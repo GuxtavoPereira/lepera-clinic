@@ -12,26 +12,22 @@ import {
 export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex md:flex-col shrink-0">
-      {/* BLOCO DE PERFIL (No Topo) */}
       <div className="flex items-center gap-3 p-6 border-b border-slate-100">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground overflow-hidden">
           img
         </div>
         <div className="flex flex-col overflow-hidden">
-          {/* [cargo de acordo com o cargo] */}
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">
             oioi
           </span>
-          {/* [colocar o nome da pessoa de acordo com o login] */}
+
           <span className="text-sm font-bold text-slate-700 truncate">
             oioi
           </span>
         </div>
       </div>
 
-      {/* ÁREA DE NAVEGAÇÃO */}
       <div className="flex-1 flex flex-col justify-between overflow-y-auto py-4">
-        {/* Menu Principal */}
         <nav className="px-4 space-y-1">
           <Link
             href="/home"
@@ -78,7 +74,6 @@ export default function Sidebar() {
           </Link>
         </nav>
 
-        {/* Menu Inferior (Fica fixo na base) */}
         <div className="px-4 pb-4">
           <hr className="border-slate-100 mb-4" />
 
