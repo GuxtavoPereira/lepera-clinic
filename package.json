@@ -7,7 +7,6 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "dev:dev": "concurrently \"cd apps/web && pnpm dev\" \"cd apps/api && pnpm dev\"",
     "dev:frontend": "cd apps/web && pnpm dev",
     "dev:backend": "cd api && pnpm dev"
   },
