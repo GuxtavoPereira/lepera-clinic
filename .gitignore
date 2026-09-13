@@ -36,3 +36,9 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Pastas de ferramentas de IA q o prisma cria
+.agents
+.claude
+.cursor
+.devin

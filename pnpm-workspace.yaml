@@ -1,9 +1,12 @@
 packages:
   - "apps/*"
+  - "api"
   - "packages/*"
 allowBuilds:
+  '@prisma/engines': false
   esbuild: true
   msgpackr-extract: true
+  prisma: false
   unrs-resolver: true
   workerd: true
 minimumReleaseAgeExclude:
