@@ -28,13 +28,47 @@ pnpm install
 ```
 
 ### Passo 3: Configurar Variáveis de Ambiente (.env)
-1. Vá até a pasta `api/` e crie um arquivo `.env` baseado no `.env.example` (se houver) com as configurações do seu Banco de Dados.
-2. Vá até a pasta `apps/web/` e crie um arquivo `.env.local` configurando a URL da API (ex: `NEXT_PUBLIC_API_URL=http://localhost:3333`).
-3. Vá até a pasta `packages/database/` e crie um arquivo `.env` com a sua URL de conexão do Prisma (ex: `DATABASE_URL="mysql://root:senha@localhost:3306/lepera_db"`).
+Você precisará criar arquivos locais de configuração na raiz de cada pacote. Utilize os arquivos `.example` como base.
 
-### Passo 4: Rodar o Projeto (Front + Back)
-Utilizamos os scripts de automação do monorepo para subir os dois servidores com um único comando na raiz do projeto.
+**1. Back-end (Pasta `api/`)**
+Crie o arquivo `api/.env`:
+```env
+PORT=3333
+DATABASE_URL="mysql://root:sua_senha_aqui@localhost:3306/lepera_db"
+JWT_SECRET="chave_secreta_para_gerar_tokens_de_login"
+```
+
+**2. Front-end (Pasta `apps/web/`)**
+Crie o arquivo `apps/web/.env.local`:
+```env
+NEXT_PUBLIC_API_URL="http://localhost:3333"
+```
+
+**3. Banco de Dados (Pasta `packages/database/`)**
+Crie o arquivo `packages/database/.env`:
+```env
+DATABASE_URL="mysql://root:sua_senha_aqui@localhost:3306/lepera_db"
+```
+
+### Passo 4: Subir o Banco de Dados (Prisma)
+Com o seu servidor MySQL ligado e as variáveis configuradas, navegue até a pasta do banco de dados e rode a migração. O Prisma lerá o `schema.prisma` e criará as tabelas.
+
 ```bash
+cd packages/database
+pnpm exec prisma migrate dev --name init
+```
+**Nota:** Se o banco `lepera_db` não existir, o terminal perguntará se você deseja criá-lo. Pressione `y` (yes).
+
+Para visualizar as tabelas recém-criadas e gerenciar os dados visualmente, você pode iniciar o painel do Prisma (abrirá em `http://localhost:5555`):
+```bash
+pnpm exec prisma studio
+```
+
+### Passo 5: Rodar o Projeto (Front + Back)
+Utilizamos os scripts de automação do monorepo para subir os dois servidores com um único comando na raiz do projeto. (Certifique-se de voltar à raiz do projeto caso esteja na pasta do banco de dados).
+
+```bash
+cd ../../
 pnpm dev
 ```
 **O que acontece ao executar o comando:**
