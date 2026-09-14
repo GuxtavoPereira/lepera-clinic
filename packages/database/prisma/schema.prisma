@@ -7,8 +7,430 @@ datasource db {
   provider = "mysql"
 }
 
-model User { 
-  id    Int     @id @default(autoincrement()) 
-  email String  @unique 
-  name  String? 
+// ==========================================
+// ENUMS (Domínios de Dados e RBAC)
+// ==========================================
+
+enum Role {
+  RECEPTIONIST // Recepcionista
+  PATIENT // Paciente
+  DOCTOR // Médico/Psicólogo
+  ADMIN // Administrador (Controle total)
+}
+
+enum AppointmentStatus {
+  SCHEDULED // Agendada
+  CONFIRMED // Confirmada
+  COMPLETED // Realizada
+  CANCELLED // Cancelada
+  RESCHEDULED // Remarcada
+  WAITING // Em espera (na clínica)
+}
+
+enum Modality {
+  IN_PERSON // Presencial
+  ONLINE // Online
+}
+
+enum AppointmentType {
+  SESSION // Sessão comum
+  EVALUATION // Avaliação
+  RETURN // Retorno
+  CLOSURE // Encerramento
+}
+
+enum RequestStatus {
+  PENDING // Pendente
+  APPROVED // Aprovada
+  REJECTED // Rejeitada
+}
+
+enum WaitlistPriority {
+  HIGH // Alta
+  MEDIUM // Média
+  LOW // Baixa
+}
+
+enum Shift {
+  MORNING // Manhã
+  AFTERNOON // Tarde
+  INDIFFERENT // Indiferente
+}
+
+enum TransactionType {
+  INCOME // Receita (Entrada)
+  EXPENSE // Despesa (Saída)
+}
+
+enum MovementType {
+  ENTRY // Entrada de estoque
+  EXIT // Saída de estoque
+}
+
+// ==========================================
+// MODELS (Tabelas)
+// ==========================================
+
+model User {
+  id           String    @id @default(uuid()) // ID único
+  name         String // Nome completo
+  email        String    @unique // E-mail para login
+  passwordHash String // Senha criptografada (senha_hash)
+  cpf          String?   @unique // Documento CPF
+  birthDate    DateTime? // Data de nascimento
+  photoUrl     String? // URL da foto de perfil
+  role         Role      @default(PATIENT) // Papel do usuário (RBAC)
+  isActive     Boolean   @default(true) // Status de acesso (ativo)
+
+  createdAt DateTime @default(now()) // Criado em
+  updatedAt DateTime @updatedAt // Atualizado em
+
+  // Relações 1:1 (Extensões do Usuário)
+  doctor       Doctor?
+  patient      Patient?
+  receptionist Receptionist?
+
+  // Relações 1:N
+  notifications  Notification[]
+  stockMovements StockMovement[]
+  transactions   FinancialTransaction[]
+
+  @@map("users")
+}
+
+// ------------------------------------------
+// EXTENSÕES DE USUÁRIO (Roles Específicas)
+// ------------------------------------------
+
+model Doctor {
+  id     String @id @default(uuid())
+  userId String @unique // FK -> usuarios
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  licenseNumber    String // CRP ou CRM
+  specialty        String // Especialidade
+  clinicalApproach String? // Abordagem principal (TCC, Psicanálise, etc.)
+  bio              String? @db.Text // Biografia
+  averageRating    Float   @default(0.0) // Nota média
+  totalReviews     Int     @default(0) // Total de avaliações
+  room             String? // Consultório/Sala
+
+  // Relações
+  patients       Patient[]
+  appointments   Appointment[]
+  availabilities DoctorAvailability[]
+  reviews        Review[]
+  progressNotes  ClinicalRecord[]
+
+  @@map("doctors")
+}
+
+model Patient {
+  id     String @id @default(uuid())
+  userId String @unique // FK -> usuarios
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  insuranceNumber       String? // Número do plano de saúde
+  insuranceProvider     String? // Operadora do plano
+  emergencyContactName  String? // Contato de emergência (Nome)
+  emergencyContactPhone String? // Contato de emergência (Telefone)
+  status                String  @default("active") // "ativo" | "inativo" | "em_espera"
+
+  responsibleDoctorId String? // FK -> psicologos (psicologo_responsavel)
+  responsibleDoctor   Doctor? @relation(fields: [responsibleDoctorId], references: [id])
+
+  // Relações Normalizadas (Baseadas na modelagem da imagem)
+  phones    PatientPhone[]
+  addresses PatientAddress[]
+
+  appointments  Appointment[]
+  requests      ScheduleRequest[]
+  waitlists     Waitlist[]
+  reviews       Review[]
+  progressNotes ClinicalRecord[]
+
+  @@map("patients")
+}
+
+model Receptionist {
+  id     String @id @default(uuid())
+  userId String @unique // FK -> usuarios
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  extension String? // Ramal
+
+  // Relações
+  appointmentsCreated Appointment[]
+  requestsApproved    ScheduleRequest[]
+
+  @@map("receptionists")
+}
+
+// ------------------------------------------
+// NORMALIZAÇÃO DE PACIENTES (3FN - Imagem)
+// ------------------------------------------
+
+model PatientPhone {
+  id        String  @id @default(uuid())
+  patientId String // FK -> pacientes
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  contactName String? // Nome de quem atende (se não for o paciente)
+  type        String // "mobile", "home", "whatsapp"
+  phone       String // Número
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("patient_phones")
+}
+
+model PatientAddress {
+  id        String  @id @default(uuid())
+  patientId String // FK -> pacientes
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  street       String // Rua/Logradouro
+  number       String // Número
+  complement   String? // Complemento
+  neighborhood String // Bairro
+  city         String // Cidade
+  state        String  @db.VarChar(2) // Estado (UF)
+  zipCode      String  @db.VarChar(10) // CEP
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("patient_addresses")
+}
+
+// ------------------------------------------
+// NÚCLEO DO SISTEMA (Agendamentos e Clínica)
+// ------------------------------------------
+
+model Appointment {
+  id             String        @id @default(uuid())
+  patientId      String // FK -> pacientes
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  doctorId       String // FK -> psicologos
+  doctor         Doctor        @relation(fields: [doctorId], references: [id])
+  receptionistId String? // FK -> recepcionistas (Quem criou)
+  receptionist   Receptionist? @relation(fields: [receptionistId], references: [id])
+
+  startDatetime   DateTime // Data e hora de início
+  endDatetime     DateTime // Data e hora de término
+  durationMinutes Int // Duração em minutos
+  modality        Modality          @default(IN_PERSON) // Presencial ou Online
+  type            AppointmentType   @default(SESSION) // Tipo (sessão, avaliação, etc)
+  status          AppointmentStatus @default(SCHEDULED) // Status
+
+  cancelReason    String?      @db.Text // Motivo cancelamento
+  rescheduledToId String?      @unique // FK auto-referência (remarcada_para)
+  rescheduledTo   Appointment? @relation("Reschedules", fields: [rescheduledToId], references: [id])
+  rescheduledFrom Appointment? @relation("Reschedules")
+
+  sessionSequence Int? // Número sequencial da sessão por paciente
+  roomOrLink      String? // Local (Sala física) ou Link (Online)
+  receptionNotes  String? @db.Text // Notas da recepção (da imagem)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  progressNote ClinicalRecord?
+  review       Review?
+  transaction  FinancialTransaction? // Ligação financeira (da imagem)
+  requests     ScheduleRequest[]
+
+  @@map("appointments")
+}
+
+model ClinicalRecord {
+  id            String      @id @default(uuid())
+  appointmentId String      @unique // FK -> consultas
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  patientId     String // FK -> pacientes
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  doctorId      String // FK -> psicologos
+  doctor        Doctor      @relation(fields: [doctorId], references: [id])
+
+  sessionSequence      Int // numero_sessao
+  mainComplaint        String? @db.Text // queixa_principal
+  clinicalNotes        String? @db.Text // observacoes_clinicas / clinical_evolution
+  homework             String? @db.Text // tarefas_para_casa
+  diagnosticHypothesis String? // hipotese_diagnostica (Ex: F41.1 - TAG)
+  cid10                String? // CID-10
+  dsm5                 String? // DSM-5
+  approachUsed         String? // abordagem_utilizada
+  therapeuticPlan      String? @db.Text // plano_terapeutico (conduct)
+
+  nextSessionDate DateTime? // proxima_sessao_data
+  nextSessionRoom String? // proxima_sessao_sala
+
+  isSigned        Boolean   @default(false) // status - "pendente" ou "assinado"
+  signedAt        DateTime? // assinado_em
+  documentNumber  String? // numero_documento (Ex: PRON-2026...)
+  attachmentsPath String? // Caminho para anexos (da imagem)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scales SessionScale[]
+
+  @@map("clinical_records")
+}
+
+model SessionScale {
+  id       String         @id @default(uuid())
+  recordId String // FK -> prontuarios
+  record   ClinicalRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  name        String // Ex: "humor", "ansiedade"
+  value       Int // Valor (1-10)
+  observation String? @db.Text // observacao
+
+  @@map("session_scales")
+}
+
+// ------------------------------------------
+// GESTÃO DE FLUXO (Solicitações e Filas)
+// ------------------------------------------
+
+model ScheduleRequest {
+  id                String  @id @default(uuid())
+  patientId         String // FK -> pacientes
+  patient           Patient @relation(fields: [patientId], references: [id])
+  preferredDoctorId String? // FK -> psicologos (Nullable)
+
+  type           String // "novo_paciente", "reagendamento"
+  preferredDate  DateTime? // data_preferida
+  preferredShift Shift? // turno_preferido
+  reason         String?       @db.Text // motivo
+  status         RequestStatus @default(PENDING) // pendente, aprovada, rejeitada
+
+  approvedById String? // FK -> recepcionistas
+  approvedBy   Receptionist? @relation(fields: [approvedById], references: [id])
+  approvedAt   DateTime? // aprovada_em
+
+  generatedApptId      String? // FK -> consultas
+  generatedAppointment Appointment? @relation(fields: [generatedApptId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("schedule_requests")
+}
+
+model Waitlist {
+  id                String  @id @default(uuid())
+  patientId         String // FK -> pacientes
+  patient           Patient @relation(fields: [patientId], references: [id])
+  preferredDoctorId String? // FK -> psicologos
+
+  reason         String?          @db.Text // motivo
+  preferredShift Shift? // turno_preferido
+  priority       WaitlistPriority @default(MEDIUM) // prioridade (Alta, Média, Baixa)
+  status         String           @default("waiting") // "aguardando", "atendido", "desistiu"
+
+  enteredAt DateTime  @default(now()) // entrada_em
+  exitedAt  DateTime? // saiu_em
+
+  @@map("waitlist")
+}
+
+model DoctorAvailability {
+  id       String @id @default(uuid())
+  doctorId String // FK -> psicologos
+  doctor   Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int // dia_semana (0=Domingo, 6=Sábado)
+  startTime String // hora_inicio (Ex: "08:00")
+  endTime   String // hora_fim (Ex: "18:00")
+  isActive  Boolean @default(true) // ativo
+
+  @@map("doctor_availabilities")
+}
+
+// ------------------------------------------
+// SISTEMAS DE APOIO E FINANCEIRO (Da Imagem)
+// ------------------------------------------
+
+model Review {
+  id            String      @id @default(uuid())
+  appointmentId String      @unique // FK -> consultas
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  patientId     String // FK -> pacientes
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  doctorId      String // FK -> psicologos
+  doctor        Doctor      @relation(fields: [doctorId], references: [id])
+
+  rating  Int // nota (1-5)
+  comment String? @db.Text // comentario
+
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String // FK -> usuarios
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String // "lembrete", "alerta", "confirmacao"
+  title   String // titulo
+  message String  @db.Text // mensagem
+  isRead  Boolean @default(false) // lida
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model FinancialTransaction {
+  id            String       @id @default(uuid())
+  appointmentId String?      @unique // FK -> consultas (Pagamento da sessão)
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  userId        String // FK -> usuarios (Quem processou ou pagou)
+  user          User         @relation(fields: [userId], references: [id])
+
+  type            TransactionType // "income" ou "expense"
+  amount          Decimal         @db.Decimal(10, 2) // Valor
+  description     String // Descrição (Ex: "Pagamento Sessão 12")
+  transactionDate DateTime // Data do pagamento
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("financial_transactions")
+}
+
+model InventoryItem {
+  id            String  @id @default(uuid())
+  name          String // Nome do item (Medicação/Material)
+  description   String? @db.Text // Descrição
+  stockQuantity Int     @default(0) // Quantidade atual
+  minimumStock  Int     @default(5) // Estoque mínimo para alerta
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements StockMovement[]
+
+  @@map("inventory_items")
+}
+
+model StockMovement {
+  id     String        @id @default(uuid())
+  itemId String // FK -> inventory_items
+  item   InventoryItem @relation(fields: [itemId], references: [id])
+  userId String // FK -> usuarios (Quem movimentou)
+  user   User          @relation(fields: [userId], references: [id])
+
+  movementType  MovementType // "entry" ou "exit"
+  quantity      Int // Quantidade movimentada
+  justification String? // Justificativa
+
+  createdAt DateTime @default(now())
+
+  @@map("stock_movements")
 }
