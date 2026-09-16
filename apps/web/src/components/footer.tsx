@@ -21,16 +21,18 @@ export function Footer() {
             <h3 className="font-semibold mb-4 text-foreground">Links Úteis</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link href="/" className="hover:text-primary">Página Inicial</Link></li>
-              <li><Link href="/sobre" className="hover:text-primary">Corpo Clínico</Link></li>
-              <li><Link href="/login" className="hover:text-primary">Acesso Restrito</Link></li>
+              <li><Link href="/about" className="hover:text-primary">Sobre Nós</Link></li>
+              <li><Link href="/contact" className="hover:text-primary">Contato / Agende</Link></li>
+              <li><Link href="/auth/login" className="hover:text-primary">Acesso Restrito</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="font-semibold mb-4 text-foreground">Contato</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Rua da Saúde, 123 - Centro</li>
-              <li>(11) 99999-9999</li>
+              <li>Av. Dr. Arthur da Costa Filho, 100 - Centro</li>
+              <li>Caraguatatuba - SP</li>
+              <li>(12) 99999-9999</li>
               <li>contato@leperapia.com.br</li>
             </ul>
           </div>
