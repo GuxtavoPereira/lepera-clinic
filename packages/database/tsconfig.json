@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": [
+    "index.ts",
+    "client.ts",
+    "prisma.config.ts",
+    "prisma/**/*.ts",
+    "generated/**/*.ts"
+  ]
+}

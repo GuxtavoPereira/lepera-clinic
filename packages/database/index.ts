@@ -1,2 +1,2 @@
-export { prisma } from "./client";
+export { createPrismaClient, type PrismaClientInstance } from "./client";
 export * from "./generated/prisma/client";

@@ -1,31 +1,39 @@
 {
   "name": "@lepera/db",
   "version": "1.0.0",
+  "private": true,
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "db:seed": "prisma db seed"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+  "scripts": {
+    "db:generate": "prisma generate",
+    "build": "tsc -p tsconfig.build.json",
+    "check-types": "tsc -p tsconfig.json",
+    "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "studio": "prisma studio",
+    "db:seed": "prisma db seed"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "devDependencies": {
-    "@types/node": "^26.5.1",
+    "@types/node": "catalog:",
+    "bcryptjs": "^3.0.3",
     "prisma": "7.10.0",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.10.0",
     "@prisma/client": "7.10.0",
-    "dotenv": "^17.4.2"
-  },
-  "compilerOptions": {
-    "types": ["node"]
+    "dotenv": "^17.4.2",
+    "mariadb": "^3.5.4"
   }
 }
