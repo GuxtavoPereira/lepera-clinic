@@ -7,11 +7,13 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "dev:frontend": "cd apps/web && pnpm dev",
-    "dev:backend": "cd api && pnpm dev"
+    "dev:web": "turbo run dev --filter=web",
+    "dev:api": "turbo run dev --filter=api",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "pnpm --filter @lepera/db migrate",
+    "db:studio": "pnpm --filter @lepera/db studio"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5",
     "prettier": "3.9.6",
     "turbo": "^2.10.12",
     "typescript": "7.0.2"
