@@ -1,30 +1,26 @@
 {
-  "name": "@lepera/db",
-  "version": "1.0.0",
+  "name": "lepera-clinic",
+  "version": "0.0.0",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
-  },
   "scripts": {
-    "db:generate": "prisma generate",
-    "build": "tsc -p tsconfig.json",
-    "check-types": "tsc -p tsconfig.json --noEmit",
-    "migrate": "prisma migrate dev",
-    "migrate:deploy": "prisma migrate deploy",
-    "studio": "prisma studio",
-    "db:seed": "prisma db seed"
-  },
-  "dependencies": {
-    "@prisma/adapter-mariadb": "^7.10.0",
-    "@prisma/client": "7.10.0",
-    "dotenv": "^17.4.2"
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:api": "turbo run dev --filter=api",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "pnpm --filter @lepera/db migrate",
+    "db:studio": "pnpm --filter @lepera/db studio",
+    "db:seed": "pnpm --filter @lepera/db db:seed"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "prisma": "7.10.0",
-    "tsx": "^4.23.13",
+    "prettier": "catalog:",
+    "turbo": "^2.10.12",
     "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.23.0",
+  "engines": {
+    "node": ">=24"
   }
 }
