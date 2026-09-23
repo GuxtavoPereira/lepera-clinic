@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState(false);
 
   function handleLogin() {
-    if (email === "teste123" && password === "teste123") {
+    if (email === "teste" && password === "123") {
       router.push("/admin/dashboard");
     } else {
       setError(true);
