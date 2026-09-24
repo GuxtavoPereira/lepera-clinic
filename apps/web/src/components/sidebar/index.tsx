@@ -30,7 +30,7 @@ export default function Sidebar() {
       <div className="flex-1 flex flex-col justify-between overflow-y-auto py-4">
         <nav className="px-4 space-y-1">
           <Link
-            href="/home"
+            href="admin/dashboard"
             className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium bg-slate-100 text-slate-900 rounded-md transition-colors"
           >
             <Home className="h-5 w-5 text-slate-700" />
@@ -38,7 +38,7 @@ export default function Sidebar() {
           </Link>
 
           <Link
-            href="/requests"
+            href="admin/requests"
             className="flex items-center justify-between px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors"
           >
             <div className="flex items-center gap-3">

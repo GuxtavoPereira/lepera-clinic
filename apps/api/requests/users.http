@@ -1,0 +1,31 @@
+@base = http://localhost:3333/api
+
+### saúde da API + banco
+GET {{base}}/health
+
+### lista os 4 usuários do seed (nenhum deve ter passwordHash)
+GET {{base}}/users
+
+### filtros
+GET {{base}}/users?role=DOCTOR&search=roberto
+
+### validação (deve dar 400 com a lista de erros)
+GET {{base}}/users?page=0
+
+### edição (troque o id por um que apareceu na listagem)
+PATCH {{base}}/users/COLE-O-ID-AQUI
+Content-Type: application/json
+
+{ "name": "Novo Nome" }
+
+### e-mail que já existe (deve dar 409)
+PATCH {{base}}/users/COLE-O-ID-AQUI
+Content-Type: application/json
+
+{ "email": "admin@leperapia.com" }
+
+### desativar
+PATCH {{base}}/users/COLE-O-ID-AQUI/status
+Content-Type: application/json
+
+{ "isActive": false }

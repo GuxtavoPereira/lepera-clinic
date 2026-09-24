@@ -8,8 +8,9 @@ const BirthDateSchema = z.string().date("Use o formato AAAA-MM-DD");
 export const PasswordSchema = z
   .string()
   .min(8, "A senha precisa de pelo menos 8 caracteres")
-  .max(72, "A senha pode ter no máximo 72 caracteres");
+  .max(72, "A senha pode ter no máximo 72 caracteres"); // o bcrypt ignora o que passa de 72 bytes
 
+/** Campos comuns a TODO usuário. Médico, paciente e recepcionista fazem .extend() disto. */
 export const CreateUserBaseSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().toLowerCase().email("E-mail inválido"),
@@ -20,12 +21,13 @@ export const CreateUserBaseSchema = z.object({
 });
 export type CreateUserBaseInput = z.infer<typeof CreateUserBaseSchema>;
 
+/** Edição dos dados-base. Sem `password` (troca de senha é do módulo de auth) e sem `role`. */
 export const UpdateUserSchema = CreateUserBaseSchema.omit({ password: true })
   .partial()
   .extend({
     cpf: CpfSchema.nullable().optional(),
     birthDate: BirthDateSchema.nullable().optional(),
-    photoUrl: z.string().url().nullable().optional(),
+    photoUrl: z.string().url().nullable().optional(), // null = apagar o campo
   });
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 
@@ -36,6 +38,7 @@ export const ListUsersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   role: RoleSchema.optional(),
+  // z.coerce.boolean() trata a string "false" como true. Por isso o enum + transform.
   isActive: z
     .enum(["true", "false"])
     .transform((value) => value === "true")
@@ -44,6 +47,7 @@ export const ListUsersQuerySchema = z.object({
 });
 export type ListUsersQuery = z.infer<typeof ListUsersQuerySchema>;
 
+/** O que a API devolve. Repare: não existe passwordHash aqui. Datas viajam como string ISO. */
 export const UserResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
