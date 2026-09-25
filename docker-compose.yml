@@ -4,7 +4,7 @@ services:
     container_name: lepera-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: lepera_db
     ports:
       - "3306:3306"
