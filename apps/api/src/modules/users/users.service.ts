@@ -1,5 +1,9 @@
 // users.service.ts
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type {
   CreateUserBaseInput,
   ListUsersQuery,
@@ -16,7 +20,8 @@ import { toUserResponse, USER_OMIT } from './users.mapper';
 
 export type CreateUserData = CreateUserBaseInput & { role: Role };
 
-const toDate = (value: string | null | undefined) => (value == null ? value : new Date(value));
+const toDate = (value: string | null | undefined) =>
+  value == null ? value : new Date(value);
 
 @Injectable()
 export class UsersService {
@@ -29,7 +34,10 @@ export class UsersService {
    * Cria o usuário-base. NÃO tem rota: é chamado pelos módulos de médico, paciente e
    * recepcionista, que passam `db` (o `tx` da transação) para gravar tudo junto.
    */
-  async create(data: CreateUserData, db: DbClient = this.prisma.db): Promise<UserResponse> {
+  async create(
+    data: CreateUserData,
+    db: DbClient = this.prisma.db,
+  ): Promise<UserResponse> {
     await this.assertUnique(db, { email: data.email, cpf: data.cpf });
 
     try {
@@ -48,7 +56,8 @@ export class UsersService {
       return toUserResponse(user);
     } catch (error) {
       // Rede de segurança: duas requisições simultâneas passam pela checagem acima.
-      if (isUniqueViolation(error)) throw new ConflictException('E-mail ou CPF já cadastrado');
+      if (isUniqueViolation(error))
+        throw new ConflictException('E-mail ou CPF já cadastrado');
       throw error;
     }
   }
@@ -90,7 +99,10 @@ export class UsersService {
     };
   }
 
-  async findById(id: string, db: DbClient = this.prisma.db): Promise<UserResponse> {
+  async findById(
+    id: string,
+    db: DbClient = this.prisma.db,
+  ): Promise<UserResponse> {
     const user = await db.user.findUnique({ where: { id }, omit: USER_OMIT });
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return toUserResponse(user);
@@ -99,7 +111,14 @@ export class UsersService {
   /** `role` não é editável aqui: trocar o papel sem trocar as tabelas de perfil quebraria os dados. */
   async update(id: string, data: UpdateUserInput): Promise<UserResponse> {
     await this.findById(id); // 404 se não existir
-    await this.assertUnique(this.prisma.db, { email: data.email, cpf: data.cpf }, id);
+    await this.assertUnique(
+      this.prisma.db,
+      {
+        email: data.email,
+        cpf: data.cpf,
+      },
+      id,
+    );
 
     const user = await this.prisma.db.user.update({
       where: { id },
@@ -128,7 +147,9 @@ export class UsersService {
 
   /** Uso INTERNO do futuro AuthModule. Devolve o hash: nunca retorne isto numa rota. */
   findWithPasswordByEmail(email: string) {
-    return this.prisma.db.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    return this.prisma.db.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+    });
   }
 
   private async assertUnique(
@@ -149,7 +170,9 @@ export class UsersService {
     if (!existing) return;
 
     throw new ConflictException(
-      fields.email && existing.email === fields.email ? 'E-mail já cadastrado' : 'CPF já cadastrado',
+      fields.email && existing.email === fields.email
+        ? 'E-mail já cadastrado'
+        : 'CPF já cadastrado',
     );
   }
 }

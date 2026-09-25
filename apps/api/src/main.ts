@@ -8,7 +8,10 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: config.getOrThrow<string>('WEB_URL'), credentials: true });
+  app.enableCors({
+    origin: config.getOrThrow<string>('WEB_URL'),
+    credentials: true,
+  });
   app.enableShutdownHooks();
 
   const port = config.getOrThrow<number>('PORT');

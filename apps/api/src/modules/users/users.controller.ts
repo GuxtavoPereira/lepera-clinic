@@ -1,6 +1,18 @@
 // users.controller.ts
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
-import { ListUsersQuerySchema, SetUserStatusSchema, UpdateUserSchema } from '@lepera/contracts';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+} from '@nestjs/common';
+import {
+  ListUsersQuerySchema,
+  SetUserStatusSchema,
+  UpdateUserSchema,
+} from '@lepera/contracts';
 import type {
   ListUsersQuery,
   Paginated,

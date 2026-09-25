@@ -8,7 +8,10 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, validate: (config) => envSchema.parse(config) }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: (config) => envSchema.parse(config),
+    }),
     PrismaModule,
     UsersModule,
   ],
