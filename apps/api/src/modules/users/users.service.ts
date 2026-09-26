@@ -1,178 +1,81 @@
-// users.service.ts
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import type {
-  CreateUserBaseInput,
-  ListUsersQuery,
-  Paginated,
-  Role,
-  UpdateUserInput,
-  UserResponse,
-} from '@lepera/contracts';
+// apps/api/src/modules/users/users.service.ts
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import type { DbClient } from '../../prisma/prisma.types';
-import { isUniqueViolation } from '../../prisma/prisma-errors';
 import { PasswordService } from './password.service';
-import { toUserResponse, USER_OMIT } from './users.mapper';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
-export type CreateUserData = CreateUserBaseInput & { role: Role };
-
-const toDate = (value: string | null | undefined) =>
-  value == null ? value : new Date(value);
-
+/**
+ * Um SERVICE é onde mora a LÓGICA. Ele não sabe nada sobre HTTP
+ * (não conhece rota, nem status code) — só sabe conversar com o banco
+ * (via PrismaService) e fazer as contas/regras necessárias.
+ *
+ * `@Injectable()` avisa o Nest: "esta classe pode ser injetada em outras".
+ * É isso que permite o Controller simplesmente PEDIR um UsersService no
+ * construtor, sem precisar saber como criar um.
+ */
 @Injectable()
 export class UsersService {
+  // O Nest cria (ou reaproveita) um PrismaService e um PasswordService
+  // sozinho e entrega aqui. Isso se chama "injeção de dependência" (DI).
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
   ) {}
 
-  /**
-   * Cria o usuário-base. NÃO tem rota: é chamado pelos módulos de médico, paciente e
-   * recepcionista, que passam `db` (o `tx` da transação) para gravar tudo junto.
-   */
-  async create(
-    data: CreateUserData,
-    db: DbClient = this.prisma.db,
-  ): Promise<UserResponse> {
-    await this.assertUnique(db, { email: data.email, cpf: data.cpf });
+  async create(dto: CreateUserDto) {
+    // Nunca guardamos a senha "pura" no banco. `hash()` a embaralha.
+    const passwordHash = await this.passwords.hash(dto.password);
 
-    try {
-      const user = await db.user.create({
-        data: {
-          name: data.name,
-          email: data.email,
-          passwordHash: await this.passwords.hash(data.password),
-          cpf: data.cpf,
-          birthDate: toDate(data.birthDate),
-          photoUrl: data.photoUrl,
-          role: data.role,
-        },
-        omit: USER_OMIT,
-      });
-      return toUserResponse(user);
-    } catch (error) {
-      // Rede de segurança: duas requisições simultâneas passam pela checagem acima.
-      if (isUniqueViolation(error))
-        throw new ConflictException('E-mail ou CPF já cadastrado');
-      throw error;
-    }
-  }
-
-  async findAll(query: ListUsersQuery): Promise<Paginated<UserResponse>> {
-    const { page, pageSize, role, isActive, search } = query;
-
-    // No Prisma, `undefined` num filtro significa "ignore". No MySQL o `contains`
-    // já ignora maiúsculas (não existe o `mode: 'insensitive'` aqui).
-    const where = {
-      role,
-      isActive,
-      OR: search
-        ? [
-            { name: { contains: search } },
-            { email: { contains: search } },
-            { cpf: { contains: search } },
-          ]
-        : undefined,
-    };
-
-    const [total, users] = await Promise.all([
-      this.prisma.db.user.count({ where }),
-      this.prisma.db.user.findMany({
-        where,
-        omit: USER_OMIT,
-        orderBy: { name: 'asc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-    ]);
-
-    return {
-      items: users.map((user) => toUserResponse(user)),
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    };
-  }
-
-  async findById(
-    id: string,
-    db: DbClient = this.prisma.db,
-  ): Promise<UserResponse> {
-    const user = await db.user.findUnique({ where: { id }, omit: USER_OMIT });
-    if (!user) throw new NotFoundException('Usuário não encontrado');
-    return toUserResponse(user);
-  }
-
-  /** `role` não é editável aqui: trocar o papel sem trocar as tabelas de perfil quebraria os dados. */
-  async update(id: string, data: UpdateUserInput): Promise<UserResponse> {
-    await this.findById(id); // 404 se não existir
-    await this.assertUnique(
-      this.prisma.db,
-      {
-        email: data.email,
-        cpf: data.cpf,
-      },
-      id,
-    );
-
-    const user = await this.prisma.db.user.update({
-      where: { id },
+    // `omit` diz ao Prisma: "monte o resultado, mas tire o passwordHash dele".
+    return this.prisma.db.user.create({
       data: {
-        name: data.name,
-        email: data.email,
-        cpf: data.cpf,
-        birthDate: toDate(data.birthDate),
-        photoUrl: data.photoUrl,
+        name: dto.name,
+        email: dto.email,
+        passwordHash,
+        role: dto.role,
       },
-      omit: USER_OMIT,
+      omit: { passwordHash: true },
     });
-    return toUserResponse(user);
   }
 
-  /** Desativar em vez de apagar: prontuários e financeiro precisam manter o histórico. */
-  async setActive(id: string, isActive: boolean): Promise<UserResponse> {
-    await this.findById(id);
-    const user = await this.prisma.db.user.update({
-      where: { id },
-      data: { isActive },
-      omit: USER_OMIT,
+  findAll() {
+    return this.prisma.db.user.findMany({
+      omit: { passwordHash: true },
+      orderBy: { name: 'asc' },
     });
-    return toUserResponse(user);
   }
 
-  /** Uso INTERNO do futuro AuthModule. Devolve o hash: nunca retorne isto numa rota. */
-  findWithPasswordByEmail(email: string) {
+  findOne(id: string) {
     return this.prisma.db.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+      where: { id },
+      omit: { passwordHash: true },
     });
   }
 
-  private async assertUnique(
-    db: DbClient,
-    fields: { email?: string; cpf?: string | null },
-    ignoreId?: string,
-  ) {
-    const or = [
-      ...(fields.email ? [{ email: fields.email }] : []),
-      ...(fields.cpf ? [{ cpf: fields.cpf }] : []),
-    ];
-    if (or.length === 0) return;
-
-    const existing = await db.user.findFirst({
-      where: { OR: or, NOT: ignoreId ? { id: ignoreId } : undefined },
-      select: { email: true },
+  update(id: string, dto: UpdateUserDto) {
+    return this.prisma.db.user.update({
+      where: { id },
+      data: dto,
+      omit: { passwordHash: true },
     });
-    if (!existing) return;
+  }
 
-    throw new ConflictException(
-      fields.email && existing.email === fields.email
-        ? 'E-mail já cadastrado'
-        : 'CPF já cadastrado',
-    );
+  /** Não apagamos usuário do banco (prontuário e financeiro dependem dele). Só desligamos o acesso. */
+  deactivate(id: string) {
+    return this.prisma.db.user.update({
+      where: { id },
+      data: { isActive: false },
+      omit: { passwordHash: true },
+    });
+  }
+
+  /**
+   * Uso interno do AuthModule (login). Esta é a ÚNICA função que devolve o
+   * passwordHash — e só porque o AuthService precisa comparar a senha.
+   * Ela nunca deve virar uma rota HTTP.
+   */
+  findByEmailWithPassword(email: string) {
+    return this.prisma.db.user.findUnique({ where: { email } });
   }
 }

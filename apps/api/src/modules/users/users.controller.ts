@@ -1,57 +1,49 @@
-// users.controller.ts
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Query,
-} from '@nestjs/common';
-import {
-  ListUsersQuerySchema,
-  SetUserStatusSchema,
-  UpdateUserSchema,
-} from '@lepera/contracts';
-import type {
-  ListUsersQuery,
-  Paginated,
-  SetUserStatusInput,
-  UpdateUserInput,
-  UserResponse,
-} from '@lepera/contracts';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+// apps/api/src/modules/users/users.controller.ts
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
+/**
+ * Um CONTROLLER só cuida de HTTP: qual rota, qual verbo (GET/POST/PATCH),
+ * pegar o que veio no corpo/parâmetro e devolver para o service. Repare que
+ * nenhuma linha aqui embaixo fala com o banco — quem faz isso é o
+ * UsersService.
+ *
+ * `@Controller('users')` faz TODA rota aqui dentro começar com /users
+ * (e o main.ts já soma o prefixo /api na frente: /api/users).
+ */
 @Controller('users')
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
+  // POST /api/users
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
+  }
+
+  // GET /api/users
   @Get()
-  list(
-    @Query(new ZodValidationPipe(ListUsersQuerySchema)) query: ListUsersQuery,
-  ): Promise<Paginated<UserResponse>> {
-    return this.users.findAll(query);
+  findAll() {
+    return this.usersService.findAll();
   }
 
+  // GET /api/users/:id  → ex: /api/users/abc-123
   @Get(':id')
-  get(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponse> {
-    return this.users.findById(id);
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 
+  // PATCH /api/users/:id
   @Patch(':id')
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(UpdateUserSchema)) body: UpdateUserInput,
-  ): Promise<UserResponse> {
-    return this.users.update(id, body);
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
   }
 
-  @Patch(':id/status')
-  setStatus(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(SetUserStatusSchema)) body: SetUserStatusInput,
-  ): Promise<UserResponse> {
-    return this.users.setActive(id, body.isActive);
+  // PATCH /api/users/:id/deactivate
+  @Patch(':id/deactivate')
+  deactivate(@Param('id') id: string) {
+    return this.usersService.deactivate(id);
   }
 }
