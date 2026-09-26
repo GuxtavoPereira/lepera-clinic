@@ -1,0 +1,88 @@
+{
+  "info": {
+    "name": "Lepera API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base", "value": "http://localhost:3333/api" },
+    { "key": "userId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/health"
+      }
+    },
+    {
+      "name": "Users - Listar",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/users"
+      }
+    },
+    {
+      "name": "Users - Criar",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Fulano de Tal\",\n  \"email\": \"fulano@teste.com\",\n  \"password\": \"12345678\",\n  \"role\": \"RECEPTIONIST\"\n}"
+        },
+        "url": "{{base}}/users"
+      }
+    },
+    {
+      "name": "Users - Buscar por id",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/users/{{userId}}"
+      }
+    },
+    {
+      "name": "Users - Editar",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Fulano Editado\"\n}"
+        },
+        "url": "{{base}}/users/{{userId}}"
+      }
+    },
+    {
+      "name": "Users - Desativar",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base}}/users/{{userId}}/deactivate"
+      }
+    },
+    {
+      "name": "Auth - Login (admin do seed)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@leperapia.com\",\n  \"password\": \"Senha@123\"\n}"
+        },
+        "url": "{{base}}/auth/login"
+      }
+    },
+    {
+      "name": "Auth - Login (senha errada, deve dar 401)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@leperapia.com\",\n  \"password\": \"senha-errada\"\n}"
+        },
+        "url": "{{base}}/auth/login"
+      }
+    }
+  ]
+}
