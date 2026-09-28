@@ -1,4 +1,3 @@
-// apps/api/src/modules/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -8,10 +7,8 @@ import { AuthService } from './auth.service';
 
 @Module({
   imports: [
-    UsersModule, // pega emprestado o UsersService (ver "exports" do UsersModule)
+    UsersModule,
     JwtModule.registerAsync({
-      // "async" porque a chave secreta vem do .env, que só existe depois
-      // que o ConfigModule termina de carregar.
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),

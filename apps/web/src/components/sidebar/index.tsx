@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getCurrentUser } from "@/lib/auth";
+import { useRole } from "@/lib/use-role";
 import { navigation } from "@/config/navigation";
 import type { Role } from "@lepera/contracts";
 
@@ -16,12 +15,7 @@ const ROLE_LABEL: Record<Role, string> = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [role, setRole] = useState<Role | null>(null);
-
-  useEffect(() => {
-    // localStorage só existe no navegador, por isso lemos aqui e não no render
-    setRole(getCurrentUser()?.role ?? null);
-  }, []);
+  const role = useRole();
 
   const items = role ? navigation[role] : [];
 

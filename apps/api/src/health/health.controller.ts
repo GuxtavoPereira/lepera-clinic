@@ -1,4 +1,3 @@
-// apps/api/src/health/health.controller.ts
 import { Controller, Get } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 

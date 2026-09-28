@@ -1,4 +1,3 @@
-// apps/web/src/lib/api-client.ts
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
 export class ApiError extends Error {
