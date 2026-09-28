@@ -1,5 +1,4 @@
-import React from "react";
-import { Target, Lightbulb, Heart, ShieldCheck } from "lucide-react";
+import { Target, Lightbulb, Heart, } from "lucide-react";
 
 export default function SobrePage() {
   return (

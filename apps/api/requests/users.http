@@ -1,0 +1,30 @@
+@base = http://localhost:3333/api
+
+### saúde da API + banco
+GET {{base}}/health
+
+### listar usuários (o seed já cria 4)
+GET {{base}}/users
+
+### criar um usuário novo
+POST {{base}}/users
+Content-Type: application/json
+
+{
+  "name": "Fulano de Tal",
+  "email": "fulano@teste.com",
+  "password": "12345678",
+  "role": "RECEPTIONIST"
+}
+
+### buscar um usuário (troque o id pelo que veio na criação/listagem acima)
+GET {{base}}/users/COLE-O-ID-AQUI
+
+### editar o nome
+PATCH {{base}}/users/COLE-O-ID-AQUI
+Content-Type: application/json
+
+{ "name": "Fulano Editado" }
+
+### desativar
+PATCH {{base}}/users/COLE-O-ID-AQUI/deactivate

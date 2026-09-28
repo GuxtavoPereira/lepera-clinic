@@ -1,0 +1,19 @@
+@base = http://localhost:3333/api
+
+### login com o admin criado pelo seed (senha: Senha@123)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@leperapia.com",
+  "password": "Senha@123"
+}
+
+### senha errada (deve dar 401)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@leperapia.com",
+  "password": "senha-errada"
+}

@@ -3,19 +3,40 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
+import { login } from "@/lib/auth";
+import { ApiError } from "@/lib/api-client";
+
+const HOME_BY_ROLE: Record<string, string> = {
+  ADMIN: "/admin/dashboard",
+  DOCTOR: "/doctor/dashboard",
+  PATIENT: "/patient/dashboard",
+  RECEPTIONIST: "/reception/dashboard",
+};
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
-    if (email === "teste" && password === "123") {
-      router.push("/admin/dashboard");
-    } else {
-      setError(true);
+  async function handleLogin() {
+    if (loading) return;
+    setError(null);
+    setLoading(true);
+
+    try {
+      const user = await login(email, password);
+      router.push(HOME_BY_ROLE[user.role] ?? "/");
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Não foi possível conectar à API. Ela está rodando?",
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -70,12 +91,13 @@ export default function LoginPage() {
 
               <input
                 id="email"
-                type="text"
-                placeholder="teste123"
+                type="email"
+                autoComplete="email"
+                placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setError(false);
+                  setError(null);
                 }}
               />
             </div>
@@ -105,24 +127,29 @@ export default function LoginPage() {
               <input
                 id="senha"
                 type="password"
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setError(false);
+                  setError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleLogin();
                 }}
               />
             </div>
           </div>
 
-          {error && <p className={styles.error}>E-mail ou senha incorretos.</p>}
+          {error && <p className={styles.error}>{error}</p>}
 
           <button
             type="button"
             className={styles.btnPrimary}
             onClick={handleLogin}
+            disabled={loading}
           >
-            Entrar
+            {loading ? "Entrando..." : "Entrar"}
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 12h14M13 6l6 6-6 6"
