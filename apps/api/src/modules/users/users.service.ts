@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from './password.service';
@@ -13,7 +12,6 @@ export class UsersService {
 
   async create(dto: CreateUserDto) {
     const passwordHash = await this.passwords.hash(dto.password);
-
 
     return this.prisma.db.user.create({
       data: {

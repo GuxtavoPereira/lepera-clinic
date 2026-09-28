@@ -2,11 +2,6 @@
   "name": "lepera-clinic",
   "version": "1.0.0",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
-  },
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=web",
