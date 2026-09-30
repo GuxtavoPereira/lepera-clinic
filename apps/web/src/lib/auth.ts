@@ -2,12 +2,11 @@ import type { Role } from "@lepera/contracts";
 import { apiFetch } from "./api-client";
 
 const TOKEN_KEY = "lepera:token";
+const USER_KEY = "lepera:user";
 export const AUTH_EVENT = "lepera:auth-changed";
 
-type LoginResponse = {
-  accessToken: string;
-  user: { id: string; name: string; email: string; role: Role };
-};
+type StoredUser = { id: string; name: string; email: string; role: Role };
+type LoginResponse = { accessToken: string; user: StoredUser };
 
 export type TokenPayload = { sub: string; role: Role; exp: number };
 
@@ -21,12 +20,14 @@ export async function login(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
   localStorage.setItem(TOKEN_KEY, data.accessToken);
+  localStorage.setItem(USER_KEY, JSON.stringify(data.user));
   notify();
   return data.user;
 }
 
 export function logout() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
   notify();
 }
 
@@ -34,6 +35,13 @@ export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(TOKEN_KEY);
 }
+
+export function getStoredUser(): StoredUser | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(USER_KEY);
+  return raw ? (JSON.parse(raw) as StoredUser) : null;
+}
+
 export function parseToken(token: string | null): TokenPayload | null {
   if (!token) return null;
   try {
