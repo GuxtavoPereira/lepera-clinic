@@ -26,7 +26,7 @@
     "@lepera/contracts": "workspace:*",
     "@lepera/db": "workspace:*",
     "@nestjs/common": "^11.0.1",
-    "@nestjs/config": "^12.0.0",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^12.0.2",
     "@nestjs/platform-express": "^11.0.1",
