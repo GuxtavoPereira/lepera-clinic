@@ -7,4 +7,3 @@ export const AppointmentStatusSchema = z.enum([
   "SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "RESCHEDULED", "WAITING",
 ]);
 export type AppointmentStatus = z.infer<typeof AppointmentStatusSchema>;
-// repita para Modality, AppointmentType, RequestStatus, Shift, etc.
