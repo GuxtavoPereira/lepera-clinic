@@ -25,15 +25,16 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "^8.23.1",
     "prisma": "7.10.0",
     "tsx": "^4.23.13",
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.10.0",
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "mariadb": "^3.5.4"
+    "pg": "^8.23.0"
   }
 }

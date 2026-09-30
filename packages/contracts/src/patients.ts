@@ -4,7 +4,7 @@ export const CreatePatientSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   cpf: z.string().regex(/^\d{11}$/).optional(),
-  birthDate: z.string().optional(), // ISO
+  birthDate: z.string().optional(),
   insuranceProvider: z.string().optional(),
 });
 export type CreatePatientInput = z.infer<typeof CreatePatientSchema>;

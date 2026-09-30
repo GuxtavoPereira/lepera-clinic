@@ -63,8 +63,8 @@ async function main() {
           room: "Sala 01",
           availabilities: {
             create: [
-              { dayOfWeek: 1, startTime: "08:00", endTime: "12:00" }, // Segunda
-              { dayOfWeek: 3, startTime: "14:00", endTime: "18:00" }, // Quarta
+              { dayOfWeek: 1, startTime: "08:00", endTime: "12:00" }, 
+              { dayOfWeek: 3, startTime: "14:00", endTime: "18:00" },
             ],
           },
         },
