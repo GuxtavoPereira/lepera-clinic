@@ -1,7 +1,18 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { ChevronLeft, Bookmark, Search, Sun, Bell } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ChevronLeft, Bookmark, Search, Sun, Bell, LogOut, User as UserIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useCurrentUser } from "@/lib/use-current-user";
+import { logout } from "@/lib/auth";
 
 const routeNames: Record<string, string> = {
   "/home": "Início",
@@ -13,9 +24,21 @@ const routeNames: Record<string, string> = {
   "/new-session": "Nova Sessão",
 };
 
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
+}
+
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const user = useCurrentUser();
   const currentPage = routeNames[pathname] || "Visão Geral";
+
+  function handleLogout() {
+    logout();
+    router.push("/auth/login");
+  }
 
   return (
     <header className="flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6 shrink-0">
@@ -57,6 +80,32 @@ export function Header() {
             <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary border border-white"></span>
           </button>
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 rounded-md p-1 pr-2 hover:bg-slate-100 transition-colors">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                  {user ? initials(user.name) : <UserIcon className="h-4 w-4" />}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden md:block text-sm font-medium text-slate-700">
+                {user?.name ?? "Minha conta"}
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <p className="text-sm font-medium text-slate-800">{user?.name}</p>
+              <p className="text-xs text-slate-500">{user?.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+              <LogOut className="h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
