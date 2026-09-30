@@ -5,10 +5,27 @@ const TOKEN_KEY = "lepera:token";
 const USER_KEY = "lepera:user";
 export const AUTH_EVENT = "lepera:auth-changed";
 
-type StoredUser = { id: string; name: string; email: string; role: Role };
-type LoginResponse = { accessToken: string; user: StoredUser };
+type StoredUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+};
 
-export type TokenPayload = { sub: string; role: Role; exp: number };
+type LoginResponse = {
+  accessToken: string;
+  user: StoredUser;
+};
+
+export type TokenPayload = {
+  sub: string;
+  role: Role;
+  exp: number;
+};
+
+// Cache do usuário para evitar novos objetos a cada leitura
+let cachedRaw: string | null | undefined;
+let cachedUser: StoredUser | null = null;
 
 function notify() {
   window.dispatchEvent(new Event(AUTH_EVENT));
@@ -39,7 +56,26 @@ export function getToken(): string | null {
 export function getStoredUser(): StoredUser | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(USER_KEY);
-  return raw ? (JSON.parse(raw) as StoredUser) : null;
+
+  // Se o armazenamento não mudou, retorna a mesma referência
+  if (raw === cachedRaw) {
+    return cachedUser;
+  }
+
+  cachedRaw = raw;
+
+  if (!raw) {
+    cachedUser = null;
+    return null;
+  }
+
+  try {
+    cachedUser = JSON.parse(raw) as StoredUser;
+  } catch {
+    cachedUser = null;
+  }
+
+  return cachedUser;
 }
 
 export function parseToken(token: string | null): TokenPayload | null {

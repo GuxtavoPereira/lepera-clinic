@@ -75,7 +75,11 @@ export default function UsersManagementPage() {
       });
       setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Não foi possível desativar o usuário.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Não foi possível desativar o usuário.",
+      );
     } finally {
       setPendingId(null);
     }
@@ -166,12 +170,16 @@ export default function UsersManagementPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-800 truncate">{u.name}</p>
+                    <p className="text-sm font-medium text-slate-800 truncate">
+                      {u.name}
+                    </p>
                     <p className="text-xs text-slate-500 truncate">{u.email}</p>
                   </div>
                 </div>
 
-                <span className="text-sm text-slate-600">{ROLE_LABEL[u.role]}</span>
+                <span className="text-sm text-slate-600">
+                  {ROLE_LABEL[u.role]}
+                </span>
 
                 <span>
                   {u.isActive ? (
@@ -185,18 +193,26 @@ export default function UsersManagementPage() {
                   )}
                 </span>
 
-                <span className="text-sm text-slate-500">{formatDate(u.createdAt)}</span>
+                <span className="text-sm text-slate-500">
+                  {formatDate(u.createdAt)}
+                </span>
 
                 <div className="flex justify-end">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" disabled={pendingId === u.id}>
-                        {pendingId === u.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <MoreVertical className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={pendingId === u.id}
+                        />
+                      }
+                    >
+                      {pendingId === u.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MoreVertical className="h-4 w-4" />
+                      )}
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem

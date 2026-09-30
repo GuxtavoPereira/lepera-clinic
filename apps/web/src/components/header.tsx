@@ -1,7 +1,15 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, Bookmark, Search, Sun, Bell, LogOut, User as UserIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  Bookmark,
+  Search,
+  Sun,
+  Bell,
+  LogOut,
+  User as UserIcon,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,25 +90,35 @@ export function Header() {
         </div>
 
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-md p-1 pr-2 hover:bg-slate-100 transition-colors">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-                  {user ? initials(user.name) : <UserIcon className="h-4 w-4" />}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden md:block text-sm font-medium text-slate-700">
-                {user?.name ?? "Minha conta"}
-              </span>
-            </button>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={
+              <button className="flex items-center gap-2 rounded-md p-1 pr-2 hover:bg-slate-100 transition-colors">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                    {user ? (
+                      initials(user.name)
+                    ) : (
+                      <UserIcon className="h-4 w-4" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+
+                <span className="hidden md:block text-sm font-medium text-slate-700">
+                  {user?.name ?? "Minha conta"}
+                </span>
+              </button>
+            }
+          />
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <p className="text-sm font-medium text-slate-800">{user?.name}</p>
               <p className="text-xs text-slate-500">{user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-600 focus:text-red-600"
+            >
               <LogOut className="h-4 w-4" />
               Sair
             </DropdownMenuItem>
