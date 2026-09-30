@@ -41,7 +41,7 @@ JWT_SECRET="chave_secreta_para_gerar_tokens_de_login"
 **2. Front-end (Pasta `apps/web/`)**
 Crie o arquivo `apps/web/.env.local`:
 ```env
-NEXT_CONFIG_API_URL="http://localhost:3333"
+NEXT_PUBLIC_API_URL="http://localhost:3333"
 ```
 
 **3. Banco de Dados (Pasta `packages/database/`)**
