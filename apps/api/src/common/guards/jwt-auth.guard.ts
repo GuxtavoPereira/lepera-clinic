@@ -14,9 +14,11 @@ export class JwtAuthGuard implements CanActivate {
   constructor(private readonly jwt: JwtService) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const req = ctx
-      .switchToHttp()
-      .getRequest<{ headers: Record<string, string | undefined>; user?: AuthUser }>();
+    const req = ctx.switchToHttp().getRequest<{
+      headers: Record<string, string | undefined>;
+
+      user?: AuthUser;
+    }>();
 
     const [type, token] = req.headers.authorization?.split(' ') ?? [];
     if (type !== 'Bearer' || !token) {

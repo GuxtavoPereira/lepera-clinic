@@ -1,7 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL", "JWT_SECRET", "PORT", "WEB_URL", "NEXT_PUBLIC_API_URL"],
+  "globalEnv": ["DATABASE_URL", "JWT_SECRET", "PORT", "WEB_URL", "NEXT_CONFIG_API_URL"],
   "tasks": {
     "db:generate": {
       "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
