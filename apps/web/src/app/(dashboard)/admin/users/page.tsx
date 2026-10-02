@@ -87,8 +87,23 @@ export default function UsersManagementPage() {
   }
 
   useEffect(() => {
+    async function loadUsers() {
+      try {
+        const data = await apiFetch<UserResponse[]>("/users");
+        setUsers(data);
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Não foi possível carregar os usuários. A API está rodando?",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
     loadUsers();
   }, []);
+
   async function handleDeactivate(id: string) {
     setPendingId(id);
     try {
