@@ -1,6 +1,7 @@
 // apps/api/src/main.ts
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -12,6 +13,13 @@ async function bootstrap() {
     origin: config.getOrThrow<string>('WEB_URL'),
     credentials: true,
   });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.enableShutdownHooks();
 
   const port = config.getOrThrow<number>('PORT');

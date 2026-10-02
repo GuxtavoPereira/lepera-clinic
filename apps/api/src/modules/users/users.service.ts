@@ -1,8 +1,11 @@
+// apps/api/src/modules/users/users.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from './password.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import type { DbClient } from '../../prisma/prisma.types';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -10,10 +13,10 @@ export class UsersService {
     private readonly passwords: PasswordService,
   ) {}
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, db: DbClient = this.prisma.db) {
     const passwordHash = await this.passwords.hash(dto.password);
 
-    return this.prisma.db.user.create({
+    return db.user.create({
       data: {
         name: dto.name,
         email: dto.email,
@@ -45,6 +48,7 @@ export class UsersService {
       omit: { passwordHash: true },
     });
   }
+
   deactivate(id: string) {
     return this.prisma.db.user.update({
       where: { id },

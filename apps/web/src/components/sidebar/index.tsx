@@ -1,9 +1,12 @@
+// apps/web/src/components/sidebar/index.tsx
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { useRole } from "@/lib/use-role";
 import { navigation } from "@/config/navigation";
+import { logout } from "@/lib/auth";
 import type { Role } from "@lepera/contracts";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -15,9 +18,15 @@ const ROLE_LABEL: Record<Role, string> = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const role = useRole();
 
   const items = role ? navigation[role] : [];
+
+  function handleLogout() {
+    logout();
+    router.push("/auth/login");
+  }
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex md:flex-col shrink-0">
@@ -57,6 +66,17 @@ export function Sidebar() {
             );
           })}
         </nav>
+      </div>
+
+      
+      <div className="p-4 border-t border-slate-100">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-md transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          Sair do Sistema
+        </button>
       </div>
     </aside>
   );

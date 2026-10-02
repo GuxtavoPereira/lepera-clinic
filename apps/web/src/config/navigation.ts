@@ -1,6 +1,6 @@
 import {
   Home, FileText, Calendar, CalendarPlus, Users, ListTodo, Wallet,
-  Package, UserCog, Clock, User, type LucideIcon,
+  Package, UserCog, Clock, User, Settings, type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@lepera/contracts";
 
@@ -17,6 +17,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Painel", href: "/doctor/dashboard", icon: Home },
     { label: "Agenda", href: "/doctor/calendar", icon: Calendar },
     { label: "Pacientes", href: "/doctor/patients", icon: Users },
+    { label: "Prontuários", href: "/doctor/records", icon: FileText },
     { label: "Disponibilidade", href: "/doctor/availability", icon: Clock },
   ],
   PATIENT: [
@@ -24,6 +25,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Minhas consultas", href: "/patient/appointments", icon: Calendar },
     { label: "Solicitar consulta", href: "/patient/request-appointment", icon: CalendarPlus },
     { label: "Perfil", href: "/patient/profile", icon: User },
+    { label: "Configurações", href: "/patient/settings", icon: Settings },
   ],
   RECEPTIONIST: [
     { label: "Painel", href: "/reception/dashboard", icon: Home },
@@ -31,6 +33,6 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Agenda geral", href: "/reception/appointments", icon: Calendar },
     { label: "Pacientes", href: "/reception/patients", icon: Users },
     { label: "Lista de espera", href: "/reception/waitlist", icon: ListTodo },
-    { label: "Pagamentos", href: "/reception/payments", icon: Wallet },
+    { label: "Perfil", href: "/reception/profile", icon: User },
   ],
 };
