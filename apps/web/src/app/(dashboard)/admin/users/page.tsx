@@ -69,23 +69,6 @@ export default function UsersManagementPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
 
-  async function loadUsers() {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiFetch<UserResponse[]>("/users");
-      setUsers(data);
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Não foi possível carregar os usuários. A API está rodando?",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
     async function loadUsers() {
       try {
@@ -170,13 +153,13 @@ export default function UsersManagementPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">Usuários</h1>
             <Button className="gap-1.5 rounded-[10px]" onClick={handleCreate}>
-              <UserPlus className="h-[15px] w-[15px]" />
+              <UserPlus className="h-3.75 w-3.75" />
               Novo Usuário
             </Button>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center rounded-[10px] bg-white border border-gray-200 px-[13px] py-[11px]">
+            <div className="flex-1 flex items-center rounded-[10px] bg-white border border-gray-200 px-3.25 py-2.75">
               <Search className="h-3.5 w-3.5 text-gray-400 mr-2 shrink-0" />
               <input
                 type="text"
@@ -187,7 +170,7 @@ export default function UsersManagementPage() {
               />
             </div>
 
-            <div className="flex items-center gap-1 rounded-[10px] bg-white border border-gray-100 p-[5px]">
+            <div className="flex items-center gap-1 rounded-[10px] bg-white border border-gray-100 p-1.25">
               {ROLE_FILTERS.map((f) => (
                 <button
                   key={f.value}
@@ -250,11 +233,11 @@ export default function UsersManagementPage() {
 
                     <div className="flex items-center gap-4 mt-1 flex-wrap">
                       <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Mail className="h-[11px] w-[11px]" />
+                        <Mail className="h-2.75 w-2.75" />
                         {u.email}
                       </span>
                       <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Calendar className="h-[11px] w-[11px]" />
+                        <Calendar className="h-2.75 w-2.75" />
                         Desde {formatDate(u.createdAt)}
                       </span>
                     </div>
@@ -305,10 +288,10 @@ export default function UsersManagementPage() {
         </div>
 
         <div className="w-64 shrink-0 flex flex-col gap-4">
-          <Card className="rounded-[14px] border-gray-100 p-[17px] flex-row items-center justify-between">
+          <Card className="rounded-[14px] border-gray-100 p-4.25 flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-[10px] bg-gray-50 flex items-center justify-center">
-                <UserCheck className="h-[18px] w-[18px] text-gray-500" />
+                <UserCheck className="h-4.5 w-4.5 text-gray-500" />
               </div>
               <span className="text-sm text-gray-500">Ativos</span>
             </div>
@@ -317,10 +300,10 @@ export default function UsersManagementPage() {
             </span>
           </Card>
 
-          <Card className="rounded-[14px] border-gray-100 p-[17px] flex-row items-center justify-between">
+          <Card className="rounded-[14px] border-gray-100 p-4.25 flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-[10px] bg-gray-50 flex items-center justify-center">
-                <UserX className="h-[18px] w-[18px] text-gray-500" />
+                <UserX className="h-4.5 w-4.5 text-gray-500" />
               </div>
               <span className="text-sm text-gray-500">Inativos</span>
             </div>
@@ -329,10 +312,10 @@ export default function UsersManagementPage() {
             </span>
           </Card>
 
-          <Card className="rounded-[14px] border-gray-100 p-[17px] flex-row items-center justify-between">
+          <Card className="rounded-[14px] border-gray-100 p-4.25 flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-[10px] bg-gray-50 flex items-center justify-center">
-                <UsersIcon className="h-[18px] w-[18px] text-gray-500" />
+                <UsersIcon className="h-4.5 w-4.5 text-gray-500" />
               </div>
               <span className="text-sm text-gray-500">Total</span>
             </div>
@@ -341,7 +324,7 @@ export default function UsersManagementPage() {
             </span>
           </Card>
 
-          <Card className="rounded-[14px] border-gray-100 p-[17px]">
+          <Card className="rounded-[14px] border-gray-100 p-4.25">
             <p className="text-sm font-semibold text-[#1e2939] mb-3">
               Por Perfil
             </p>
