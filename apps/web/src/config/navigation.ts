@@ -1,5 +1,5 @@
 import {
-  Home, FileText, Calendar, CalendarPlus, Users, ListTodo, Wallet,
+  Home, FileText, Calendar, Users, ListTodo, Wallet,
   Package, UserCog, Clock, User, Settings, type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@lepera/contracts";
@@ -23,7 +23,6 @@ export const navigation: Record<Role, NavItem[]> = {
   PATIENT: [
     { label: "Painel", href: "/patient/dashboard", icon: Home },
     { label: "Minhas consultas", href: "/patient/appointments", icon: Calendar },
-    { label: "Solicitar consulta", href: "/patient/request-appointment", icon: CalendarPlus },
     { label: "Perfil", href: "/patient/profile", icon: User },
     { label: "Configurações", href: "/patient/settings", icon: Settings },
   ],
