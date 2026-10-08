@@ -7,21 +7,23 @@ import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('doctors')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
 export class DoctorsController {
   constructor(private readonly doctorsService: DoctorsService) {}
 
   @Post()
+  @Roles('ADMIN')
   create(@Body() dto: CreateDoctorDto) {
     return this.doctorsService.create(dto);
   }
 
   @Get()
+  @Roles('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR')
   findAll() {
     return this.doctorsService.findAll();
   }
 
   @Get(':id')
+  @Roles('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR')
   findOne(@Param('id') id: string) {
     return this.doctorsService.findOne(id);
   }

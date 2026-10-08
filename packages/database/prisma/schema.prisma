@@ -120,6 +120,7 @@ model Doctor {
   patients       Patient[]
   appointments   Appointment[]
   availabilities DoctorAvailability[]
+  scheduleRequests ScheduleRequest[]
   reviews        Review[]
   progressNotes  ClinicalRecord[]
 
@@ -302,6 +303,7 @@ model ScheduleRequest {
   patientId         String // FK -> pacientes
   patient           Patient @relation(fields: [patientId], references: [id])
   preferredDoctorId String? // FK -> psicologos (Nullable)
+  preferredDoctor   Doctor? @relation(fields: [preferredDoctorId], references: [id], onDelete: SetNull)
 
   type           String // "novo_paciente", "reagendamento"
   preferredDate  DateTime? // data_preferida
@@ -312,6 +314,7 @@ model ScheduleRequest {
   approvedById String? // FK -> recepcionistas
   approvedBy   Receptionist? @relation(fields: [approvedById], references: [id])
   approvedAt   DateTime? // aprovada_em
+  reviewedAt DateTime? // data de decisão da recepção
 
   generatedApptId      String? // FK -> consultas
   generatedAppointment Appointment? @relation(fields: [generatedApptId], references: [id])

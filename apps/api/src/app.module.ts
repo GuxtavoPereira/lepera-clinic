@@ -9,6 +9,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DoctorsModule } from './modules/doctors/doctors.module';
 import { PatientsModule } from './modules/patients/patients.module';
 import { ReceptionistsModule } from './modules/receptionists/receptionists.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
+import { ScheduleRequestsModule } from './modules/schedule-requests/schedule-requests.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { ReceptionistsModule } from './modules/receptionists/receptionists.modul
     DoctorsModule,
     PatientsModule,
     ReceptionistsModule,
+    AppointmentsModule,
+    ScheduleRequestsModule,
   ],
   controllers: [HealthController],
 })
