@@ -22,7 +22,15 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new ApiError(res.status, body?.message ?? "Erro na requisição");
+    const message = body?.message;
+    throw new ApiError(
+      res.status,
+      typeof message === "string"
+        ? message
+        : Array.isArray(message)
+          ? message.join("; ")
+          : "Erro na requisição",
+    );
   }
 
   return res.json() as Promise<T>;
