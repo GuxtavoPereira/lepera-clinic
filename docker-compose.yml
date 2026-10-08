@@ -1,15 +1,21 @@
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: lepera-mysql
+  postgres:
+    image: postgres:17-alpine
+    container_name: lepera-postgres
     restart: unless-stopped
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_DATABASE: lepera_db
+      POSTGRES_USER: lepera
+      POSTGRES_PASSWORD: lepera_dev
+      POSTGRES_DB: lepera_db
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - lepera_mysql_data:/var/lib/mysql
+      - lepera_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lepera -d lepera_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  lepera_mysql_data:
+  lepera_postgres_data:
