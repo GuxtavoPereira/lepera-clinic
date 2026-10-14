@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Calendar, CalendarPlus, Clock3, UserRound } from "lucide-react";
+import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatDatePtBr, formatDateTimePtBr } from "@/lib/date-format";
 
@@ -77,12 +78,21 @@ function appointmentTypeLabel(type: Appointment["type"]) {
   return labels[type];
 }
 
+function fetchPage() {
+  return Promise.all([
+    apiFetch<Appointment[]>("/appointments/mine"),
+    apiFetch<ScheduleRequest[]>("/schedule-requests/mine"),
+  ]);
+}
+
 function AppointmentCard({
   appointment,
   isApprovedRequest = false,
+  onCancelled,
 }: {
   appointment: Appointment;
   isApprovedRequest?: boolean;
+  onCancelled: () => void | Promise<void>;
 }) {
   const statusLabel =
     isApprovedRequest && appointment.status !== "CANCELLED"
@@ -92,6 +102,8 @@ function AppointmentCard({
     isApprovedRequest && appointment.status !== "CANCELLED"
       ? "bg-emerald-50 text-emerald-800"
       : appointmentStatusClasses[appointment.status];
+  const canCancel =
+    appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED";
 
   return (
     <li className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -122,6 +134,12 @@ function AppointmentCard({
               Motivo do cancelamento: {appointment.cancelReason}
             </p>
           )}
+          {canCancel && (
+            <CancelAppointmentButton
+              appointmentId={appointment.id}
+              onCancelled={onCancelled}
+            />
+          )}
         </div>
         <span
           className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusClass}`}
@@ -139,12 +157,24 @@ export default function PatientAppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  async function reload() {
+    try {
+      const [patientAppointments, patientRequests] = await fetchPage();
+      setAppointments(patientAppointments);
+      setRequests(patientRequests);
+      setError(null);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Não foi possível carregar suas consultas.",
+      );
+    }
+  }
+
   useEffect(() => {
     let active = true;
-    void Promise.all([
-      apiFetch<Appointment[]>("/appointments/mine"),
-      apiFetch<ScheduleRequest[]>("/schedule-requests/mine"),
-    ])
+    void fetchPage()
       .then(([patientAppointments, patientRequests]) => {
         if (!active) return;
         setAppointments(patientAppointments);
@@ -227,6 +257,7 @@ export default function PatientAppointmentsPage() {
                   <AppointmentCard
                     key={appointment.id}
                     appointment={appointment}
+                    onCancelled={reload}
                   />
                 ))}
               </ul>
@@ -244,6 +275,7 @@ export default function PatientAppointmentsPage() {
                   key={request.id}
                   appointment={request.generatedAppointment}
                   isApprovedRequest
+                  onCancelled={reload}
                 />,
               ];
             })}

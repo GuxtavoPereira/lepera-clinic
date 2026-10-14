@@ -1,4 +1,10 @@
-import { IsEmail, IsIn, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsString,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
 
 export type Role = 'RECEPTIONIST' | 'PATIENT' | 'DOCTOR' | 'ADMIN';
 const ROLES: Role[] = ['RECEPTIONIST', 'PATIENT', 'DOCTOR', 'ADMIN'];
@@ -17,4 +23,14 @@ export class CreateUserDto {
 
   @IsIn(ROLES, { message: 'Perfil inválido' })
   role!: Role;
+
+  @ValidateIf((dto: CreateUserDto) => dto.role === 'DOCTOR')
+  @IsString({ message: 'Informe o número do CRP/CRM' })
+  @MinLength(3, { message: 'Informe o número do CRP/CRM' })
+  licenseNumber?: string;
+
+  @ValidateIf((dto: CreateUserDto) => dto.role === 'DOCTOR')
+  @IsString({ message: 'Informe a especialidade' })
+  @MinLength(2, { message: 'Informe a especialidade' })
+  specialty?: string;
 }

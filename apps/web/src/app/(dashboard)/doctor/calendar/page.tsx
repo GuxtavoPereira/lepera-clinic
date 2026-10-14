@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calendar, Clock3, UserRound } from "lucide-react";
+import Link from "next/link";
+import { Calendar, ClipboardList, Clock3, UserRound } from "lucide-react";
+import { RequestCancellationButton } from "@/components/appointments/request-cancellation-button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatDateTimePtBr } from "@/lib/date-format";
 
@@ -22,6 +24,15 @@ type Appointment = {
   status: AppointmentStatus;
   cancelReason: string | null;
   patient: { user: { name: string } };
+};
+
+type CancellationRequest = {
+  id: string;
+  appointmentId: string;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewNote: string | null;
+  createdAt: string;
 };
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -49,7 +60,39 @@ const appointmentTypeLabels: Record<Appointment["type"], string> = {
   CLOSURE: "Encerramento",
 };
 
-function AppointmentCard({ appointment }: { appointment: Appointment }) {
+function fetchPage() {
+  return Promise.all([
+    apiFetch<Appointment[]>("/appointments/mine"),
+    apiFetch<CancellationRequest[]>("/cancellation-requests/mine"),
+  ]);
+}
+
+// A API devolve do mais recente para o mais antigo: o primeiro de cada
+// consulta é o pedido mais recente.
+function latestByAppointment(requests: CancellationRequest[]) {
+  const map = new Map<string, CancellationRequest>();
+  for (const request of requests) {
+    if (!map.has(request.appointmentId)) map.set(request.appointmentId, request);
+  }
+  return map;
+}
+
+function AppointmentCard({
+  appointment,
+  request,
+  onRequested,
+}: {
+  appointment: Appointment;
+  request: CancellationRequest | undefined;
+  onRequested: () => void | Promise<void>;
+}) {
+  const active =
+    appointment.status !== "CANCELLED" && appointment.status !== "RESCHEDULED";
+  const canRequest =
+    (appointment.status === "SCHEDULED" ||
+      appointment.status === "CONFIRMED") &&
+    request?.status !== "PENDING";
+
   return (
     <li className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -73,11 +116,42 @@ function AppointmentCard({ appointment }: { appointment: Appointment }) {
               {appointment.modality === "ONLINE" ? "Online" : "Presencial"}
             </p>
           </div>
+
           {appointment.status === "CANCELLED" && appointment.cancelReason && (
             <p className="text-sm text-red-700">
               Motivo do cancelamento: {appointment.cancelReason}
             </p>
           )}
+
+          {request?.status === "PENDING" && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Cancelamento solicitado — aguardando a recepção.
+            </p>
+          )}
+          {request?.status === "REJECTED" && appointment.status !== "CANCELLED" && (
+            <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
+              Pedido de cancelamento recusado
+              {request.reviewNote ? `: ${request.reviewNote}` : "."}
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-start gap-2">
+            {active && (
+              <Link
+                href={`/doctor/session/${appointment.id}`}
+                className="inline-flex h-7 items-center justify-center gap-1 rounded-lg bg-primary px-2.5 text-[0.8rem] font-medium text-primary-foreground transition hover:bg-primary/80"
+              >
+                <ClipboardList className="size-3.5" />
+                Abrir prontuário
+              </Link>
+            )}
+            {canRequest && (
+              <RequestCancellationButton
+                appointmentId={appointment.id}
+                onRequested={onRequested}
+              />
+            )}
+          </div>
         </div>
         <span
           className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusClasses[appointment.status]}`}
@@ -91,14 +165,32 @@ function AppointmentCard({ appointment }: { appointment: Appointment }) {
 
 export default function DoctorCalendarPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [requests, setRequests] = useState<CancellationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  async function reload() {
+    try {
+      const [mine, myRequests] = await fetchPage();
+      setAppointments(mine);
+      setRequests(myRequests);
+      setError(null);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Não foi possível carregar a agenda.",
+      );
+    }
+  }
+
   useEffect(() => {
     let active = true;
-    void apiFetch<Appointment[]>("/appointments/mine")
-      .then((result) => {
-        if (active) setAppointments(result);
+    void fetchPage()
+      .then(([mine, myRequests]) => {
+        if (!active) return;
+        setAppointments(mine);
+        setRequests(myRequests);
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -116,6 +208,7 @@ export default function DoctorCalendarPage() {
     };
   }, []);
 
+  const requestByAppointment = latestByAppointment(requests);
   const scheduled = appointments.filter(
     (appointment) => appointment.status !== "CANCELLED",
   );
@@ -132,7 +225,8 @@ export default function DoctorCalendarPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Minha agenda</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Consultas vinculadas ao seu perfil profissional.
+            Consultas vinculadas ao seu perfil profissional. Para cancelar uma
+            consulta, envie um pedido à recepção.
           </p>
         </div>
       </header>
@@ -171,6 +265,8 @@ export default function DoctorCalendarPage() {
                   <AppointmentCard
                     key={appointment.id}
                     appointment={appointment}
+                    request={requestByAppointment.get(appointment.id)}
+                    onRequested={reload}
                   />
                 ))}
               </ul>
@@ -187,6 +283,8 @@ export default function DoctorCalendarPage() {
                   <AppointmentCard
                     key={appointment.id}
                     appointment={appointment}
+                    request={requestByAppointment.get(appointment.id)}
+                    onRequested={reload}
                   />
                 ))}
               </ul>

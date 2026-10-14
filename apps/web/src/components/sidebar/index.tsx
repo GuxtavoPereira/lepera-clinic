@@ -10,6 +10,7 @@ import { logout } from "@/lib/auth";
 import type { Role } from "@lepera/contracts";
 
 const ROLE_LABEL: Record<Role, string> = {
+  SUPER_ADMIN: "Super administrador",
   ADMIN: "Administração",
   DOCTOR: "Profissional",
   PATIENT: "Paciente",

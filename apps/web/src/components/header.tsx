@@ -21,16 +21,34 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { logout } from "@/lib/auth";
+import { navigation } from "@/config/navigation";
 
-const routeNames: Record<string, string> = {
-  "/home": "Início",
-  "/requests": "Solicitações",
-  "/schedule": "Agenda Geral",
-  "/patients": "Pacientes",
-  "/waitlist": "Lista de Espera",
-  "/profile": "Perfil",
-  "/new-session": "Nova Sessão",
+// Páginas que não aparecem no menu lateral mas precisam de título.
+const EXTRA_TITLES: Record<string, string> = {
+  "/patient/request-appointment": "Solicitar agendamento",
+  "/reception/appointments/new": "Novo agendamento",
+  "/doctor/session": "Prontuário da sessão",
+  "/doctor/clinical-history": "Histórico clínico",
 };
+
+const navItems = Object.values(navigation).flat();
+
+// Título = item do menu cujo href é o prefixo mais longo da rota atual.
+function pageTitle(pathname: string) {
+  const extra = Object.entries(EXTRA_TITLES).find(
+    ([path]) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+  if (extra) return extra[1];
+
+  const match = navItems
+    .filter(
+      (item) =>
+        pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0];
+
+  return match?.label ?? "Visão Geral";
+}
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -41,7 +59,7 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useCurrentUser();
-  const currentPage = routeNames[pathname] || "Visão Geral";
+  const currentPage = pageTitle(pathname);
 
   function handleLogout() {
     logout();
@@ -51,7 +69,12 @@ export function Header() {
   return (
     <header className="flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6 shrink-0">
       <div className="flex items-center gap-3 text-sm text-slate-500">
-        <button className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 transition-colors">
+        <button
+          type="button"
+          aria-label="Voltar"
+          onClick={() => router.back()}
+          className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 transition-colors"
+        >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <button className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 transition-colors">

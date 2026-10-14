@@ -7,7 +7,8 @@
     "JWT_SECRET",
     "PORT",
     "WEB_URL",
-    "NEXT_PUBLIC_API_URL"
+    "NEXT_PUBLIC_API_URL",
+    "ENCRYPTION_KEY"
   ],
   "tasks": {
     "db:generate": {

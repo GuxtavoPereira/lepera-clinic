@@ -3,3 +3,7 @@ import type { Role } from '@lepera/contracts';
 
 export const ROLES_KEY = 'roles';
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
+
+export const STRICT_ROLES_KEY = 'strictRoles';
+
+export const StrictRoles = () => SetMetadata(STRICT_ROLES_KEY, true);

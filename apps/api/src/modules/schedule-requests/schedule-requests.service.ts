@@ -99,14 +99,7 @@ export class ScheduleRequestsService {
   }
 
   async approve(id: string, dto: ApproveScheduleRequestDto, user: AuthUser) {
-    const receptionist = await this.prisma.db.receptionist.findUnique({
-      where: { userId: user.sub },
-      select: { id: true },
-    });
-
-    if (!receptionist) {
-      throw new NotFoundException('Perfil de recepcionista não encontrado');
-    }
+    const reviewerId = await this.resolveReviewerId(user);
 
     try {
       return await this.prisma.db.$transaction(
@@ -129,14 +122,14 @@ export class ScheduleRequestsService {
               ...dto,
               patientId: scheduleRequest.patientId,
             },
-            receptionist.id,
+            reviewerId,
           );
 
           const updated = await tx.scheduleRequest.updateMany({
             where: { id, status: 'PENDING' },
             data: {
               status: 'APPROVED',
-              approvedById: receptionist.id,
+              approvedById: reviewerId,
               approvedAt: new Date(),
               reviewedAt: new Date(),
               generatedApptId: appointment.id,
@@ -164,19 +157,13 @@ export class ScheduleRequestsService {
   }
 
   async reject(id: string, user: AuthUser) {
-    const receptionist = await this.prisma.db.receptionist.findUnique({
-      where: { userId: user.sub },
-      select: { id: true },
-    });
-    if (!receptionist) {
-      throw new NotFoundException('Perfil de recepcionista não encontrado');
-    }
+    const reviewerId = await this.resolveReviewerId(user);
 
     const updated = await this.prisma.db.scheduleRequest.updateMany({
       where: { id, status: 'PENDING' },
       data: {
         status: 'REJECTED',
-        approvedById: receptionist.id,
+        approvedById: reviewerId,
         reviewedAt: new Date(),
       },
     });
@@ -193,5 +180,20 @@ export class ScheduleRequestsService {
     }
 
     return this.prisma.db.scheduleRequest.findUnique({ where: { id } });
+  }
+
+  /** Recepcionista usa o próprio perfil. O super admin (que não tem perfil
+   *  de recepção) decide sem "revisor" registrado. */
+  private async resolveReviewerId(user: AuthUser): Promise<string | undefined> {
+    if (user.role !== 'RECEPTIONIST') return undefined;
+
+    const receptionist = await this.prisma.db.receptionist.findUnique({
+      where: { userId: user.sub },
+      select: { id: true },
+    });
+    if (!receptionist) {
+      throw new NotFoundException('Perfil de recepcionista não encontrado');
+    }
+    return receptionist.id;
   }
 }

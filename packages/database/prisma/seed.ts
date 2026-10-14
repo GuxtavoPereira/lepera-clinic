@@ -29,6 +29,18 @@ async function main() {
     },
   });
 
+  // 1b. Super administrador (conta raiz). Em produção use: pnpm db:super-admin
+  await prisma.user.upsert({
+    where: { email: "super@leperapia.com" },
+    update: {},
+    create: {
+      name: "Super Admin (dev)",
+      email: "super@leperapia.com",
+      passwordHash,
+      role: "SUPER_ADMIN",
+    },
+  });
+
   // 2. Recepcionista
   const receptionist = await prisma.user.upsert({
     where: { email: "recepcao@leperapia.com" },

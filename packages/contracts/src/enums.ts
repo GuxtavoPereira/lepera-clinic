@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const RoleSchema = z.enum(["RECEPTIONIST", "PATIENT", "DOCTOR", "ADMIN"]);
+export const RoleSchema = z.enum([
+  "SUPER_ADMIN",
+  "ADMIN",
+  "RECEPTIONIST",
+  "DOCTOR",
+  "PATIENT",
+]);
 export type Role = z.infer<typeof RoleSchema>;
 
 export const AppointmentStatusSchema = z.enum([

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import type { Role, UserResponse } from "@lepera/contracts";
 import { apiFetch, ApiError } from "@/lib/api-client";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,12 +16,18 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 
-const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
-  { value: "ADMIN", label: "Administração" },
-  { value: "DOCTOR", label: "Profissional" },
-  { value: "RECEPTIONIST", label: "Recepção" },
-  { value: "PATIENT", label: "Paciente" },
-];
+const ROLE_LABELS: Record<Role, string> = {
+  SUPER_ADMIN: "Super administrador",
+  ADMIN: "Administração",
+  DOCTOR: "Profissional",
+  RECEPTIONIST: "Recepção",
+  PATIENT: "Paciente",
+};
+
+const CREATABLE_ROLES: Role[] = ["ADMIN", "DOCTOR", "RECEPTIONIST", "PATIENT"];
+
+const inputClassName =
+  "rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-300";
 
 type Props = {
   open: boolean;
@@ -31,11 +38,18 @@ type Props = {
 
 export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
   const isEdit = !!user;
+  const actor = useCurrentUser();
+
+  const roleOptions = CREATABLE_ROLES.filter(
+    (value) => value !== "ADMIN" || actor?.role === "SUPER_ADMIN",
+  );
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("RECEPTIONIST");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [specialty, setSpecialty] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +60,8 @@ export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
     setEmail(user?.email ?? "");
     setPassword("");
     setRole(user?.role ?? "RECEPTIONIST");
+    setLicenseNumber("");
+    setSpecialty("");
   }, [open, user]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -61,7 +77,18 @@ export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
           })
         : await apiFetch<UserResponse>("/users", {
             method: "POST",
-            body: JSON.stringify({ name, email, password, role }),
+            body: JSON.stringify({
+              name,
+              email,
+              password,
+              role,
+              ...(role === "DOCTOR"
+                ? {
+                    licenseNumber: licenseNumber.trim(),
+                    specialty: specialty.trim(),
+                  }
+                : {}),
+            }),
           });
 
       onSaved(saved);
@@ -104,7 +131,7 @@ export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
                 onChange={(e) => setName(e.target.value)}
                 required
                 minLength={2}
-                className="rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-300"
+                className={inputClassName}
               />
             </div>
 
@@ -121,7 +148,7 @@ export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-300"
+                className={inputClassName}
               />
             </div>
 
@@ -142,7 +169,7 @@ export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
                     required
                     minLength={8}
                     placeholder="Mínimo de 8 caracteres"
-                    className="rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-300"
+                    className={inputClassName}
                   />
                 </div>
 
@@ -157,23 +184,68 @@ export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
                     id="role"
                     value={role}
                     onChange={(e) => setRole(e.target.value as Role)}
-                    className="rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-300"
+                    className={inputClassName}
                   >
-                    {ROLE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                    {roleOptions.map((value) => (
+                      <option key={value} value={value}>
+                        {ROLE_LABELS[value]}
                       </option>
                     ))}
                   </select>
+                  {actor?.role !== "SUPER_ADMIN" && (
+                    <p className="text-xs text-gray-400">
+                      Administradores só podem ser criados pelo super
+                      administrador.
+                    </p>
+                  )}
                 </div>
+
+                {role === "DOCTOR" && (
+                  <>
+                    <div className="flex flex-col gap-1.5">
+                      <label
+                        htmlFor="licenseNumber"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Registro profissional (CRP/CRM)
+                      </label>
+                      <input
+                        id="licenseNumber"
+                        value={licenseNumber}
+                        onChange={(e) => setLicenseNumber(e.target.value)}
+                        required
+                        minLength={3}
+                        placeholder="Ex.: CRP 06/123456"
+                        className={inputClassName}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label
+                        htmlFor="specialty"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Especialidade
+                      </label>
+                      <input
+                        id="specialty"
+                        value={specialty}
+                        onChange={(e) => setSpecialty(e.target.value)}
+                        required
+                        minLength={2}
+                        placeholder="Ex.: Psicologia Clínica"
+                        className={inputClassName}
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
 
             {isEdit && (
               <p className="text-xs text-gray-400">
-                O perfil (
-                {ROLE_OPTIONS.find((o) => o.value === user.role)?.label}) e a
-                senha não podem ser alterados por aqui ainda.
+                O perfil ({ROLE_LABELS[user.role]}) e a senha não podem ser
+                alterados por aqui ainda.
               </p>
             )}
 

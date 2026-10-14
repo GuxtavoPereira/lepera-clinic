@@ -12,7 +12,8 @@
     "db:generate": "turbo run db:generate",
     "db:migrate": "pnpm --filter @lepera/db migrate",
     "db:seed": "pnpm --filter @lepera/db db:seed",
-    "db:studio": "pnpm --filter @lepera/db studio"
+    "db:studio": "pnpm --filter @lepera/db studio",
+    "db:super-admin": "pnpm --filter @lepera/db create:super-admin"
   },
   "devDependencies": {
     "turbo": "^2.10.12"

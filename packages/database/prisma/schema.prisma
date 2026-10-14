@@ -13,10 +13,11 @@ datasource db {
 // ==========================================
 
 enum Role {
+  SUPER_ADMIN // Conta raiz (dev): cria admins. Só nasce via seed/CLI, nunca pela API
   RECEPTIONIST // Recepcionista
   PATIENT // Paciente
   DOCTOR // Médico/Psicólogo
-  ADMIN // Administrador (Controle total)
+  ADMIN // Administrador (gestão da clínica)
 }
 
 enum AppointmentStatus {
@@ -44,6 +45,12 @@ enum RequestStatus {
   PENDING // Pendente
   APPROVED // Aprovada
   REJECTED // Rejeitada
+}
+
+enum CancellationRequestStatus {
+  PENDING // Aguardando a recepção
+  APPROVED // Aprovada (a consulta foi cancelada)
+  REJECTED // Recusada pela recepção
 }
 
 enum WaitlistPriority {
@@ -95,6 +102,7 @@ model User {
   notifications  Notification[]
   stockMovements StockMovement[]
   transactions   FinancialTransaction[]
+  auditLogs      AuditLog[]
 
   @@map("users")
 }
@@ -117,12 +125,13 @@ model Doctor {
   room             String? // Consultório/Sala
 
   // Relações
-  patients       Patient[]
-  appointments   Appointment[]
-  availabilities DoctorAvailability[]
-  scheduleRequests ScheduleRequest[]
-  reviews        Review[]
-  progressNotes  ClinicalRecord[]
+  patients             Patient[]
+  appointments         Appointment[]
+  availabilities       DoctorAvailability[]
+  scheduleRequests     ScheduleRequest[]
+  cancellationRequests CancellationRequest[]
+  reviews              Review[]
+  progressNotes        ClinicalRecord[]
 
   @@map("doctors")
 }
@@ -162,8 +171,9 @@ model Receptionist {
   extension String? // Ramal
 
   // Relações
-  appointmentsCreated Appointment[]
-  requestsApproved    ScheduleRequest[]
+  appointmentsCreated  Appointment[]
+  requestsApproved     ScheduleRequest[]
+  cancellationReviews  CancellationRequest[]
 
   @@map("receptionists")
 }
@@ -239,11 +249,16 @@ model Appointment {
   updatedAt DateTime @updatedAt
 
   // Relações
-  progressNote ClinicalRecord?
-  review       Review?
-  transaction  FinancialTransaction? // Ligação financeira (da imagem)
-  requests     ScheduleRequest[]
+  progressNote         ClinicalRecord?
+  review               Review?
+  transaction          FinancialTransaction? // Ligação financeira (da imagem)
+  requests             ScheduleRequest[]
+  cancellationRequests CancellationRequest[]
 
+  // Índices das consultas de conflito (RN01) e das listagens
+  @@index([doctorId, startDatetime])
+  @@index([patientId, startDatetime])
+  @@index([status])
   @@map("appointments")
 }
 
@@ -256,14 +271,17 @@ model ClinicalRecord {
   doctorId      String // FK -> psicologos
   doctor        Doctor      @relation(fields: [doctorId], references: [id])
 
-  sessionSequence      Int // numero_sessao
+  sessionSequence Int // numero_sessao
+
+  // CAMPOS CLÍNICOS SENSÍVEIS — gravados criptografados (AES-256-GCM, RNF01).
+  // O banco só guarda o texto cifrado ("v1:iv:tag:dados"); quem cifra/decifra é a API.
   mainComplaint        String? @db.Text // queixa_principal
   clinicalNotes        String? @db.Text // observacoes_clinicas / clinical_evolution
   homework             String? @db.Text // tarefas_para_casa
-  diagnosticHypothesis String? // hipotese_diagnostica (Ex: F41.1 - TAG)
-  cid10                String? // CID-10
-  dsm5                 String? // DSM-5
-  approachUsed         String? // abordagem_utilizada
+  diagnosticHypothesis String? @db.Text // hipotese_diagnostica (Ex: F41.1 - TAG)
+  cid10                String? @db.Text // CID-10
+  dsm5                 String? @db.Text // DSM-5
+  approachUsed         String? @db.Text // abordagem_utilizada
   therapeuticPlan      String? @db.Text // plano_terapeutico (conduct)
 
   nextSessionDate DateTime? // proxima_sessao_data
@@ -279,6 +297,8 @@ model ClinicalRecord {
 
   scales SessionScale[]
 
+  @@index([doctorId, createdAt])
+  @@index([patientId])
   @@map("clinical_records")
 }
 
@@ -314,7 +334,7 @@ model ScheduleRequest {
   approvedById String? // FK -> recepcionistas
   approvedBy   Receptionist? @relation(fields: [approvedById], references: [id])
   approvedAt   DateTime? // aprovada_em
-  reviewedAt DateTime? // data de decisão da recepção
+  reviewedAt   DateTime? // data de decisão da recepção
 
   generatedApptId      String? // FK -> consultas
   generatedAppointment Appointment? @relation(fields: [generatedApptId], references: [id])
@@ -322,6 +342,29 @@ model ScheduleRequest {
   createdAt DateTime @default(now())
 
   @@map("schedule_requests")
+}
+
+// Pedido do PROFISSIONAL para cancelar uma consulta. Quem decide é a recepção.
+model CancellationRequest {
+  id            String      @id @default(uuid())
+  appointmentId String // FK -> consultas
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  requestedById String // FK -> psicologos (quem pediu)
+  requestedBy   Doctor      @relation(fields: [requestedById], references: [id])
+
+  reason String                    @db.Text // motivo informado pelo profissional
+  status CancellationRequestStatus @default(PENDING)
+
+  reviewedById String? // FK -> recepcionistas (nulo se decidido pelo super admin)
+  reviewedBy   Receptionist? @relation(fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  reviewNote   String?       @db.Text // justificativa da recusa / observação
+
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([appointmentId])
+  @@map("cancellation_requests")
 }
 
 model Waitlist {
@@ -437,4 +480,31 @@ model StockMovement {
   createdAt DateTime @default(now())
 
   @@map("stock_movements")
+}
+
+// ------------------------------------------
+// AUDITORIA (RF12) — trilha de quem fez o quê
+// Só se insere; a API não expõe update nem delete.
+// Nunca grave conteúdo clínico em `metadata`.
+// ------------------------------------------
+
+model AuditLog {
+  id        String @id @default(uuid())
+  actorId   String? // FK -> usuarios (nulo se o usuário for apagado)
+  actor     User?  @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorRole Role? // papel no momento da ação
+
+  action     String // ex.: "clinical_record.sign"
+  resource   String // ex.: "ClinicalRecord"
+  resourceId String? // id do registro afetado
+  metadata   Json? // contexto sem dados sensíveis
+  ip         String?
+  userAgent  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([resource, resourceId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const ROLE_LABEL: Record<Role, string> = {
+  SUPER_ADMIN: "Super administrador",
   ADMIN: "Administração",
   DOCTOR: "Profissional",
   PATIENT: "Paciente",
@@ -35,6 +36,7 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 const ROLE_DOT: Record<Role, string> = {
+  SUPER_ADMIN: "bg-slate-800",
   ADMIN: "bg-blue-500",
   DOCTOR: "bg-purple-500",
   RECEPTIONIST: "bg-pink-500",
@@ -329,7 +331,13 @@ export default function UsersManagementPage() {
               Por Perfil
             </p>
             <div className="flex flex-col gap-2">
-              {(Object.keys(ROLE_LABEL) as Role[]).map((role) => (
+              {(Object.keys(ROLE_LABEL) as Role[])
+                .filter(
+                  (role) =>
+                    role !== "SUPER_ADMIN" ||
+                    (stats.byRole.SUPER_ADMIN ?? 0) > 0,
+                )
+                .map((role) => (
                 <div
                   key={role}
                   className="flex items-center justify-between py-1.5"

@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { login } from "@/lib/auth";
 import { ApiError } from "@/lib/api-client";
-
-const HOME_BY_ROLE: Record<string, string> = {
-  ADMIN: "/admin/dashboard",
-  DOCTOR: "/doctor/dashboard",
-  PATIENT: "/patient/dashboard",
-  RECEPTIONIST: "/reception/dashboard",
-};
+import { HOME_BY_ROLE } from "@/config/access";
 
 export default function LoginPage() {
   const router = useRouter();
