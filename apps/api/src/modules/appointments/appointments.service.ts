@@ -144,9 +144,7 @@ export class AppointmentsService {
         throw new NotFoundException('Consulta não encontrada');
       }
 
-      const limit = new Date(
-        Date.now() + PATIENT_MIN_CANCEL_HOURS * 3_600_000,
-      );
+      const limit = new Date(Date.now() + PATIENT_MIN_CANCEL_HOURS * 3_600_000);
       if (appointment.startDatetime < limit) {
         throw new BadRequestException(
           `O cancelamento exige antecedência mínima de ${PATIENT_MIN_CANCEL_HOURS} horas. Entre em contato com a recepção.`,
@@ -167,7 +165,9 @@ export class AppointmentsService {
       });
 
       if (updated.count !== 1) {
-        throw new ConflictException('Esta consulta não pode mais ser cancelada');
+        throw new ConflictException(
+          'Esta consulta não pode mais ser cancelada',
+        );
       }
 
       await tx.cancellationRequest.updateMany({

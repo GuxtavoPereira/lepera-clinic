@@ -6,15 +6,6 @@ const VERSION = 'v1';
 const ALGORITHM = 'aes-256-gcm';
 const IV_BYTES = 12; // tamanho recomendado para GCM
 
-/**
- * Criptografia dos dados clínicos em repouso (RNF01).
- *
- * Formato gravado: "v1:<iv>:<tag>:<dados>" (base64). Cada gravação usa um IV
- * novo, então o mesmo texto nunca produz o mesmo valor cifrado.
- *
- * `aad` (dado associado) amarra o texto cifrado ao seu registro/campo: se
- * alguém copiar o cifrado de uma linha para outra, a decifragem falha.
- */
 @Injectable()
 export class EncryptionService {
   private readonly key: Buffer;
@@ -33,10 +24,7 @@ export class EncryptionService {
     const cipher = createCipheriv(ALGORITHM, this.key, iv);
     if (aad) cipher.setAAD(Buffer.from(aad, 'utf8'));
 
-    const data = Buffer.concat([
-      cipher.update(plain, 'utf8'),
-      cipher.final(),
-    ]);
+    const data = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
     const tag = cipher.getAuthTag();
 
     return [
