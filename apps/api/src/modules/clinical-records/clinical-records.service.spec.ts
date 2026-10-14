@@ -85,7 +85,7 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
     );
     auditLog = jest.fn().mockResolvedValue({});
 
-    const db = {
+    const db: Record<string, unknown> = {
       doctor: { findUnique: doctorFindUnique },
       appointment: {
         findUnique: appointmentFindUnique,
@@ -270,7 +270,7 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
 
     expect(recordUpdate).toHaveBeenCalledWith({
       where: { id: 'record-1' },
-      data: { isSigned: true, signedAt: expect.any(Date) },
+      data: { isSigned: true, signedAt: expect.any(Date) as Date },
     });
     expect(appointmentUpdate).toHaveBeenCalledWith({
       where: { id: 'appointment-1' },

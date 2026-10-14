@@ -51,7 +51,7 @@ describe('CancellationRequestsService', () => {
     requestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
     auditLog = jest.fn().mockResolvedValue({});
 
-    const db = {
+    const db: Record<string, unknown> = {
       doctor: { findUnique: doctorFindUnique },
       receptionist: { findUnique: receptionistFindUnique },
       appointment: {
@@ -174,7 +174,7 @@ describe('CancellationRequestsService', () => {
         data: expect.objectContaining({
           status: 'APPROVED',
           reviewedById: 'rec-1',
-        }),
+        }) as Record<string, unknown>,
       });
       expect(auditLog).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'cancellation_request.approve' }),
@@ -228,7 +228,7 @@ describe('CancellationRequestsService', () => {
         data: expect.objectContaining({
           status: 'REJECTED',
           reviewNote: 'Sem substituto',
-        }),
+        }) as Record<string, unknown>,
       });
       expect(auditLog).toHaveBeenCalledTimes(1);
     });

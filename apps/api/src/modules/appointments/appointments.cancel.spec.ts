@@ -38,7 +38,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
     requestUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
     patientFindUnique = jest.fn().mockResolvedValue({ id: 'patient-1' });
 
-    const db = {
+    const db: Record<string, unknown> = {
       appointment: {
         findUnique: appointmentFindUnique,
         updateMany: appointmentUpdateMany,
@@ -82,7 +82,10 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
 
     expect(requestUpdateMany).toHaveBeenCalledWith({
       where: { appointmentId: 'appointment-1', status: 'PENDING' },
-      data: expect.objectContaining({ status: 'APPROVED' }),
+      data: expect.objectContaining({ status: 'APPROVED' }) as Record<
+        string,
+        unknown
+      >,
     });
   });
 
