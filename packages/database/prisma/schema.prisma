@@ -84,7 +84,7 @@ model User {
   name         String // Nome completo
   email        String    @unique // E-mail para login
   passwordHash String // Senha criptografada (senha_hash)
-  cpf          String?   @unique // Documento CPF
+  cpf          String    @unique // Documento CPF
   birthDate    DateTime? // Data de nascimento
   photoUrl     String? // URL da foto de perfil
   role         Role      @default(PATIENT) // Papel do usuário (RBAC)
@@ -128,6 +128,7 @@ model Doctor {
   patients             Patient[]
   appointments         Appointment[]
   availabilities       DoctorAvailability[]
+  waitlistEntries      Waitlist[]
   scheduleRequests     ScheduleRequest[]
   cancellationRequests CancellationRequest[]
   reviews              Review[]
@@ -372,6 +373,7 @@ model Waitlist {
   patientId         String // FK -> pacientes
   patient           Patient @relation(fields: [patientId], references: [id])
   preferredDoctorId String? // FK -> psicologos
+  preferredDoctor   Doctor? @relation(fields: [preferredDoctorId], references: [id], onDelete: SetNull)
 
   reason         String?          @db.Text // motivo
   preferredShift Shift? // turno_preferido
@@ -381,6 +383,7 @@ model Waitlist {
   enteredAt DateTime  @default(now()) // entrada_em
   exitedAt  DateTime? // saiu_em
 
+  @@index([status, priority, enteredAt])
   @@map("waitlist")
 }
 

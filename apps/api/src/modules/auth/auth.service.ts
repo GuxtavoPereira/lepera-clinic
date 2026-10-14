@@ -2,6 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from '../users/password.service';
+import { PatientsService } from '../patients/patients.service';
+import { RegisterPatientDto } from './dto/register.dto';
+
+type SessionUser = { id: string; name: string; email: string; role: string };
 
 @Injectable()
 export class AuthService {
@@ -9,6 +13,7 @@ export class AuthService {
     private readonly users: UsersService,
     private readonly passwords: PasswordService,
     private readonly jwt: JwtService,
+    private readonly patients: PatientsService,
   ) {}
 
   async login(email: string, password: string) {
@@ -26,6 +31,16 @@ export class AuthService {
       throw new UnauthorizedException('Usuário desativado');
     }
 
+    return this.issueToken(user);
+  }
+
+  /** Cadastro público: cria o paciente e já devolve a sessão (auto-login). */
+  async register(dto: RegisterPatientDto) {
+    const created = await this.patients.create(dto);
+    return this.issueToken(created);
+  }
+
+  private async issueToken(user: SessionUser) {
     const accessToken = await this.jwt.signAsync({
       sub: user.id,
       role: user.role,

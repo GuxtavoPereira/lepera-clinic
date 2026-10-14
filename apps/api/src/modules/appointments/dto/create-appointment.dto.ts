@@ -1,5 +1,6 @@
 import { AppointmentType, Modality } from '@lepera/db';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -37,4 +38,9 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsString()
   receptionNotes?: string;
+
+  /** Encaixe: permite marcar fora do horário de atendimento do profissional. */
+  @IsOptional()
+  @IsBoolean()
+  allowOutsideAvailability?: boolean;
 }

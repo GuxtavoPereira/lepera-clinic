@@ -11,6 +11,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
+import { assertWithinAvailability } from '../availability/availability.check';
+import { notifyWaitlistOnFreedSlot } from '../waitlist/waitlist-notify';
 
 /** RN03: antecedência mínima para o PACIENTE cancelar (confirmado: 24h). */
 export const PATIENT_MIN_CANCEL_HOURS = 24;
@@ -125,6 +127,7 @@ export class AppointmentsService {
       select: {
         id: true,
         patientId: true,
+        doctorId: true,
         status: true,
         startDatetime: true,
       },
@@ -179,6 +182,12 @@ export class AppointmentsService {
         },
       });
 
+      // RF11: a vaga liberada avisa quem está na lista de espera
+      await notifyWaitlistOnFreedSlot(tx, {
+        doctorId: appointment.doctorId,
+        startDatetime: appointment.startDatetime,
+      });
+
       return tx.appointment.findUnique({ where: { id } });
     });
   }
@@ -203,6 +212,15 @@ export class AppointmentsService {
 
     if (!doctor) {
       throw new NotFoundException('Profissional não encontrado');
+    }
+
+    if (!dto.allowOutsideAvailability) {
+      await assertWithinAvailability(
+        tx,
+        dto.doctorId,
+        startDatetime,
+        endDatetime,
+      );
     }
 
     const conflictingAppointment = await tx.appointment.findFirst({
@@ -272,6 +290,15 @@ export class AppointmentsService {
               );
             }
             receptionistId = receptionist.id;
+          }
+
+          if (!dto.allowOutsideAvailability) {
+            await assertWithinAvailability(
+              tx,
+              dto.doctorId,
+              startDatetime,
+              endDatetime,
+            );
           }
 
           const conflictingAppointment = await tx.appointment.findFirst({

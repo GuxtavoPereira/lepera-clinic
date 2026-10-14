@@ -44,3 +44,5 @@ yarn-error.log*
 .devin
 .turbo-clone-temp
 .windsurf
+work/
+outputs/

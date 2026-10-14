@@ -23,6 +23,20 @@ export type TokenPayload = {
   exp: number;
 };
 
+/** Corpo de POST /auth/register (cadastro público do paciente). */
+export type RegisterPayload = {
+  name: string;
+  email: string;
+  password: string;
+  cpf: string; // só dígitos
+  birthDate: string; // AAAA-MM-DD
+  phone: string; // só dígitos
+  insuranceProvider?: string;
+  insuranceNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string; // só dígitos
+};
+
 // Cache do usuário para evitar novos objetos a cada leitura
 let cachedRaw: string | null | undefined;
 let cachedUser: StoredUser | null = null;
@@ -31,14 +45,28 @@ function notify() {
   window.dispatchEvent(new Event(AUTH_EVENT));
 }
 
+function persistSession(data: LoginResponse) {
+  localStorage.setItem(TOKEN_KEY, data.accessToken);
+  localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+  notify();
+}
+
 export async function login(email: string, password: string) {
   const data = await apiFetch<LoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
-  localStorage.setItem(TOKEN_KEY, data.accessToken);
-  localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-  notify();
+  persistSession(data);
+  return data.user;
+}
+
+/** Cadastra o paciente e já deixa a sessão aberta. */
+export async function registerPatient(payload: RegisterPayload) {
+  const data = await apiFetch<LoginResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  persistSession(data);
   return data.user;
 }
 

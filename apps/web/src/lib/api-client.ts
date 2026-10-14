@@ -1,4 +1,4 @@
-import { getToken } from "./auth";
+import { getToken, logout } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
@@ -21,6 +21,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
 
   if (!res.ok) {
+    // Sessão que existia mas o servidor recusou (token expirado ou conta
+    // desativada): encerra a sessão local; o AuthGuard leva ao login.
+    // Login com senha errada não cai aqui (ainda não há token).
+    if (res.status === 401 && token) {
+      logout();
+    }
+
     const body = await res.json().catch(() => null);
     const message = body?.message;
     throw new ApiError(

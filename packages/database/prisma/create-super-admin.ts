@@ -1,14 +1,19 @@
 // Uso (a partir da raiz do repositório):
-//   SUPER_ADMIN_EMAIL=dev@clinica.com SUPER_ADMIN_PASSWORD='uma-senha-longa-123' pnpm db:super-admin
+//   SUPER_ADMIN_CPF=52998224725 SUPER_ADMIN_EMAIL=dev@clinica.com SUPER_ADMIN_PASSWORD='uma-senha-longa-123' pnpm db:super-admin
 //
 // Variáveis opcionais: SUPER_ADMIN_NAME.
 import "dotenv/config";
 import bcrypt from "bcryptjs";
+import { isValidCpf } from "./cpf";
 import { createPrismaClient } from "../client";
 
 const MIN_PASSWORD_LENGTH = 12;
 
 async function main() {
+  const cpf = process.env.SUPER_ADMIN_CPF?.replace(/\D/g, "") ?? "";
+  if (!isValidCpf(cpf)) {
+    throw new Error("Defina SUPER_ADMIN_CPF com um CPF válido (11 dígitos).");
+  }
   const email = process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SUPER_ADMIN_PASSWORD;
   const name = process.env.SUPER_ADMIN_NAME?.trim() || "Super Administrador";
@@ -43,12 +48,12 @@ async function main() {
     if (existing) {
       await prisma.user.update({
         where: { id: existing.id },
-        data: { passwordHash, isActive: true },
+        data: { passwordHash, cpf, isActive: true },
       });
       console.log(`Senha do super administrador ${email} redefinida.`);
     } else {
       await prisma.user.create({
-        data: { name, email, passwordHash, role: "SUPER_ADMIN" },
+        data: { name, email, passwordHash, cpf, role: "SUPER_ADMIN" },
       });
       console.log(`Super administrador ${email} criado.`);
     }

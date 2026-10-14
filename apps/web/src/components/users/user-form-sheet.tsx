@@ -3,9 +3,10 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import type { Role, UserResponse } from "@lepera/contracts";
+import type { CreateUserBaseInput, Role, UserResponse } from "@lepera/contracts";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { isValidCpf, maskCpf, onlyDigits } from "@/lib/br-format";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -84,6 +85,7 @@ function UserFormContent({
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
+  const [cpf, setCpf] = useState("");
   const [role, setRole] = useState<Role>(
     user?.role ?? "RECEPTIONIST",
   );
@@ -94,10 +96,33 @@ function UserFormContent({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
+    if (!isEdit && !isValidCpf(cpf)) {
+      setError("Informe um CPF válido para criar o usuário.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
     try {
+      const createPayload: CreateUserBaseInput & {
+        role: Role;
+        licenseNumber?: string;
+        specialty?: string;
+      } = {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        cpf: onlyDigits(cpf),
+        role,
+        ...(role === "DOCTOR"
+          ? {
+              licenseNumber: licenseNumber.trim(),
+              specialty: specialty.trim(),
+            }
+          : {}),
+      };
+
       const saved = isEdit
         ? await apiFetch<UserResponse>(`/users/${user.id}`, {
             method: "PATCH",
@@ -105,18 +130,7 @@ function UserFormContent({
           })
         : await apiFetch<UserResponse>("/users", {
             method: "POST",
-            body: JSON.stringify({
-              name,
-              email,
-              password,
-              role,
-              ...(role === "DOCTOR"
-                ? {
-                    licenseNumber: licenseNumber.trim(),
-                    specialty: specialty.trim(),
-                  }
-                : {}),
-            }),
+            body: JSON.stringify(createPayload),
           });
 
       onSaved(saved);
@@ -145,7 +159,7 @@ function UserFormContent({
         </SheetDescription>
       </SheetHeader>
 
-      <div className="flex flex-col gap-4 px-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="name"
@@ -182,6 +196,22 @@ function UserFormContent({
 
         {!isEdit && (
           <>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="user-cpf" className="text-sm font-medium text-gray-700">
+                CPF
+              </label>
+              <input
+                id="user-cpf"
+                inputMode="numeric"
+                value={cpf}
+                onChange={(e) => setCpf(maskCpf(e.target.value))}
+                required
+                maxLength={14}
+                placeholder="000.000.000-00"
+                className={inputClassName}
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="password"
@@ -279,7 +309,7 @@ function UserFormContent({
         )}
 
         {error && (
-          <div className="rounded-[10px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div role="alert" className="rounded-[10px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         )}

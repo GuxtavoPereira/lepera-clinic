@@ -26,6 +26,7 @@ describe('CancellationRequestsService', () => {
   let requestUpdate: jest.Mock;
   let requestUpdateMany: jest.Mock;
   let auditLog: jest.Mock;
+  let waitlistFindMany: jest.Mock;
 
   function appointment(overrides: Record<string, unknown> = {}) {
     return {
@@ -50,14 +51,16 @@ describe('CancellationRequestsService', () => {
       .mockResolvedValue({ id: 'req-1', status: 'APPROVED' });
     requestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
     auditLog = jest.fn().mockResolvedValue({});
+    waitlistFindMany = jest.fn().mockResolvedValue([]);
 
-    const db: Record<string, unknown> = {
+    const db = {
       doctor: { findUnique: doctorFindUnique },
       receptionist: { findUnique: receptionistFindUnique },
       appointment: {
         findUnique: appointmentFindUnique,
         updateMany: appointmentUpdateMany,
       },
+      waitlist: { findMany: waitlistFindMany },
       cancellationRequest: {
         create: requestCreate,
         findFirst: requestFindFirst,
@@ -65,8 +68,9 @@ describe('CancellationRequestsService', () => {
         update: requestUpdate,
         updateMany: requestUpdateMany,
       },
-      $transaction: jest.fn((callback: (client: unknown) => Promise<unknown>) =>
-        callback(db),
+      $transaction: jest.fn(
+        (callback: (client: unknown) => Promise<unknown>): Promise<unknown> =>
+          callback(db),
       ),
     };
 
@@ -156,7 +160,17 @@ describe('CancellationRequestsService', () => {
         status: 'PENDING',
         appointmentId: 'appointment-1',
         reason: 'Atestado',
+        appointment: {
+          doctorId: 'doctor-1',
+          startDatetime: new Date(Date.now() + 48 * HOUR),
+        },
       });
+    });
+
+    it('avisa a lista de espera quando a vaga é liberada', async () => {
+      await service.approve('req-1', {}, receptionUser);
+
+      expect(waitlistFindMany).toHaveBeenCalledTimes(1);
     });
 
     it('cancela a consulta e marca o pedido como aprovado', async () => {
@@ -174,7 +188,7 @@ describe('CancellationRequestsService', () => {
         data: expect.objectContaining({
           status: 'APPROVED',
           reviewedById: 'rec-1',
-        }) as Record<string, unknown>,
+        }) as unknown,
       });
       expect(auditLog).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'cancellation_request.approve' }),
@@ -228,7 +242,7 @@ describe('CancellationRequestsService', () => {
         data: expect.objectContaining({
           status: 'REJECTED',
           reviewNote: 'Sem substituto',
-        }) as Record<string, unknown>,
+        }) as unknown,
       });
       expect(auditLog).toHaveBeenCalledTimes(1);
     });

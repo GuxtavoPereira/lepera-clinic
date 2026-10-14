@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { CpfSchema } from "./users";
 
 export const CreatePatientSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  cpf: z.string().regex(/^\d{11}$/).optional(),
+  cpf: CpfSchema,
   birthDate: z.string().optional(),
   insuranceProvider: z.string().optional(),
 });

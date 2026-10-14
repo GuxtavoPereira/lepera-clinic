@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { login } from "@/lib/auth";
@@ -21,13 +22,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const user = await login(email, password);
-      router.push(HOME_BY_ROLE[user.role] ?? "/");
+      const user = await login(email.trim(), password);
+      const requestedPage = new URLSearchParams(window.location.search).get("next");
+      router.push(
+        user.role === "PATIENT" && requestedPage === "/patient/request-appointment"
+          ? requestedPage
+          : HOME_BY_ROLE[user.role] ?? "/",
+      );
     } catch (err) {
       setError(
         err instanceof ApiError
           ? err.message
-          : "Não foi possível conectar à API. Ela está rodando?",
+          : "Não foi possível entrar. Verifique sua conexão e tente novamente.",
       );
     } finally {
       setLoading(false);
@@ -57,11 +63,14 @@ export default function LoginPage() {
 
           <h1>Bem-vindo de volta à Leperapia Clinic</h1>
           <p>
-            Entre para acompanhar consultas, exames e sua equipe de cuidado.
+            Entre para acompanhar consultas e sua equipe de cuidado.
           </p>
         </div>
 
-        <div className={styles.formwrap}>
+        <form className={styles.formwrap} onSubmit={(event) => {
+          event.preventDefault();
+          void handleLogin();
+        }}>
           <div
             className={`${styles.field} ${error ? styles.fieldError : styles.focused}`}
           >
@@ -87,6 +96,7 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
+                required
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => {
@@ -122,25 +132,22 @@ export default function LoginPage() {
                 id="senha"
                 type="password"
                 autoComplete="current-password"
+                required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   setError(null);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleLogin();
-                }}
               />
             </div>
           </div>
 
-          {error && <p className={styles.error}>{error}</p>}
+          {error && <p role="alert" className={styles.error}>{error}</p>}
 
           <button
-            type="button"
+            type="submit"
             className={styles.btnPrimary}
-            onClick={handleLogin}
             disabled={loading}
           >
             {loading ? "Entrando..." : "Entrar"}
@@ -159,14 +166,14 @@ export default function LoginPage() {
           <div className={styles.divider}>
             <div className={styles.line}></div>
 
-            <span>ou continue com</span>
+            <span>outras formas em breve</span>
 
             <div className={styles.line}></div>
           </div>
 
           {/* Login alternativo */}
           <div className={styles.altActions}>
-            <div className={styles.altBtn}>
+            <button type="button" disabled aria-label="Login com Google indisponível" title="Login com Google ainda não disponível" className={`${styles.altBtn} cursor-not-allowed opacity-50`}>
               <svg viewBox="0 0 24 24" fill="none">
                 <path
                   d="M21.6 12.2c0-.7-.06-1.4-.18-2H12v3.8h5.4a4.6 4.6 0 01-2 3v2.5h3.2c1.9-1.75 3-4.35 3-7.3z"
@@ -189,9 +196,9 @@ export default function LoginPage() {
                 />
               </svg>
               Google
-            </div>
+            </button>
 
-            <div className={styles.altBtn}>
+            <button type="button" disabled aria-label="Login com Face ID indisponível" title="Login com Face ID ainda não disponível" className={`${styles.altBtn} cursor-not-allowed opacity-50`}>
               <svg viewBox="0 0 24 24" fill="none">
                 <path
                   d="M9 3v3.5a3 3 0 003 3 3 3 0 003-3V3M6 21v-3.5a3 3 0 013-3h6a3 3 0 013 3V21"
@@ -212,14 +219,17 @@ export default function LoginPage() {
                 />
               </svg>
               Face ID
-            </div>
+            </button>
           </div>
 
           {/* Cadastro */}
           <p className={styles.signup}>
-            Ainda não tem cadastro? <b>Criar conta</b>
+            Ainda não tem cadastro?{" "}
+            <Link href="/auth/register">
+              <b>Criar conta</b>
+            </Link>
           </p>
-        </div>
+        </form>
       </div>
     </div>
   );

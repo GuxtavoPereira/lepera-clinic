@@ -2,11 +2,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService);
+
+  const trustProxy = config.get<number>('TRUST_PROXY') ?? 0;
+  if (trustProxy > 0) {
+    app.set('trust proxy', trustProxy);
+  }
 
   app.setGlobalPrefix('api');
   app.enableCors({

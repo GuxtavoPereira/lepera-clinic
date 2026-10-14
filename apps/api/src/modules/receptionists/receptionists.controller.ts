@@ -1,7 +1,19 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ReceptionistsService } from './receptionists.service';
 import { CreateReceptionistDto } from './dto/create-receptionist.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { UpdateReceptionistProfileDto } from './dto/update-receptionist-profile.dto';
+import {
+  JwtAuthGuard,
+  type AuthUser,
+} from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
@@ -19,5 +31,15 @@ export class ReceptionistsController {
   @Get()
   findAll() {
     return this.receptionistsService.findAll();
+  }
+
+  // PATCH /api/receptionists/me — a recepcionista edita o próprio perfil
+  @Patch('me')
+  @Roles('RECEPTIONIST')
+  updateMine(
+    @Body() dto: UpdateReceptionistProfileDto,
+    @Req() req: { user: AuthUser },
+  ) {
+    return this.receptionistsService.updateMine(req.user, dto);
   }
 }

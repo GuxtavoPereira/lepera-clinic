@@ -8,6 +8,7 @@ import { CryptoModule } from './common/crypto/crypto.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ProfileModule } from './modules/profile/profile.module';
 import { DoctorsModule } from './modules/doctors/doctors.module';
 import { PatientsModule } from './modules/patients/patients.module';
 import { ReceptionistsModule } from './modules/receptionists/receptionists.module';
@@ -15,6 +16,9 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { ScheduleRequestsModule } from './modules/schedule-requests/schedule-requests.module';
 import { CancellationRequestsModule } from './modules/cancellation-requests/cancellation-requests.module';
 import { ClinicalRecordsModule } from './modules/clinical-records/clinical-records.module';
+import { AvailabilityModule } from './modules/availability/availability.module';
+import { WaitlistModule } from './modules/waitlist/waitlist.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -27,6 +31,7 @@ import { ClinicalRecordsModule } from './modules/clinical-records/clinical-recor
     AuditModule,
     UsersModule,
     AuthModule,
+    ProfileModule,
     DoctorsModule,
     PatientsModule,
     ReceptionistsModule,
@@ -34,6 +39,9 @@ import { ClinicalRecordsModule } from './modules/clinical-records/clinical-recor
     ScheduleRequestsModule,
     CancellationRequestsModule,
     ClinicalRecordsModule,
+    AvailabilityModule,
+    WaitlistModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })

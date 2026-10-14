@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import type { RequestContext } from '../audit/request-context';
 import { CANCELLABLE_STATUSES } from '../appointments/appointments.service';
+import { notifyWaitlistOnFreedSlot } from '../waitlist/waitlist-notify';
 import {
   ApproveCancellationRequestDto,
   CreateCancellationRequestDto,
@@ -17,6 +18,10 @@ import {
 
 const RESOURCE = 'CancellationRequest';
 
+/**
+ * O profissional NÃO cancela a própria consulta: ele pede e a recepção decide.
+ * Aprovar cancela a consulta (liberando o horário) na mesma transação.
+ */
 @Injectable()
 export class CancellationRequestsService {
   constructor(
@@ -42,6 +47,7 @@ export class CancellationRequestsService {
       select: { id: true, doctorId: true, status: true, startDatetime: true },
     });
 
+    // Consulta de outro profissional responde 404 (não revela que existe).
     if (!appointment || appointment.doctorId !== doctor.id) {
       throw new NotFoundException('Consulta não encontrada');
     }
@@ -87,6 +93,7 @@ export class CancellationRequestsService {
     });
   }
 
+  /** Pedidos do próprio profissional (mais recentes primeiro). */
   findMine(user: AuthUser) {
     return this.prisma.db.cancellationRequest.findMany({
       where: { requestedBy: { userId: user.sub } },
@@ -103,6 +110,7 @@ export class CancellationRequestsService {
     });
   }
 
+  /** Fila da recepção (mais antigos primeiro). */
   findPending() {
     return this.prisma.db.cancellationRequest.findMany({
       where: { status: 'PENDING' },
@@ -129,7 +137,13 @@ export class CancellationRequestsService {
     return this.prisma.db.$transaction(async (tx) => {
       const request = await tx.cancellationRequest.findUnique({
         where: { id },
-        select: { id: true, status: true, appointmentId: true, reason: true },
+        select: {
+          id: true,
+          status: true,
+          appointmentId: true,
+          reason: true,
+          appointment: { select: { doctorId: true, startDatetime: true } },
+        },
       });
 
       if (!request) {
@@ -151,6 +165,12 @@ export class CancellationRequestsService {
           'A consulta não pode mais ser cancelada; recuse o pedido',
         );
       }
+
+      // RF11: a vaga liberada avisa quem está na lista de espera
+      await notifyWaitlistOnFreedSlot(tx, {
+        doctorId: request.appointment.doctorId,
+        startDatetime: request.appointment.startDatetime,
+      });
 
       const updated = await tx.cancellationRequest.update({
         where: { id },
@@ -223,6 +243,8 @@ export class CancellationRequestsService {
     });
   }
 
+  /** Recepcionista usa o próprio perfil; o super admin (sem perfil de
+   *  recepção) decide sem "revisor" registrado — a autoria fica no AuditLog. */
   private async resolveReviewerId(user: AuthUser): Promise<string | undefined> {
     if (user.role !== 'RECEPTIONIST') return undefined;
 

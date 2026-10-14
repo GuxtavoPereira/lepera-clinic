@@ -1,12 +1,11 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsEmail, IsOptional } from 'class-validator';
+import { trimLower } from '../../../common/transforms';
+import { PersonalDataDto } from './personal-data.dto';
 
-export class UpdateUserDto {
+export class UpdateUserDto extends PersonalDataDto {
   @IsOptional()
-  @IsString()
-  @MinLength(2, { message: 'O nome precisa de pelo menos 2 caracteres' })
-  name?: string;
-
-  @IsOptional()
+  @Transform(trimLower)
   @IsEmail({}, { message: 'E-mail inválido' })
   email?: string;
 }

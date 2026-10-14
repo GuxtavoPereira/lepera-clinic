@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ChevronLeft,
   Bookmark,
   Search,
   Sun,
-  Bell,
   LogOut,
   User as UserIcon,
 } from "lucide-react";
@@ -21,6 +21,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { logout } from "@/lib/auth";
+import { NotificationBell } from "@/components/notification-bell";
 import { navigation } from "@/config/navigation";
 
 // Páginas que não aparecem no menu lateral mas precisam de título.
@@ -60,6 +61,7 @@ export function Header() {
   const router = useRouter();
   const user = useCurrentUser();
   const currentPage = pageTitle(pathname);
+  const items = user ? navigation[user.role] : [];
 
   function handleLogout() {
     logout();
@@ -69,6 +71,16 @@ export function Header() {
   return (
     <header className="flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6 shrink-0">
       <div className="flex items-center gap-3 text-sm text-slate-500">
+        <details key={pathname} className="relative md:hidden">
+          <summary className="cursor-pointer rounded-md border px-2 py-1" aria-label="Abrir menu de navegação">Menu</summary>
+          <nav aria-label="Menu da área restrita" className="absolute left-0 top-10 z-50 w-60 max-h-96 overflow-y-auto rounded-lg border bg-white p-2 shadow-lg">
+            {items.map((item) => (
+              <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} className="flex items-center gap-2 rounded-md p-3 text-slate-700 hover:bg-slate-100">
+                <item.icon className="h-4 w-4" />{item.label}
+              </Link>
+            ))}
+          </nav>
+        </details>
         <button
           type="button"
           aria-label="Voltar"
@@ -106,10 +118,7 @@ export function Header() {
           <button className="p-2 hover:bg-slate-100 hover:text-slate-600 rounded-md transition-colors">
             <Sun className="h-5 w-5" />
           </button>
-          <button className="relative p-2 hover:bg-slate-100 hover:text-slate-600 rounded-md transition-colors">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary border border-white"></span>
-          </button>
+          <NotificationBell />
         </div>
 
         <DropdownMenu>

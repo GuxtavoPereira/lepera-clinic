@@ -1,7 +1,20 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { DoctorsService } from './doctors.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto';
+import {
+  JwtAuthGuard,
+  type AuthUser,
+} from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
@@ -20,6 +33,16 @@ export class DoctorsController {
   @Roles('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR')
   findAll() {
     return this.doctorsService.findAll();
+  }
+
+  // PATCH /api/doctors/me — antes de ":id" para "me" não virar id
+  @Patch('me')
+  @Roles('DOCTOR')
+  updateMine(
+    @Body() dto: UpdateDoctorProfileDto,
+    @Req() req: { user: AuthUser },
+  ) {
+    return this.doctorsService.updateMine(req.user, dto);
   }
 
   @Get(':id')

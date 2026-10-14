@@ -1,55 +1,105 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Alert,
+  FormField,
+  inputClassName,
+  textareaClassName,
+} from "@/components/forms/form-field";
+import {
+  PatientPicker,
+  type PickedPatient,
+} from "@/components/patients/patient-picker";
 import { ApiError, apiFetch } from "@/lib/api-client";
-import { useCurrentUser } from "@/lib/use-current-user";
+import { formatDateTimePtBr } from "@/lib/date-format";
 
-type CreatedAppointment = {
-  id: string;
-  patientId: string;
-  doctorId: string;
-  startDatetime: string;
-  endDatetime: string;
-  durationMinutes: number;
-  status: string;
-};
+type DoctorOption = { id: string; specialty: string; user: { name: string } };
+type Slot = { id: string; dayOfWeek: number; startTime: string; endTime: string };
 
-const fieldClassName =
-  "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15";
-const labelClassName = "text-sm font-medium text-slate-700";
+const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function describeSlots(slots: Slot[]) {
+  if (slots.length === 0) {
+    return "Sem horários cadastrados (o sistema não restringe).";
+  }
+  return slots
+    .map((slot) => `${DAYS[slot.dayOfWeek]} ${slot.startTime}–${slot.endTime}`)
+    .join(" · ");
+}
 
 export default function NewAppointmentPage() {
-  const user = useCurrentUser();
-  const [patientId, setPatientId] = useState("");
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [patient, setPatient] = useState<PickedPatient | null>(null);
   const [doctorId, setDoctorId] = useState("");
+  const [slots, setSlots] = useState<Slot[] | null>(null);
   const [startDatetime, setStartDatetime] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("50");
   const [modality, setModality] = useState<"IN_PERSON" | "ONLINE">("IN_PERSON");
   const [type, setType] = useState("SESSION");
   const [roomOrLink, setRoomOrLink] = useState("");
   const [receptionNotes, setReceptionNotes] = useState("");
-  const [created, setCreated] = useState<CreatedAppointment | null>(null);
+  const [allowOutside, setAllowOutside] = useState(false);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const canCreate = user?.role === "ADMIN" || user?.role === "RECEPTIONIST";
+  useEffect(() => {
+    let active = true;
+    void apiFetch<DoctorOption[]>("/doctors")
+      .then((result) => {
+        if (active) setDoctors(result);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Não foi possível carregar os profissionais.",
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function chooseDoctor(id: string) {
+    setDoctorId(id);
+    setSlots(null);
+    if (!id) return;
+    try {
+      setSlots(await apiFetch<Slot[]>(`/availability/doctor/${id}`));
+    } catch {
+      setSlots([]);
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (!patient) {
+      setError("Escolha o paciente.");
+      return;
+    }
+    if (!doctorId) {
+      setError("Escolha o profissional.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
-    setCreated(null);
-
+    setCreatedAt(null);
     try {
-      const result = await apiFetch<CreatedAppointment>("/appointments", {
+      const start = new Date(startDatetime).toISOString();
+      await apiFetch("/appointments", {
         method: "POST",
         body: JSON.stringify({
-          patientId: patientId.trim(),
-          doctorId: doctorId.trim(),
-          startDatetime: new Date(startDatetime).toISOString(),
+          patientId: patient.id,
+          doctorId,
+          startDatetime: start,
           durationMinutes: Number(durationMinutes),
           modality,
           type,
@@ -57,9 +107,15 @@ export default function NewAppointmentPage() {
           ...(receptionNotes.trim()
             ? { receptionNotes: receptionNotes.trim() }
             : {}),
+          ...(allowOutside ? { allowOutsideAvailability: true } : {}),
         }),
       });
-      setCreated(result);
+      setCreatedAt(start);
+      setPatient(null);
+      setStartDatetime("");
+      setRoomOrLink("");
+      setReceptionNotes("");
+      setAllowOutside(false);
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -87,192 +143,148 @@ export default function NewAppointmentPage() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">
-              Testar cadastro de agendamento
+              Novo agendamento
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Envia uma requisição real para{" "}
-              <code className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
-                POST /api/appointments
-              </code>{" "}
-              usando sua sessão atual.
+              Marque uma consulta para um paciente. O horário precisa caber na
+              disponibilidade do profissional, a menos que seja um encaixe.
             </p>
           </div>
         </div>
       </div>
 
-      {!user && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Entre no sistema com um perfil de administração ou recepção para
-          chamar esta rota.{" "}
-          <Link className="font-semibold underline" href="/auth/login">
-            Ir para o login
-          </Link>
-        </div>
-      )}
-
-      {user && !canCreate && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          A rota permite apenas os perfis Administração e Recepção. Seu perfil
-          atual não tem permissão para criar agendamentos.
-        </div>
+      {error && <Alert kind="error">{error}</Alert>}
+      {createdAt && (
+        <Alert kind="success">
+          Consulta agendada para {formatDateTimePtBr(createdAt)}.
+        </Alert>
       )}
 
       <form
         onSubmit={handleSubmit}
         className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
       >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label className={labelClassName} htmlFor="patientId">
-              ID do paciente
-            </label>
-            <input
-              id="patientId"
-              className={fieldClassName}
-              value={patientId}
-              onChange={(event) => setPatientId(event.target.value)}
-              placeholder="UUID do paciente"
-              required
-            />
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium text-slate-700">Paciente</p>
+            <PatientPicker value={patient} onChange={setPatient} />
           </div>
-          <div className="space-y-2">
-            <label className={labelClassName} htmlFor="doctorId">
-              ID do profissional
-            </label>
-            <input
+
+          <FormField
+            id="doctorId"
+            label="Profissional"
+            hint={slots ? `Atende: ${describeSlots(slots)}` : undefined}
+          >
+            <select
               id="doctorId"
-              className={fieldClassName}
+              className={inputClassName}
               value={doctorId}
-              onChange={(event) => setDoctorId(event.target.value)}
-              placeholder="UUID do profissional"
+              onChange={(e) => void chooseDoctor(e.target.value)}
               required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={labelClassName} htmlFor="startDatetime">
-              Data e hora de início
-            </label>
-            <input
-              id="startDatetime"
-              className={fieldClassName}
-              type="datetime-local"
-              lang="pt-BR"
-              value={startDatetime}
-              onChange={(event) => setStartDatetime(event.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={labelClassName} htmlFor="durationMinutes">
-              Duração (minutos)
-            </label>
-            <input
-              id="durationMinutes"
-              className={fieldClassName}
-              type="number"
-              min={1}
-              step={1}
-              value={durationMinutes}
-              onChange={(event) => setDurationMinutes(event.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={labelClassName} htmlFor="modality">
-              Modalidade
-            </label>
-            <select
-              id="modality"
-              className={fieldClassName}
-              value={modality}
-              onChange={(event) =>
-                setModality(event.target.value as "IN_PERSON" | "ONLINE")
-              }
             >
-              <option value="IN_PERSON">Presencial</option>
-              <option value="ONLINE">Online</option>
+              <option value="">Selecione um profissional</option>
+              {doctors.map((doctor) => (
+                <option key={doctor.id} value={doctor.id}>
+                  {doctor.user.name} — {doctor.specialty}
+                </option>
+              ))}
             </select>
+          </FormField>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField id="startDatetime" label="Data e hora de início">
+              <input
+                id="startDatetime"
+                type="datetime-local"
+                lang="pt-BR"
+                className={inputClassName}
+                value={startDatetime}
+                onChange={(e) => setStartDatetime(e.target.value)}
+                required
+              />
+            </FormField>
+            <FormField id="durationMinutes" label="Duração (minutos)">
+              <input
+                id="durationMinutes"
+                type="number"
+                min={1}
+                step={1}
+                className={inputClassName}
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(e.target.value)}
+                required
+              />
+            </FormField>
+            <FormField id="modality" label="Modalidade">
+              <select
+                id="modality"
+                className={inputClassName}
+                value={modality}
+                onChange={(e) =>
+                  setModality(e.target.value as "IN_PERSON" | "ONLINE")
+                }
+              >
+                <option value="IN_PERSON">Presencial</option>
+                <option value="ONLINE">Online</option>
+              </select>
+            </FormField>
+            <FormField id="type" label="Tipo de consulta">
+              <select
+                id="type"
+                className={inputClassName}
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+              >
+                <option value="SESSION">Sessão</option>
+                <option value="EVALUATION">Avaliação</option>
+                <option value="RETURN">Retorno</option>
+                <option value="CLOSURE">Encerramento</option>
+              </select>
+            </FormField>
           </div>
-          <div className="space-y-2">
-            <label className={labelClassName} htmlFor="type">
-              Tipo de consulta
-            </label>
-            <select
-              id="type"
-              className={fieldClassName}
-              value={type}
-              onChange={(event) => setType(event.target.value)}
-            >
-              <option value="SESSION">Sessão</option>
-              <option value="EVALUATION">Avaliação</option>
-              <option value="RETURN">Retorno</option>
-              <option value="CLOSURE">Encerramento</option>
-            </select>
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <label className={labelClassName} htmlFor="roomOrLink">
-              Sala ou link <span className="font-normal text-slate-400">— opcional</span>
-            </label>
+
+          <FormField id="roomOrLink" label="Sala ou link (opcional)">
             <input
               id="roomOrLink"
-              className={fieldClassName}
+              className={inputClassName}
               value={roomOrLink}
-              onChange={(event) => setRoomOrLink(event.target.value)}
+              onChange={(e) => setRoomOrLink(e.target.value)}
               placeholder="Ex.: Sala 2 ou link da videochamada"
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <label className={labelClassName} htmlFor="receptionNotes">
-              Notas da recepção <span className="font-normal text-slate-400">— opcional</span>
-            </label>
+          </FormField>
+
+          <FormField id="receptionNotes" label="Notas da recepção (opcional)">
             <textarea
               id="receptionNotes"
-              className={`${fieldClassName} h-24 resize-y py-2`}
+              className={textareaClassName}
               value={receptionNotes}
-              onChange={(event) => setReceptionNotes(event.target.value)}
-              placeholder="Observações sobre este agendamento"
+              onChange={(e) => setReceptionNotes(e.target.value)}
             />
-          </div>
+          </FormField>
+
+          <label className="flex items-start gap-3 rounded-lg bg-slate-50 px-3 py-3 text-sm text-slate-600">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 rounded border-slate-300"
+              checked={allowOutside}
+              onChange={(e) => setAllowOutside(e.target.checked)}
+            />
+            <span>
+              <strong className="font-medium text-slate-800">Encaixe:</strong>{" "}
+              permitir marcar fora do horário de atendimento do profissional.
+              Conflitos com outras consultas continuam bloqueados.
+            </span>
+          </label>
         </div>
 
-        <p className="text-xs leading-5 text-slate-500">
-          Os IDs podem ser consultados nas respostas de{" "}
-          <code>GET /api/patients</code> e <code>GET /api/doctors</code> no
-          Thunder Client. A consulta de profissionais atualmente exige perfil
-          Administração.
-        </p>
-
-        {error && (
-          <div
-            role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          >
-            {error}
-          </div>
-        )}
-
-        {created && (
-          <div
-            role="status"
-            className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
-          >
-            <p className="text-sm font-semibold text-emerald-900">
-              Agendamento criado com sucesso.
-            </p>
-            <pre className="overflow-x-auto rounded-lg bg-white/80 p-3 text-xs text-slate-700">
-              {JSON.stringify(created, null, 2)}
-            </pre>
-          </div>
-        )}
-
         <div className="flex justify-end border-t border-slate-100 pt-5">
-          <Button type="submit" disabled={!canCreate || saving}>
+          <Button type="submit" disabled={saving}>
             {saving ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <CalendarPlus className="size-4" />
             )}
-            {saving ? "Enviando..." : "Enviar para a API"}
+            {saving ? "Agendando..." : "Agendar consulta"}
           </Button>
         </div>
       </form>

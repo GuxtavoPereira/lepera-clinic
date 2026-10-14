@@ -18,6 +18,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
   let appointmentUpdateMany: jest.Mock;
   let requestUpdateMany: jest.Mock;
   let patientFindUnique: jest.Mock;
+  let waitlistFindMany: jest.Mock;
 
   function appointmentIn(
     hours: number,
@@ -26,6 +27,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
     return {
       id: 'appointment-1',
       patientId: 'patient-1',
+      doctorId: 'doctor-1',
       status: 'SCHEDULED',
       startDatetime: new Date(Date.now() + hours * HOUR),
       ...overrides,
@@ -37,16 +39,19 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
     appointmentUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
     requestUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
     patientFindUnique = jest.fn().mockResolvedValue({ id: 'patient-1' });
+    waitlistFindMany = jest.fn().mockResolvedValue([]);
 
-    const db: Record<string, unknown> = {
+    const db = {
       appointment: {
         findUnique: appointmentFindUnique,
         updateMany: appointmentUpdateMany,
       },
       cancellationRequest: { updateMany: requestUpdateMany },
+      waitlist: { findMany: waitlistFindMany },
       patient: { findUnique: patientFindUnique },
-      $transaction: jest.fn((callback: (client: unknown) => Promise<unknown>) =>
-        callback(db),
+      $transaction: jest.fn(
+        (callback: (client: unknown) => Promise<unknown>): Promise<unknown> =>
+          callback(db),
       ),
     };
 
@@ -82,11 +87,20 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
 
     expect(requestUpdateMany).toHaveBeenCalledWith({
       where: { appointmentId: 'appointment-1', status: 'PENDING' },
-      data: expect.objectContaining({ status: 'APPROVED' }) as Record<
-        string,
-        unknown
-      >,
+      data: expect.objectContaining({ status: 'APPROVED' }) as unknown,
     });
+  });
+
+  it('RF11: avisa a lista de espera quando a vaga futura é liberada', async () => {
+    appointmentFindUnique.mockResolvedValue(appointmentIn(48));
+
+    await service.cancel(
+      'appointment-1',
+      {},
+      { sub: 'u', role: 'RECEPTIONIST' },
+    );
+
+    expect(waitlistFindMany).toHaveBeenCalledTimes(1);
   });
 
   it('super admin cancela como a recepção', async () => {

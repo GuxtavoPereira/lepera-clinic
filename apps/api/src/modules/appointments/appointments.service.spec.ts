@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Prisma } from '@lepera/db';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -27,10 +27,12 @@ describe('AppointmentsService', () => {
   let receptionistFindUnique: jest.Mock;
   let appointmentFindFirst: jest.Mock;
   let appointmentCreate: jest.Mock;
+  let availabilityFindMany: jest.Mock;
   let transaction: jest.Mock;
   let patientForUserFindUnique: jest.Mock;
   let doctorForUserFindUnique: jest.Mock;
   let appointmentFindMany: jest.Mock;
+  let appointmentCount: jest.Mock;
 
   beforeEach(async () => {
     patientFindUnique = jest.fn().mockResolvedValue({ id: dto.patientId });
@@ -40,16 +42,20 @@ describe('AppointmentsService', () => {
       .mockResolvedValue({ id: 'receptionist-1' });
     appointmentFindFirst = jest.fn().mockResolvedValue(null);
     appointmentCreate = jest.fn().mockResolvedValue(appointment);
+    // sem horários cadastrados = sem restrição
+    availabilityFindMany = jest.fn().mockResolvedValue([]);
     patientForUserFindUnique = jest
       .fn()
       .mockResolvedValue({ id: dto.patientId });
     doctorForUserFindUnique = jest.fn().mockResolvedValue({ id: dto.doctorId });
     appointmentFindMany = jest.fn().mockResolvedValue([appointment]);
+    appointmentCount = jest.fn().mockResolvedValue(1);
 
     const tx = {
       patient: { findUnique: patientFindUnique },
       doctor: { findUnique: doctorFindUnique },
       receptionist: { findUnique: receptionistFindUnique },
+      doctorAvailability: { findMany: availabilityFindMany },
       appointment: {
         findFirst: appointmentFindFirst,
         create: appointmentCreate,
@@ -71,6 +77,7 @@ describe('AppointmentsService', () => {
               doctor: { findUnique: doctorForUserFindUnique },
               appointment: {
                 findMany: appointmentFindMany,
+                count: appointmentCount,
               },
             },
           },
@@ -115,6 +122,46 @@ describe('AppointmentsService', () => {
     expect(appointmentCreate).not.toHaveBeenCalled();
   });
 
+  describe('disponibilidade do profissional', () => {
+    // 08/10/2026 é quinta-feira; 10:00 UTC = 07:00 em Brasília.
+    const MONDAY_ONLY = [
+      { dayOfWeek: 1, startTime: '08:00', endTime: '12:00' },
+    ];
+
+    it('recusa horário fora da disponibilidade cadastrada', async () => {
+      availabilityFindMany.mockResolvedValue(MONDAY_ONLY);
+
+      await expect(
+        service.create(dto, { sub: 'admin-1', role: 'ADMIN' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(appointmentCreate).not.toHaveBeenCalled();
+    });
+
+    it('encaixe (allowOutsideAvailability) ignora a disponibilidade', async () => {
+      availabilityFindMany.mockResolvedValue(MONDAY_ONLY);
+
+      await expect(
+        service.create(
+          { ...dto, allowOutsideAvailability: true },
+          { sub: 'admin-1', role: 'ADMIN' },
+        ),
+      ).resolves.toEqual(appointment);
+
+      expect(availabilityFindMany).not.toHaveBeenCalled();
+    });
+
+    it('aceita horário dentro da disponibilidade (quinta 07:00–07:50)', async () => {
+      availabilityFindMany.mockResolvedValue([
+        { dayOfWeek: 4, startTime: '07:00', endTime: '12:00' },
+      ]);
+
+      await expect(
+        service.create(dto, { sub: 'admin-1', role: 'ADMIN' }),
+      ).resolves.toEqual(appointment);
+    });
+  });
+
   it('lists the authenticated patient appointments with current statuses', async () => {
     await expect(
       service.findMine({ sub: 'patient-user-1', role: 'PATIENT' }),
@@ -148,6 +195,34 @@ describe('AppointmentsService', () => {
         patient: { include: { user: { select: { name: true } } } },
       },
       orderBy: { startDatetime: 'asc' },
+    });
+  });
+
+  it('agenda geral: pagina e filtra por escopo e status', async () => {
+    const result = await service.findAll({
+      page: 2,
+      pageSize: 10,
+      scope: 'upcoming',
+      status: 'SCHEDULED',
+    });
+
+    expect(appointmentFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: 'SCHEDULED',
+          endDatetime: { gte: expect.any(Date) as unknown },
+        },
+        skip: 10,
+        take: 10,
+        orderBy: { startDatetime: 'asc' },
+      }),
+    );
+    expect(result).toEqual({
+      items: [appointment],
+      page: 2,
+      pageSize: 10,
+      total: 1,
+      totalPages: 1,
     });
   });
 });

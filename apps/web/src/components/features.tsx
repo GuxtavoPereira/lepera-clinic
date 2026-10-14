@@ -18,7 +18,7 @@ export function Features() {
             <CalendarDays className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-xl font-semibold mb-2">Agendamento Fácil</h3>
-          <p className="text-muted-foreground">Marque suas consultas de forma rápida e 100% digital pelo nosso portal.</p>
+          <p className="text-muted-foreground">Solicite consultas pelo portal e acompanhe a confirmação da recepção.</p>
         </div>
 
         <div className="flex flex-col items-center text-center p-6 bg-card rounded-2xl border shadow-sm">

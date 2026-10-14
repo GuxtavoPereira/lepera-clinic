@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { RoleSchema } from "./enums";
+import { isValidCpf } from "./cpf";
 
-const CpfSchema = z.string().regex(/^\d{11}$/, "CPF deve ter 11 dígitos (só números)");
+export const CpfSchema = z.string().refine(isValidCpf, "CPF inválido");
 const BirthDateSchema = z.string().date("Use o formato AAAA-MM-DD");
 
 export const PasswordSchema = z
@@ -12,7 +13,7 @@ export const CreateUserBaseSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().toLowerCase().email("E-mail inválido"),
   password: PasswordSchema,
-  cpf: CpfSchema.optional(),
+  cpf: CpfSchema,
   birthDate: BirthDateSchema.optional(),
   photoUrl: z.string().url("URL inválida").optional(),
 });
@@ -20,7 +21,7 @@ export type CreateUserBaseInput = z.infer<typeof CreateUserBaseSchema>;
 export const UpdateUserSchema = CreateUserBaseSchema.omit({ password: true })
   .partial()
   .extend({
-    cpf: CpfSchema.nullable().optional(),
+    cpf: CpfSchema.optional(),
     birthDate: BirthDateSchema.nullable().optional(),
     photoUrl: z.string().url().nullable().optional(), 
   });
@@ -44,7 +45,7 @@ export const UserResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
-  cpf: z.string().nullable(),
+  cpf: CpfSchema,
   birthDate: z.string().nullable(),
   photoUrl: z.string().nullable(),
   role: RoleSchema,

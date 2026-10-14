@@ -1,4 +1,5 @@
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight, CalendarDays } from "lucide-react";
 
 export function Hero() {
@@ -16,18 +17,18 @@ export function Hero() {
         </h1>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10">
-          Cansado de esperas intermináveis ao telefone? Na Leperapia Clinic, unimos tecnologia e atendimento humanizado para que você agende suas consultas em minutos e tenha seu histórico médico sempre acessível.
+          Na Leperapia Clinic, unimos tecnologia e atendimento humanizado para que você solicite suas consultas pelo portal e acompanhe seus agendamentos.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <Button size="lg" className="w-full sm:w-auto gap-2 text-md h-12 px-8">
+          <Link href="/contact" className={buttonVariants({ size: "lg", className: "w-full sm:w-auto gap-2 text-md h-12 px-8" })}>
             <CalendarDays className="h-5 w-5" />
             Agendar Agora
-          </Button>
-          <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 text-md h-12 px-8">
-            Conhecer Especialidades
+          </Link>
+          <Link href="/about" className={buttonVariants({ size: "lg", variant: "outline", className: "w-full sm:w-auto gap-2 text-md h-12 px-8" })}>
+            Conhecer a Clínica
             <ArrowRight className="h-4 w-4" />
-          </Button>
+          </Link>
         </div>
 
       </div>

@@ -13,6 +13,7 @@ describe('UsersService', () => {
   const admin: AuthUser = { sub: 'admin-1', role: 'ADMIN' };
   const superAdmin: AuthUser = { sub: 'super-1', role: 'SUPER_ADMIN' };
   const baseDto = {
+    cpf: '52998224725',
     name: 'Maria Souza',
     email: 'maria@email.com',
     password: 'Senha@123',
