@@ -46,7 +46,9 @@ export class UsersService {
           passwordHash,
           role: dto.role,
           cpf,
-          birthDate: extra.birthDate,
+          birthDate:
+            extra.birthDate ??
+            (dto.birthDate ? parseBirthDate(dto.birthDate) : undefined),
         },
         omit: { passwordHash: true },
       });

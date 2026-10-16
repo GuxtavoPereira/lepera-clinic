@@ -1,12 +1,17 @@
-// apps/web/src/components/users/user-form-sheet.tsx
 "use client";
-
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import type { CreateUserBaseInput, Role, UserResponse } from "@lepera/contracts";
+import type { Role, UserResponse } from "@lepera/contracts";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useCurrentUser } from "@/lib/use-current-user";
-import { isValidCpf, maskCpf, onlyDigits } from "@/lib/br-format";
+import { FormField, inputClassName } from "@/components/forms/form-field";
+import {
+  RegistrationFields,
+  EMPTY_REGISTRATION,
+  registrationPayload,
+  validateRegistration,
+  type RegistrationForm,
+} from "@/components/forms/registration-fields";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,50 +21,27 @@ import {
   SheetDescription,
   SheetFooter,
 } from "@/components/ui/sheet";
-
-const ROLE_LABELS: Record<Role, string> = {
-  SUPER_ADMIN: "Super administrador",
+const LABELS: Record<Role, string> = {
+  SUPER_ADMIN: "Superadministrador",
   ADMIN: "Administração",
   DOCTOR: "Profissional",
   RECEPTIONIST: "Recepção",
   PATIENT: "Paciente",
 };
-
-const CREATABLE_ROLES: Role[] = [
-  "ADMIN",
-  "DOCTOR",
-  "RECEPTIONIST",
-  "PATIENT",
-];
-
-const inputClassName =
-  "rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-300";
-
+const ROLES: Role[] = ["ADMIN", "DOCTOR", "RECEPTIONIST", "PATIENT"];
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: UserResponse | null;
   onSaved: (user: UserResponse) => void;
 };
-
-type FormContentProps = {
-  user: UserResponse | null;
-  onOpenChange: (open: boolean) => void;
-  onSaved: (user: UserResponse) => void;
-};
-
-export function UserFormSheet({
-  open,
-  onOpenChange,
-  user,
-  onSaved,
-}: Props) {
+export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         {open && (
           <UserFormContent
-            key={user?.id ?? "new-user"}
+            key={user?.id ?? "new"}
             user={user}
             onOpenChange={onOpenChange}
             onSaved={onSaved}
@@ -69,262 +51,197 @@ export function UserFormSheet({
     </Sheet>
   );
 }
-
-function UserFormContent({
-  user,
-  onOpenChange,
-  onSaved,
-}: FormContentProps) {
-  const isEdit = !!user;
+function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
   const actor = useCurrentUser();
-
-  const roleOptions = CREATABLE_ROLES.filter(
-    (value) => value !== "ADMIN" || actor?.role === "SUPER_ADMIN",
-  );
-
-  const [name, setName] = useState(user?.name ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
-  const [password, setPassword] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [role, setRole] = useState<Role>(
-    user?.role ?? "RECEPTIONIST",
-  );
+  const isEdit = !!user;
+  const [form, setForm] = useState<RegistrationForm>({
+    ...EMPTY_REGISTRATION,
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+  });
+  const [role, setRole] = useState<Role>(user?.role ?? "PATIENT");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function update(patch: Partial<RegistrationForm>) {
+    setForm((current) => ({ ...current, ...patch }));
+    setError(null);
+  }
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
     if (saving) return;
-    if (!isEdit && !isValidCpf(cpf)) {
-      setError("Informe um CPF válido para criar o usuário.");
+    const problem = isEdit
+      ? null
+      : validateRegistration(form, role === "PATIENT");
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    if (
+      !isEdit &&
+      role === "DOCTOR" &&
+      (licenseNumber.trim().length < 3 || specialty.trim().length < 2)
+    ) {
+      setError("Informe registro profissional e especialidade.");
       return;
     }
     setSaving(true);
     setError(null);
-
     try {
-      const createPayload: CreateUserBaseInput & {
-        role: Role;
-        licenseNumber?: string;
-        specialty?: string;
-      } = {
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        cpf: onlyDigits(cpf),
-        role,
-        ...(role === "DOCTOR"
-          ? {
-              licenseNumber: licenseNumber.trim(),
-              specialty: specialty.trim(),
-            }
-          : {}),
-      };
-
-      const saved = isEdit
-        ? await apiFetch<UserResponse>(`/users/${user.id}`, {
-            method: "PATCH",
-            body: JSON.stringify({ name, email }),
-          })
-        : await apiFetch<UserResponse>("/users", {
-            method: "POST",
-            body: JSON.stringify(createPayload),
-          });
-
+      const base = registrationPayload(form);
+      const path = isEdit
+        ? `/users/${user.id}`
+        : role === "PATIENT"
+          ? "/patients"
+          : "/users";
+      const payload = isEdit
+        ? { name: form.name.trim(), email: form.email.trim() }
+        : role === "PATIENT"
+          ? base
+          : {
+              name: base.name,
+              email: base.email,
+              password: base.password,
+              cpf: base.cpf,
+              birthDate: base.birthDate,
+              role,
+              ...(role === "DOCTOR"
+                ? {
+                    licenseNumber: licenseNumber.trim(),
+                    specialty: specialty.trim(),
+                  }
+                : {}),
+            };
+      const saved = await apiFetch<UserResponse>(path, {
+        method: isEdit ? "PATCH" : "POST",
+        body: JSON.stringify(payload),
+      });
       onSaved(saved);
       onOpenChange(false);
     } catch (err) {
       setError(
         err instanceof ApiError
           ? err.message
-          : "Não foi possível salvar.",
+          : "Não foi possível salvar o cadastro.",
       );
     } finally {
       setSaving(false);
     }
   }
-
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={submit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>
-          {isEdit ? "Editar usuário" : "Novo usuário"}
-        </SheetTitle>
+        <SheetTitle>{isEdit ? "Editar usuário" : "Novo usuário"}</SheetTitle>
         <SheetDescription>
           {isEdit
-            ? "Altere o nome ou o e-mail deste usuário."
-            : "Preencha os dados para criar um novo acesso ao sistema."}
+            ? "Atualize nome e e-mail da conta."
+            : "Preencha os dados para criar o acesso ao sistema."}
         </SheetDescription>
       </SheetHeader>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="name"
-            className="text-sm font-medium text-gray-700"
-          >
-            Nome
-          </label>
-          <input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            minLength={2}
-            className={inputClassName}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="email"
-            className="text-sm font-medium text-gray-700"
-          >
-            E-mail
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className={inputClassName}
-          />
-        </div>
-
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
         {!isEdit && (
-          <>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="user-cpf" className="text-sm font-medium text-gray-700">
-                CPF
-              </label>
-              <input
-                id="user-cpf"
-                inputMode="numeric"
-                value={cpf}
-                onChange={(e) => setCpf(maskCpf(e.target.value))}
-                required
-                maxLength={14}
-                placeholder="000.000.000-00"
-                className={inputClassName}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-gray-700"
-              >
-                Senha
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                placeholder="Mínimo de 8 caracteres"
-                className={inputClassName}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="role"
-                className="text-sm font-medium text-gray-700"
-              >
-                Perfil
-              </label>
-              <select
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value as Role)}
-                className={inputClassName}
-              >
-                {roleOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {ROLE_LABELS[value]}
-                  </option>
-                ))}
-              </select>
-
-              {actor?.role !== "SUPER_ADMIN" && (
-                <p className="text-xs text-gray-400">
-                  Administradores só podem ser criados pelo super
-                  administrador.
-                </p>
-              )}
-            </div>
-
-            {role === "DOCTOR" && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="licenseNumber"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Registro profissional (CRP/CRM)
-                  </label>
-                  <input
-                    id="licenseNumber"
-                    value={licenseNumber}
-                    onChange={(e) => setLicenseNumber(e.target.value)}
-                    required
-                    minLength={3}
-                    placeholder="Ex.: CRP 06/123456"
-                    className={inputClassName}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="specialty"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Especialidade
-                  </label>
-                  <input
-                    id="specialty"
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                    required
-                    minLength={2}
-                    placeholder="Ex.: Psicologia Clínica"
-                    className={inputClassName}
-                  />
-                </div>
-              </>
-            )}
-          </>
+          <FormField id="new-user-role" label="Perfil">
+            <select
+              id="new-user-role"
+              className={inputClassName}
+              value={role}
+              onChange={(event) => setRole(event.target.value as Role)}
+            >
+              {ROLES.filter(
+                (value) => value !== "ADMIN" || actor?.role === "SUPER_ADMIN",
+              ).map((value) => (
+                <option key={value} value={value}>
+                  {LABELS[value]}
+                </option>
+              ))}
+            </select>
+          </FormField>
         )}
-
-        {isEdit && user && (
-          <p className="text-xs text-gray-400">
-            O perfil ({ROLE_LABELS[user.role]}) e a senha não podem ser
-            alterados por aqui ainda.
+        {isEdit ? (
+          <>
+            <FormField id="edit-user-name" label="Nome completo">
+              <input
+                id="edit-user-name"
+                required
+                minLength={2}
+                className={inputClassName}
+                value={form.name}
+                onChange={(event) => update({ name: event.target.value })}
+              />
+            </FormField>
+            <FormField id="edit-user-email" label="E-mail">
+              <input
+                id="edit-user-email"
+                type="email"
+                required
+                className={inputClassName}
+                value={form.email}
+                onChange={(event) => update({ email: event.target.value })}
+              />
+            </FormField>
+          </>
+        ) : (
+          <RegistrationFields
+            value={form}
+            onChange={update}
+            patient={role === "PATIENT"}
+            prefix="new-user"
+          />
+        )}
+        {!isEdit && role !== "PATIENT" && (
+          <p className="text-xs text-muted-foreground">
+            Responsável legal, contato de emergência e plano de saúde são dados
+            do cadastro de pacientes.
           </p>
         )}
-
+        {!isEdit && role === "DOCTOR" && (
+          <>
+            <FormField
+              id="doctor-license"
+              label="Registro profissional (CRP/CRM)"
+            >
+              <input
+                id="doctor-license"
+                required
+                minLength={3}
+                className={inputClassName}
+                value={licenseNumber}
+                onChange={(event) => setLicenseNumber(event.target.value)}
+              />
+            </FormField>
+            <FormField id="doctor-specialty" label="Especialidade">
+              <input
+                id="doctor-specialty"
+                required
+                minLength={2}
+                className={inputClassName}
+                value={specialty}
+                onChange={(event) => setSpecialty(event.target.value)}
+              />
+            </FormField>
+          </>
+        )}
         {error && (
-          <div role="alert" className="rounded-[10px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive"
+          >
             {error}
-          </div>
+          </p>
         )}
       </div>
-
       <SheetFooter className="flex-row justify-end gap-2">
         <Button
           type="button"
           variant="outline"
+          disabled={saving}
           onClick={() => onOpenChange(false)}
         >
           Cancelar
         </Button>
         <Button type="submit" disabled={saving}>
-          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          {saving && <Loader2 className="size-4 animate-spin" />}
           {isEdit ? "Salvar alterações" : "Criar usuário"}
         </Button>
       </SheetFooter>

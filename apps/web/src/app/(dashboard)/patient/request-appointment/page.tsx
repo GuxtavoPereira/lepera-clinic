@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CalendarPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatDatePtBr, formatDateTimePtBr } from "@/lib/date-format";
+import { calendarDateKey } from "@/lib/calendar";
 
 type DoctorOption = {
   id: string;
@@ -41,13 +44,28 @@ function formatDate(value: string) {
   return formatDateTimePtBr(value);
 }
 
+function validCalendarDate(value: string | null) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
+  const parsed = new Date(`${value}T12:00:00Z`);
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value ? "" : value;
+}
+
 export default function RequestAppointmentPage() {
+  return <Suspense fallback={<p className="text-sm text-slate-500">Carregando solicitação...</p>}><RequestAppointmentForm /></Suspense>;
+}
+
+function RequestAppointmentForm() {
+  const searchParams = useSearchParams();
+  const calendarDate = validCalendarDate(searchParams.get("date"));
+  const rawTime = searchParams.get("time") ?? "";
+  const calendarTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(rawTime) ? rawTime : "";
+  const queryDoctorId = searchParams.get("doctorId") ?? "";
   const [doctors, setDoctors] = useState<DoctorOption[]>([]);
   const [requests, setRequests] = useState<ScheduleRequest[]>([]);
-  const [preferredDoctorId, setPreferredDoctorId] = useState("");
-  const [preferredDate, setPreferredDate] = useState("");
-  const [preferredShift, setPreferredShift] = useState("INDIFFERENT");
-  const [reason, setReason] = useState("");
+  const [preferredDoctorId, setPreferredDoctorId] = useState(/^[a-zA-Z0-9_-]{1,100}$/.test(queryDoctorId) ? queryDoctorId : "");
+  const [preferredDate, setPreferredDate] = useState(calendarDate);
+  const [preferredShift, setPreferredShift] = useState(calendarTime ? (Number(calendarTime.slice(0, 2)) < 12 ? "MORNING" : "AFTERNOON") : "INDIFFERENT");
+  const [reason, setReason] = useState(calendarTime ? `Horário de preferência: ${calendarTime} (horário de Brasília). Solicitação sujeita à confirmação da recepção.` : "");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +100,7 @@ export default function RequestAppointmentPage() {
       .then(([availableDoctors, ownRequests]) => {
         if (!active) return;
         setDoctors(availableDoctors);
+        setPreferredDoctorId((current) => availableDoctors.some((doctor) => doctor.id === current) ? current : "");
         setRequests(ownRequests);
       })
       .catch((err: unknown) => {
@@ -102,6 +121,15 @@ export default function RequestAppointmentPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sending) return;
+    if (preferredDoctorId && !doctors.some((doctor) => doctor.id === preferredDoctorId)) {
+      setError("Selecione um profissional disponível.");
+      return;
+    }
+    if (preferredDate && preferredDate < calendarDateKey(new Date())) {
+      setError("Escolha uma data a partir de hoje.");
+      return;
+    }
     setSending(true);
     setError(null);
     setSuccess(null);
@@ -152,6 +180,9 @@ export default function RequestAppointmentPage() {
         </div>
       </header>
 
+      <Link href="/patient/calendar" className="inline-flex text-sm font-medium text-primary underline underline-offset-4">Consultar horários no calendário</Link>
+      {calendarDate && calendarTime && <p className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900">As preferências do calendário foram preenchidas. Revise os dados e envie o pedido; o horário depende da aprovação da recepção.</p>}
+
       <form
         onSubmit={handleSubmit}
         className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
@@ -190,7 +221,7 @@ export default function RequestAppointmentPage() {
               className={inputClassName}
               type="date"
               lang="pt-BR"
-              min={new Date().toLocaleDateString("en-CA")}
+              min={calendarDateKey(new Date())}
               value={preferredDate}
               onChange={(event) => setPreferredDate(event.target.value)}
             />

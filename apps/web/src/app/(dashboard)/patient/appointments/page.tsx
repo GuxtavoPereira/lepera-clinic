@@ -230,6 +230,11 @@ export default function PatientAppointmentsPage() {
         </Link>
       </header>
 
+      <Link href="/patient/calendar" className="inline-flex h-9 items-center gap-2 rounded-lg border bg-white px-3 text-sm font-medium transition hover:bg-muted">
+        <Calendar className="size-4" />
+        Ver calendário e horários livres
+      </Link>
+
       {error && (
         <p
           role="alert"

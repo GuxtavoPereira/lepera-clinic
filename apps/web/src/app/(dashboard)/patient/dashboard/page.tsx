@@ -164,6 +164,10 @@ export default function PatientDashboardPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
+        <Link href="/patient/calendar" className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:bg-muted">
+          <Calendar className="size-4" />
+          Ver calendário e horários livres
+        </Link>
         <Link
           href="/patient/request-appointment"
           className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"

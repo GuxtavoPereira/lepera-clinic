@@ -19,12 +19,35 @@ import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { AppointmentsService } from './appointments.service';
+import { AppointmentCalendarService } from './appointment-calendar.service';
+import { CalendarQueryDto } from './dto/calendar-query.dto';
 
 @Controller('appointments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'RECEPTIONIST')
 export class AppointmentsController {
-  constructor(private readonly appointmentsService: AppointmentsService) {}
+  constructor(
+    private readonly appointmentsService: AppointmentsService,
+    private readonly calendarService: AppointmentCalendarService,
+  ) {}
+
+  @Get('calendar')
+  @Roles('ADMIN', 'RECEPTIONIST', 'SUPER_ADMIN', 'DOCTOR', 'PATIENT')
+  calendar(
+    @Query() query: CalendarQueryDto,
+    @Req() request: { user: AuthUser },
+  ) {
+    return this.calendarService.calendar(query, request.user);
+  }
+
+  @Get('available-slots')
+  @Roles('ADMIN', 'RECEPTIONIST', 'SUPER_ADMIN', 'DOCTOR', 'PATIENT')
+  availableSlots(
+    @Query() query: CalendarQueryDto,
+    @Req() request: { user: AuthUser },
+  ) {
+    return this.calendarService.availableSlots(query, request.user);
+  }
 
   // GET /api/appointments?scope=upcoming&status=SCHEDULED&page=1&pageSize=10
   @Get()

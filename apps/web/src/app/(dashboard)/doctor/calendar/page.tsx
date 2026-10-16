@@ -1,11 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Calendar, ClipboardList, Clock3, UserRound } from "lucide-react";
 import { RequestCancellationButton } from "@/components/appointments/request-cancellation-button";
+import { AppointmentCalendar } from "@/components/appointments/appointment-calendar";
+import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatDateTimePtBr } from "@/lib/date-format";
+import type { CalendarEvent, CalendarRange } from "@/lib/calendar";
+
+type CalendarAppointment = {
+  id: string;
+  startDatetime: string;
+  endDatetime: string;
+  status: AppointmentStatus;
+  doctorId: string;
+  patient?: { user: { name: string } };
+};
 
 type AppointmentStatus =
   | "SCHEDULED"
@@ -94,7 +106,7 @@ function AppointmentCard({
     request?.status !== "PENDING";
 
   return (
-    <li className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <li id={`appointment-${appointment.id}`} tabIndex={-1} className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div className="space-y-3">
           <div>
@@ -169,7 +181,43 @@ export default function DoctorCalendarPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [range, setRange] = useState<CalendarRange | null>(null);
+  const rangeKey = useRef("");
+  const [calendarItems, setCalendarItems] = useState<CalendarAppointment[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(true);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [calendarReloadKey, setCalendarReloadKey] = useState(0);
+
+  const changeRange = useCallback((next: CalendarRange) => {
+    const key = `${next.from}/${next.to}`;
+    if (key === rangeKey.current) return;
+    rangeKey.current = key;
+    setCalendarLoading(true);
+    setRange(next);
+  }, []);
+
+  useEffect(() => {
+    if (!range) return;
+    let active = true;
+    const params = new URLSearchParams({ from: range.from, to: range.to });
+    void apiFetch<{ items: CalendarAppointment[] }>(`/appointments/calendar?${params}`)
+      .then(({ items }) => {
+        if (!active) return;
+        setCalendarItems(items);
+        setCalendarError(null);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setCalendarItems([]);
+        setCalendarError(err instanceof ApiError ? err.message : "Não foi possível carregar a grade de horários.");
+      })
+      .finally(() => { if (active) setCalendarLoading(false); });
+    return () => { active = false; };
+  }, [range, calendarReloadKey]);
+
   async function reload() {
+    setCalendarLoading(true);
+    setCalendarReloadKey((key) => key + 1);
     try {
       const [mine, myRequests] = await fetchPage();
       setAppointments(mine);
@@ -209,6 +257,14 @@ export default function DoctorCalendarPage() {
   }, []);
 
   const requestByAppointment = latestByAppointment(requests);
+  const calendarEvents: CalendarEvent[] = calendarItems.map((item) => ({
+    id: item.id,
+    start: item.startDatetime,
+    end: item.endDatetime,
+    title: item.patient?.user.name ?? "Consulta",
+    status: item.status,
+    doctorId: item.doctorId,
+  }));
   const scheduled = appointments.filter(
     (appointment) => appointment.status !== "CANCELLED",
   );
@@ -217,7 +273,7 @@ export default function DoctorCalendarPage() {
   );
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-screen-2xl space-y-8">
       <header className="flex items-center gap-3">
         <div className="flex size-11 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
           <Calendar className="size-5" />
@@ -230,6 +286,23 @@ export default function DoctorCalendarPage() {
           </p>
         </div>
       </header>
+
+      <AppointmentCalendar
+        title="Minha agenda"
+        events={calendarEvents}
+        loading={calendarLoading}
+        error={calendarError}
+        onRangeChange={changeRange}
+        onSelectEvent={(event) => {
+          const card = document.getElementById(`appointment-${event.id}`);
+          card?.focus({ preventScroll: true });
+          card?.scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+            block: "center",
+          });
+        }}
+      />
+      {calendarError && <Button type="button" variant="outline" onClick={() => void reload()}>Tentar novamente</Button>}
 
       {error && (
         <p

@@ -298,6 +298,11 @@ export default function ReceptionAppointmentsPage() {
         </Link>
       </header>
 
+      <Link href="/reception/calendar" className="inline-flex h-9 items-center gap-2 rounded-lg border bg-white px-3 text-sm font-medium transition hover:bg-muted">
+        <Calendar className="size-4" />
+        Ver calendário por semana ou dia
+      </Link>
+
       {error && (
         <p
           role="alert"

@@ -1,6 +1,8 @@
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
+  IsOptional,
+  Matches,
   IsIn,
   IsString,
   MinLength,
@@ -14,6 +16,9 @@ export type Role = 'RECEPTIONIST' | 'PATIENT' | 'DOCTOR' | 'ADMIN';
 const ROLES: Role[] = ['RECEPTIONIST', 'PATIENT', 'DOCTOR', 'ADMIN'];
 
 export class CreateUserDto {
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Use o formato AAAA-MM-DD' })
+  birthDate?: string;
   @IsString()
   @MinLength(2, { message: 'O nome precisa de pelo menos 2 caracteres' })
   name!: string;

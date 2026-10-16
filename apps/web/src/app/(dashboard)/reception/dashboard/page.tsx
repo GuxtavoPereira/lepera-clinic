@@ -122,6 +122,10 @@ export default function ReceptionDashboardPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
+        <Link href="/reception/calendar" className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:bg-muted">
+          <CalendarCheck className="size-4" />
+          Ver calendário
+        </Link>
         <Link
           href="/reception/appointments/new"
           className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"

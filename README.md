@@ -26,6 +26,7 @@ O objetivo é facilitar o cadastro e a localização de pacientes, organizar sol
 - **Pacientes:** perfil, solicitação de atendimento, acompanhamento de consultas e lista de espera.
 - **Recepção:** cadastro, busca e ficha de pacientes; análise de solicitações; agenda e cancelamentos.
 - **Profissionais:** agenda, disponibilidade de atendimento e prontuários das sessões vinculadas ao profissional.
+- **Calendário visual:** grade semanal ou diária, navegação por data e filtro por profissional; o paciente acompanha apenas as próprias consultas e os horários livres para solicitar atendimento.
 - **Administração:** painel e gestão de usuários, com permissões específicas para o superadministrador.
 - **Regras e segurança:** CPF obrigatório, único e validado por dígitos verificadores; controle de acesso na API; criptografia dos campos clínicos e auditoria das operações previstas.
 
@@ -298,7 +299,33 @@ Agora entre com uma das contas de demonstração e siga o roteiro de apresentaç
 
 As rotas estão em `apps/web/src/app`. Os grupos `(public)` e `(dashboard)` organizam os layouts e não aparecem na URL. A interface orienta a navegação por perfil, enquanto a API verifica as permissões em cada operação protegida.
 
+## 📅 Calendário da clínica e do paciente
+
+| Perfil | Caminho | Visualização |
+| --- | --- | --- |
+| Recepção e superadministrador | `/reception/calendar` | Consultas da clínica, com filtro por profissional e acesso às ações da agenda |
+| Profissional | `/doctor/calendar` | Próprias consultas, com acesso ao prontuário e pedido de cancelamento |
+| Paciente | `/patient/calendar` | Próprias consultas e horários livres dos profissionais |
+
+Use **Semana**, **Dia**, as setas, **Hoje** ou o calendário mensal para escolher o período. A grade utiliza o horário de Brasília (`America/Sao_Paulo`) e acomoda atendimentos simultâneos de profissionais diferentes. Consultas canceladas e remarcadas podem ser exibidas pelo filtro da grade.
+
+No calendário do paciente, os blocos verdes representam opções futuras de 50 minutos dentro da disponibilidade cadastrada. Horários ocupados pelo profissional ou pelo próprio paciente não são oferecidos. Um profissional sem grade ativa não recebe horários livres calculados automaticamente.
+
+Ao selecionar uma opção, o sistema preenche profissional, data, turno e horário de preferência no formulário de solicitação. **O clique não reserva a vaga nem confirma a consulta:** o paciente ainda envia o pedido e a recepção revisa e aprova. Dados de outros pacientes não fazem parte da resposta do calendário do paciente.
+
+Os endpoints `GET /api/appointments/calendar` e `GET /api/appointments/available-slots` exigem autenticação e aceitam `from`, `to` e `doctorId` opcional. As datas usam `AAAA-MM-DD`, o início é inclusivo, o fim é exclusivo e o intervalo máximo é de 42 dias.
+
+## Painel, busca e aparência
+
+- O menu da conta no cabeçalho abre **Meu perfil**, inclusive para administração e superadministração.
+- **Buscar** ou a tecla `/` abre a busca por páginas e funcionalidades permitidas ao perfil. Recepção, administração e superadministração também podem escolher **Pacientes** e buscar por nome, e-mail ou CPF; os resultados abrem o cadastro correspondente.
+- O botão de tema alterna entre claro e escuro e preserva a escolha neste navegador. Na primeira visita, segue a preferência do sistema.
+- O cadastro interno de pacientes, pela recepção ou administração, pede os mesmos dados do cadastro público: acesso, confirmação de senha, CPF obrigatório, nascimento, telefone, contato de emergência/responsável, plano opcional e autorização. Funcionários utilizam os campos comuns de acesso e dados pessoais; profissionais também precisam de registro e especialidade.
+- Envio de e-mails e recuperação de senha continuam pendentes da configuração do remetente.
+
 ## ⚙️ Comandos úteis
+
+### Scripts disponíveis
 
 Execute os comandos a partir da raiz:
 
@@ -329,7 +356,7 @@ pnpm --filter api start:prod
 pnpm --filter web start
 ```
 
-A revisão da entrega S10 aprovou **182 testes da API**, além de lint, tipagem, compilação e navegação local por login → lista → detalhe. Isso registra a validação daquela revisão; novas alterações devem ser verificadas novamente.
+A revisão da entrega S10 aprovou **182 testes da API**, além de lint, tipagem, compilação e navegação local por login → lista → detalhe. A evolução do calendário acrescentou verificações de intervalos, fuso, privacidade e horários livres, totalizando **210 testes da API aprovados**. Esses resultados registram as respectivas revisões; novas alterações devem ser verificadas novamente.
 
 <details>
 <summary><strong>Criar um superadministrador fora do seed</strong></summary>

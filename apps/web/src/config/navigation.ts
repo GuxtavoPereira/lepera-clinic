@@ -1,6 +1,16 @@
 import {
-  Home, FileText, Calendar, Users, ListTodo, Wallet,
-  Package, UserCog, Clock, User, ClipboardList, ShieldCheck,
+  Home,
+  FileText,
+  Calendar,
+  Users,
+  ListTodo,
+  Wallet,
+  Package,
+  UserCog,
+  Clock,
+  User,
+  ClipboardList,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@lepera/contracts";
@@ -27,6 +37,7 @@ export const navigation: Record<Role, NavItem[]> = {
     ...ADMIN_ITEMS,
     { label: "Solicitações", href: "/reception/requests", icon: FileText },
     { label: "Agenda geral", href: "/reception/appointments", icon: Calendar },
+    { label: "Calendário", href: "/reception/calendar", icon: Calendar },
     { label: "Lista de espera", href: "/reception/waitlist", icon: ListTodo },
     SECURITY_ITEM,
   ],
@@ -42,7 +53,12 @@ export const navigation: Record<Role, NavItem[]> = {
   ],
   PATIENT: [
     { label: "Painel", href: "/patient/dashboard", icon: Home },
-    { label: "Minhas consultas", href: "/patient/appointments", icon: Calendar },
+    {
+      label: "Minhas consultas",
+      href: "/patient/appointments",
+      icon: Calendar,
+    },
+    { label: "Calendário", href: "/patient/calendar", icon: Calendar },
     { label: "Lista de espera", href: "/patient/waitlist", icon: ListTodo },
     { label: "Perfil", href: "/patient/profile", icon: User },
     SECURITY_ITEM,
@@ -51,9 +67,18 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Painel", href: "/reception/dashboard", icon: Home },
     { label: "Solicitações", href: "/reception/requests", icon: FileText },
     { label: "Agenda geral", href: "/reception/appointments", icon: Calendar },
+    { label: "Calendário", href: "/reception/calendar", icon: Calendar },
     { label: "Pacientes", href: "/reception/patients", icon: Users },
     { label: "Lista de espera", href: "/reception/waitlist", icon: ListTodo },
     { label: "Perfil", href: "/reception/profile", icon: User },
     SECURITY_ITEM,
   ],
 };
+
+/** Cada perfil abre uma pagina existente para seus dados pessoais. */
+export function profilePath(role: Role): string {
+  if (role === "PATIENT") return "/patient/profile";
+  if (role === "DOCTOR") return "/doctor/profile";
+  if (role === "RECEPTIONIST") return "/reception/profile";
+  return "/profile";
+}

@@ -16,7 +16,7 @@ const ROLE_PREFIXES: Record<Role, string[]> = {
   RECEPTIONIST: ["/reception"],
 };
 
-const SHARED_PREFIXES = ["/notifications", "/settings"];
+const SHARED_PREFIXES = ["/notifications", "/settings", "/profile"];
 
 function matches(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
