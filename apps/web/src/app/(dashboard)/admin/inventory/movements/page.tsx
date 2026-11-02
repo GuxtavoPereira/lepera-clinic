@@ -1,8 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function InventoryMovementsPage() {
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold capitalize">Página: /admin/inventory/movements</h1>
-      <p className="text-gray-500 mt-2">Em construção...</p>
-    </div>
-  );
+  redirect("/admin/inventory");
 }

@@ -13,7 +13,7 @@ jobs:
       JWT_SECRET: ci-only-jwt-secret-not-for-production
       ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
       WEB_URL: http://localhost:3000
-      NEXT_PUBLIC_API_URL: http://localhost:3333/api
+      NEXT_PUBLIC_API_URL: http://localhost:3333
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -27,3 +27,4 @@ jobs:
       - run: pnpm check-types
       - run: pnpm build
       - run: pnpm --filter api test
+      - run: pnpm --filter web test:financial

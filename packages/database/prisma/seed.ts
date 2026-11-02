@@ -92,7 +92,7 @@ async function seed(prisma: Prisma.TransactionClient) {
 
   const passwordHash = await bcrypt.hash(DEV_PASSWORD, 10);
   const superAdmin = await prisma.user.create({ data: { name: "Super Administrador (dev)", email: "super@leperapia.com", passwordHash, cpf: cpf("529982247"), role: "SUPER_ADMIN" } });
-  await prisma.user.create({ data: { name: "Gestor Administrativo", email: "admin@leperapia.com", passwordHash, cpf: cpf("111444777"), role: "ADMIN" } });
+  const admin = await prisma.user.create({ data: { name: "Gestor Administrativo", email: "admin@leperapia.com", passwordHash, cpf: cpf("111444777"), role: "ADMIN" } });
 
   const receptionists = await Promise.all([
     prisma.user.create({ data: { name: "Ana Costa", email: "recepcao@leperapia.com", passwordHash, cpf: cpf("123456789"), role: "RECEPTIONIST", receptionist: { create: { extension: "101" } } }, include: { receptionist: true } }),
@@ -170,11 +170,16 @@ async function seed(prisma: Prisma.TransactionClient) {
         documentNumber: `PRON-DEMO-${String(i + 1).padStart(3, "0")}-${sessionIndex + 1}`,
       } });
       recordCount++;
-      if (sessionIndex === 0) await prisma.financialTransaction.create({ data: { appointmentId: appointment.id, userId: receptionist.id, type: "INCOME", amount: 180, description: `Pagamento demonstrativo - ${patientUser.name}`, transactionDate: startDatetime } });
+      if (sessionIndex === 0) await prisma.financialTransaction.create({ data: {
+        appointmentId: appointment.id, userId: receptionist.id, type: "INCOME", amount: "180.00",
+        description: `Pagamento demonstrativo - ${patientUser.name}`, category: "Consultas",
+        transactionDate: startDatetime, dueDate: startDatetime, paidAt: startDatetime,
+        status: "PAID", paymentMethod: "PIX",
+      } });
     }
 
     const futureStart = nextAvailableSlot(i % doctorProfiles.length, 2 + i * 2);
-    await prisma.appointment.create({ data: {
+    const futureAppointment = await prisma.appointment.create({ data: {
       patientId: patient.id, doctorId: doctor.id, receptionistId: receptionist.receptionist!.id,
       startDatetime: futureStart, endDatetime: new Date(futureStart.getTime() + 50 * 60_000), durationMinutes: 50,
       modality: i % 2 === 0 ? "IN_PERSON" : "ONLINE", type: i === 0 ? "RETURN" : "SESSION",
@@ -182,9 +187,19 @@ async function seed(prisma: Prisma.TransactionClient) {
       sessionSequence: 3, receptionNotes: "Agendamento fictício para demonstração; não corresponde a paciente real.",
     } });
     appointmentCount++;
+    if (i < 2) await prisma.financialTransaction.create({ data: {
+      appointmentId: futureAppointment.id, userId: receptionist.id, type: "INCOME", amount: "180.00",
+      description: `Sessão demonstrativa - ${patientUser.name}`, category: "Consultas",
+      transactionDate: futureStart, dueDate: futureStart, status: "PENDING",
+    } });
     if (i === 0) await prisma.scheduleRequest.create({ data: { patientId: patient.id, preferredDoctorId: doctor.id, type: "reagendamento", preferredDate: dateAtOffset(10, 10), preferredShift: "MORNING", reason: "Solicitação fictícia para testar a fila de pedidos.", status: "PENDING" } });
     if (i === 1) await prisma.waitlist.create({ data: { patientId: patient.id, preferredDoctorId: doctor.id, reason: "Preferência fictícia por horário pela manhã.", preferredShift: "MORNING", priority: "MEDIUM", status: "waiting" } });
   }
+
+  await prisma.financialTransaction.createMany({ data: [
+    { userId: admin.id, type: "EXPENSE", amount: "250.00", description: "Material de escritório demonstrativo", category: "Materiais", transactionDate: dateAtOffset(-2, 12), dueDate: dateAtOffset(-2, 12), paidAt: dateAtOffset(-2, 12), status: "PAID", paymentMethod: "BANK_TRANSFER" },
+    { userId: admin.id, type: "EXPENSE", amount: "1500.00", description: "Aluguel demonstrativo", category: "Estrutura", transactionDate: dateAtOffset(5, 12), dueDate: dateAtOffset(5, 12), status: "PENDING" },
+  ] });
 
   await prisma.inventoryItem.createMany({ data: [
     { name: "Papel A4", description: "Material de escritório demonstrativo", stockQuantity: 12, minimumStock: 5 },

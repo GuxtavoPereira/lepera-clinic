@@ -19,6 +19,8 @@ import { ClinicalRecordsModule } from './modules/clinical-records/clinical-recor
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { FinancialModule } from './modules/financial/financial.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AvailabilityModule,
     WaitlistModule,
     NotificationsModule,
+    FinancialModule,
+    InventoryModule,
   ],
   controllers: [HealthController],
 })

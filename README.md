@@ -28,6 +28,8 @@ O objetivo é facilitar o cadastro e a localização de pacientes, organizar sol
 - **Profissionais:** agenda, disponibilidade de atendimento e prontuários das sessões vinculadas ao profissional.
 - **Calendário visual:** grade semanal ou diária, navegação por data e filtro por profissional; o paciente acompanha apenas as próprias consultas e os horários livres para solicitar atendimento.
 - **Administração:** painel e gestão de usuários, com permissões específicas para o superadministrador.
+- **Financeiro:** receitas, despesas, cobranças vinculadas a consultas, quitações, pendências, estornos de registros e exportação CSV.
+- **Estoque:** materiais, saldo mínimo, reposição, entradas/saídas e histórico auditado.
 - **Regras e segurança:** CPF obrigatório, único e validado por dígitos verificadores; controle de acesso na API; criptografia dos campos clínicos e auditoria das operações previstas.
 
 ## 🌐 Acessos na Vercel
@@ -323,6 +325,48 @@ Os endpoints `GET /api/appointments/calendar` e `GET /api/appointments/available
 - O cadastro interno de pacientes, pela recepção ou administração, pede os mesmos dados do cadastro público: acesso, confirmação de senha, CPF obrigatório, nascimento, telefone, contato de emergência/responsável, plano opcional e autorização. Funcionários utilizam os campos comuns de acesso e dados pessoais; profissionais também precisam de registro e especialidade.
 - Envio de e-mails e recuperação de senha continuam pendentes da configuração do remetente.
 
+## 💰 Financeiro e recebimentos
+
+| Perfil | Acesso |
+| --- | --- |
+| Administração e superadmin | `/admin/financial`: receitas, despesas, pendências, quitações, cancelamentos e estorno de registros |
+| Recepção | `/reception/payments`: receitas e cobranças, sem acesso às despesas da clínica |
+
+O lançamento começa como **pendente**. Informe descrição, categoria, valor e vencimento; receitas podem ser vinculadas a uma consulta ainda sem cobrança. Há um lançamento por consulta. A edição é permitida enquanto estiver pendente. Na quitação integral, informe a data e a forma de pagamento: Pix, dinheiro, cartão, transferência, convênio ou outro.
+
+Os filtros incluem período de vencimento (até 366 dias, com as duas datas inclusivas), descrição/categoria/paciente/profissional, tipo e situação. **Pendente** também inclui cobranças atrasadas. Os indicadores usam os mesmos filtros e somam valores decimais no servidor; o saldo exibido é a diferença entre receitas e despesas quitadas **com vencimento no período selecionado**, não o saldo da conta bancária. O CSV exporta todos os resultados dos filtros, até 5.000 registros, com proteção contra fórmulas de planilhas.
+
+Cancelamentos preservam o histórico. A recepção cancela apenas receitas pendentes; somente a administração pode estornar registros quitados ou reabrir cancelados. O cancelamento de um lançamento não cancela a consulta. As alterações são auditadas e a API impede quitação duplicada e alterações sobre uma versão desatualizada do lançamento.
+
+Este módulo registra pagamentos manualmente. Não movimenta dinheiro, não emite nota fiscal, não faz devoluções bancárias e ainda não oferece parcelamento ou pagamento parcial. Cobranças não são geradas automaticamente porque o valor de cada atendimento deve ser informado pela equipe.
+
+### Atualizar uma base existente
+
+```bash
+pnpm db:generate
+pnpm --filter @lepera/db migrate:deploy
+pnpm build
+```
+
+A migração `20261101120000_financial_management` adiciona os controles financeiros e mantém os registros antigos como quitados, com as datas da clínica. Antes de aplicar em outra base, confira se não há valores menores ou iguais a zero ou despesas vinculadas a consultas, pois a nova estrutura recusa esses dados. A atualização não exige reset nem execução do seed.
+
+## 📦 Materiais e estoque
+
+Em `/admin/inventory`, administração e superadmin podem cadastrar e editar materiais, definir o estoque mínimo e registrar entradas e saídas com justificativa. Novos materiais começam com saldo zero; registre uma entrada para incluir as unidades existentes.
+
+A tela reúne busca, filtro de reposição, indicadores e histórico paginado com data e responsável. O alerta considera saldo **igual ou abaixo do mínimo**. O saldo só muda por movimentações; a API protege contra saídas acima do disponível e grava a movimentação e a auditoria na mesma transação. O estoque utiliza as tabelas existentes e não exige migração adicional.
+
+### Verificar os módulos
+
+```bash
+pnpm --filter api exec jest --runInBand financial inventory
+pnpm --filter web test:financial
+pnpm check-types
+pnpm lint
+```
+
+Na revisão dos módulos de gestão, passaram **336 testes da API**, **6 testes dos valores/exportação no frontend** e **49 verificações de integração** no navegador e na API, incluindo quitações concorrentes, permissões e proteção contra estoque negativo. A compilação e a tipagem também foram verificadas. Os registros temporários utilizados nessa verificação foram removidos, preservando os dados existentes.
+
 ## ⚙️ Comandos úteis
 
 ### Scripts disponíveis
@@ -391,7 +435,7 @@ A disponibilidade dos links acima não substitui a validação dos fluxos da ver
 ## 🚧 Limites atuais e próximos passos
 
 - Recuperação de senha por e-mail, lembretes externos e integrações com e-mail/WhatsApp.
-- Conclusão dos módulos financeiro e estoque e de outras telas secundárias em construção.
+- Parcelamento, pagamentos parciais, emissão fiscal e integração com provedores de pagamento; outras telas secundárias em construção.
 - Login com Google e Face ID, atualmente indicados como indisponíveis.
 - Ampliação da homologação em dispositivos móveis e dos testes dos demais fluxos.
 - Medições de desempenho, rotinas de backup/restauração e revisão de segurança antes do uso com dados reais.

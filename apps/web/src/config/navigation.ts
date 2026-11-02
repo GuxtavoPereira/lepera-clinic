@@ -69,6 +69,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Agenda geral", href: "/reception/appointments", icon: Calendar },
     { label: "Calendário", href: "/reception/calendar", icon: Calendar },
     { label: "Pacientes", href: "/reception/patients", icon: Users },
+    { label: "Recebimentos", href: "/reception/payments", icon: Wallet },
     { label: "Lista de espera", href: "/reception/waitlist", icon: ListTodo },
     { label: "Perfil", href: "/reception/profile", icon: User },
     SECURITY_ITEM,

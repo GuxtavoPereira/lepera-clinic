@@ -70,6 +70,22 @@ enum TransactionType {
   EXPENSE // Despesa (Saída)
 }
 
+enum FinancialStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  PIX
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  BANK_TRANSFER
+  INSURANCE
+  OTHER
+}
+
 enum MovementType {
   ENTRY // Entrada de estoque
   EXIT // Saída de estoque
@@ -448,9 +464,18 @@ model FinancialTransaction {
   description     String // Descrição (Ex: "Pagamento Sessão 12")
   transactionDate DateTime // Data do pagamento
 
+  // PAID preserva o significado dos pagamentos existentes antes deste módulo.
+  status        FinancialStatus @default(PAID)
+  dueDate       DateTime        @db.Date
+  paidAt        DateTime?       @db.Date
+  paymentMethod PaymentMethod?
+  category      String          @default("Outros")
+  cancelReason  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([dueDate, type, status])
   @@map("financial_transactions")
 }
 
