@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -208,14 +209,43 @@ export default function ReceptionPatientsPage() {
         </>
       )}
 
-      {sheetOpen && <NewPatientSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        onCreated={() => {
-          setLoading(true);
-          setReloadKey((key) => key + 1);
-        }}
-      />}
+      <Suspense fallback={null}>
+        <PatientCreationSheet
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          onCreated={() => {
+            setLoading(true);
+            setReloadKey((key) => key + 1);
+          }}
+        />
+      </Suspense>
     </div>
+  );
+}
+
+function PatientCreationSheet(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: () => void;
+}) {
+  const query = useSearchParams();
+  const router = useRouter();
+  const requested = query.get("new") === "1";
+  function changeOpen(open: boolean) {
+    props.onOpenChange(open);
+    if (!open && requested) {
+      const next = new URLSearchParams(query.toString());
+      next.delete("new");
+      router.replace(`/reception/patients${next.size ? `?${next}` : ""}`, {
+        scroll: false,
+      });
+    }
+  }
+  return (
+    <NewPatientSheet
+      open={props.open || requested}
+      onOpenChange={changeOpen}
+      onCreated={props.onCreated}
+    />
   );
 }

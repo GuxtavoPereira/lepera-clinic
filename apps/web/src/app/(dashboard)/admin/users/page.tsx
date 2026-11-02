@@ -149,10 +149,10 @@ export default function UsersManagementPage() {
   }
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="flex gap-5 items-start">
+    <div className="mx-auto max-w-screen-2xl">
+      <div className="flex flex-col items-stretch gap-5 xl:flex-row xl:items-start">
         <div className="flex-1 min-w-0 flex flex-col gap-5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-xl font-bold text-gray-900">Usuários</h1>
             <Button className="gap-1.5 rounded-[10px]" onClick={handleCreate}>
               <UserPlus className="h-3.75 w-3.75" />
@@ -160,8 +160,8 @@ export default function UsersManagementPage() {
             </Button>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center rounded-[10px] bg-white border border-gray-200 px-3.25 py-2.75">
+          <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 flex-1 items-center rounded-[10px] bg-white border border-gray-200 px-3.25 py-2.75">
               <Search className="h-3.5 w-3.5 text-gray-400 mr-2 shrink-0" />
               <input
                 type="text"
@@ -172,15 +172,19 @@ export default function UsersManagementPage() {
               />
             </div>
 
-            <div className="flex items-center gap-1 rounded-[10px] bg-white border border-gray-100 p-1.25">
+            <div
+              aria-label="Filtrar por perfil"
+              className="flex min-w-0 max-w-full items-center gap-1 overflow-x-auto rounded-[10px] bg-white border border-gray-100 p-1.25"
+            >
               {ROLE_FILTERS.map((f) => (
                 <button
                   key={f.value}
                   onClick={() => setRoleFilter(f.value)}
+                  aria-pressed={roleFilter === f.value}
                   className={
                     roleFilter === f.value
-                      ? "rounded-[8px] bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground whitespace-nowrap"
-                      : "rounded-[8px] px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 whitespace-nowrap"
+                      ? "min-h-11 shrink-0 rounded-[8px] bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground whitespace-nowrap"
+                      : "min-h-11 shrink-0 rounded-[8px] px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 whitespace-nowrap"
                   }
                 >
                   {f.label}
@@ -219,11 +223,11 @@ export default function UsersManagementPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-[#1e2939]">
+                      <p className="text-sm font-semibold text-foreground">
                         {u.name}
                       </p>
                       {u.isActive ? (
-                        <span className="rounded-full bg-[#f0fdfa] text-[#00786f] text-xs font-medium px-2.5 py-0.5">
+                        <span className="rounded-full bg-teal-50 text-teal-800 text-xs font-medium px-2.5 py-0.5">
                           Ativo
                         </span>
                       ) : (
@@ -234,18 +238,18 @@ export default function UsersManagementPage() {
                     </div>
 
                     <div className="flex items-center gap-4 mt-1 flex-wrap">
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <span className="flex min-w-0 max-w-full items-center gap-1 break-all text-xs text-muted-foreground">
                         <Mail className="h-2.75 w-2.75" />
                         {u.email}
                       </span>
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <span className="flex min-w-0 max-w-full items-center gap-1 break-all text-xs text-muted-foreground">
                         <Calendar className="h-2.75 w-2.75" />
                         Desde {formatDate(u.createdAt)}
                       </span>
                     </div>
 
                     <div className="mt-2">
-                      <span className="rounded-full bg-[#faf5ff] text-[#8200db] text-xs font-medium px-2.5 py-1 inline-flex items-center gap-1">
+                      <span className="rounded-full bg-violet-50 text-violet-800 text-xs font-medium px-2.5 py-1 inline-flex items-center gap-1">
                         <ShieldCheck className="h-3 w-3" />
                         {ROLE_LABEL[u.role]}
                       </span>
@@ -258,6 +262,7 @@ export default function UsersManagementPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Ações de ${u.name}`}
                           disabled={pendingId === u.id}
                         />
                       }
@@ -289,7 +294,7 @@ export default function UsersManagementPage() {
           )}
         </div>
 
-        <div className="w-64 shrink-0 flex flex-col gap-4">
+        <div className="grid w-full shrink-0 gap-4 sm:grid-cols-3 xl:flex xl:w-64 xl:flex-col">
           <Card className="rounded-[14px] border-gray-100 p-4.25 flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-[10px] bg-gray-50 flex items-center justify-center">
@@ -327,7 +332,7 @@ export default function UsersManagementPage() {
           </Card>
 
           <Card className="rounded-[14px] border-gray-100 p-4.25">
-            <p className="text-sm font-semibold text-[#1e2939] mb-3">
+            <p className="text-sm font-semibold text-foreground mb-3">
               Por Perfil
             </p>
             <div className="flex flex-col gap-2">
@@ -338,23 +343,23 @@ export default function UsersManagementPage() {
                     (stats.byRole.SUPER_ADMIN ?? 0) > 0,
                 )
                 .map((role) => (
-                <div
-                  key={role}
-                  className="flex items-center justify-between py-1.5"
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`h-2 w-2 rounded-full ${ROLE_DOT[role]}`}
-                    />
-                    <span className="text-xs text-gray-500">
-                      {ROLE_LABEL[role]}
+                  <div
+                    key={role}
+                    className="flex items-center justify-between py-1.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`h-2 w-2 rounded-full ${ROLE_DOT[role]}`}
+                      />
+                      <span className="text-xs text-gray-500">
+                        {ROLE_LABEL[role]}
+                      </span>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700">
+                      {stats.byRole[role] ?? 0}
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-gray-700">
-                    {stats.byRole[role] ?? 0}
-                  </span>
-                </div>
-              ))}
+                ))}
             </div>
           </Card>
         </div>

@@ -1,175 +1,132 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   Ban,
   Calendar,
   CalendarCheck,
   ClipboardList,
-  Clock3,
+  Users,
 } from "lucide-react";
+import { DashboardHeader, StatCard } from "@/components/dashboard/stat-card";
 import {
-  DashboardHeader,
-  StatCard,
-} from "@/components/dashboard/stat-card";
-import { Alert } from "@/components/forms/form-field";
-import { ApiError, apiFetch } from "@/lib/api-client";
+  dashboardValue,
+  loadOwnAppointments,
+  loadTodayAppointments,
+  useDashboardResource,
+} from "@/components/dashboard/dashboard-data";
+import {
+  DashboardActions,
+  DashboardAppointmentList,
+  DashboardEmpty,
+  DashboardLoading,
+  DashboardSection,
+  DashboardToolbar,
+} from "@/components/dashboard/dashboard-ui";
+import { apiFetch } from "@/lib/api-client";
 import { useCurrentUser } from "@/lib/use-current-user";
-import { formatDateTimePtBr } from "@/lib/date-format";
 
-type Appointment = {
-  id: string;
-  startDatetime: string;
-  durationMinutes: number;
-  modality: "IN_PERSON" | "ONLINE";
-  status: string;
-  patient: { user: { name: string } };
-};
-
-type RecordSummary = { isSigned: boolean };
-type CancellationRequest = { status: "PENDING" | "APPROVED" | "REJECTED" };
-
-type Summary = {
-  today: Appointment[];
-  upcoming: number;
-  pendingSignature: number;
-  pendingCancellations: number;
-};
-
-const ACTIVE = ["SCHEDULED", "CONFIRMED", "WAITING"];
+const loadUnsigned = async (signal: AbortSignal) =>
+  (
+    await apiFetch<Array<{ isSigned: boolean }>>("/clinical-records/mine", {
+      signal,
+    })
+  ).filter((item) => !item.isSigned).length;
+const loadPending = async (signal: AbortSignal) =>
+  (
+    await apiFetch<Array<{ status: string }>>("/cancellation-requests/mine", {
+      signal,
+    })
+  ).filter((item) => item.status === "PENDING").length;
 
 export default function DoctorDashboardPage() {
   const user = useCurrentUser();
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      apiFetch<Appointment[]>("/appointments/mine"),
-      apiFetch<RecordSummary[]>("/clinical-records/mine"),
-      apiFetch<CancellationRequest[]>("/cancellation-requests/mine"),
-    ])
-      .then(([appointments, records, requests]) => {
-        if (!active) return;
-        const now = Date.now();
-        const todayKey = new Date(now).toLocaleDateString("pt-BR");
-        const activeOnes = appointments.filter((item) =>
-          ACTIVE.includes(item.status),
-        );
-        setSummary({
-          today: activeOnes
-            .filter(
-              (item) =>
-                new Date(item.startDatetime).toLocaleDateString("pt-BR") ===
-                todayKey,
-            )
-            .sort(
-              (a, b) =>
-                new Date(a.startDatetime).getTime() -
-                new Date(b.startDatetime).getTime(),
-            ),
-          upcoming: activeOnes.filter(
-            (item) => new Date(item.startDatetime).getTime() >= now,
-          ).length,
-          pendingSignature: records.filter((item) => !item.isSigned).length,
-          pendingCancellations: requests.filter(
-            (item) => item.status === "PENDING",
-          ).length,
-        });
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        setError(
-          err instanceof ApiError
-            ? err.message
-            : "Não foi possível carregar o painel.",
-        );
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const firstName = user?.name.split(" ").slice(0, 2).join(" ");
-
+  const today = useDashboardResource(loadTodayAppointments);
+  const appointments = useDashboardResource(loadOwnAppointments);
+  const unsigned = useDashboardResource(loadUnsigned);
+  const cancellations = useDashboardResource(loadPending);
+  const resources = [today, appointments, unsigned, cancellations];
+  const firstName = user?.name.split(" ")[0];
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-7">
       <DashboardHeader
-        title={firstName ? `Olá, ${firstName}` : "Olá"}
-        subtitle="Resumo do seu dia e pendências."
+        title={firstName ? `Olá, ${firstName}` : "Seu dia na clínica"}
+        subtitle="Sua agenda e as pendências dos seus atendimentos."
       />
-
-      {error && <Alert kind="error">{error}</Alert>}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <DashboardToolbar
+        loading={resources.some((item) => item.loading)}
+        errors={resources.map((item) => item.error)}
+        onRefresh={() => resources.forEach((item) => item.refresh())}
+      />
+      <DashboardActions
+        actions={[
+          {
+            label: "Abrir minha agenda",
+            href: "/doctor/calendar",
+            icon: Calendar,
+            primary: true,
+          },
+          { label: "Meus pacientes", href: "/doctor/patients", icon: Users },
+          {
+            label: "Prontuários",
+            href: "/doctor/records",
+            icon: ClipboardList,
+          },
+        ]}
+      />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Consultas hoje"
-          value={summary?.today.length ?? "—"}
+          value={dashboardValue(today, (items) => items.length)}
+          hint="Inclui atendimentos já realizados"
           icon={CalendarCheck}
           href="/doctor/calendar"
         />
         <StatCard
           label="Próximas consultas"
-          value={summary?.upcoming ?? "—"}
+          value={dashboardValue(appointments, (data) => data.next.length)}
+          hint="Inclui atendimento em andamento"
           icon={Calendar}
           href="/doctor/calendar"
         />
         <StatCard
           label="Aguardando assinatura"
-          value={summary?.pendingSignature ?? "—"}
+          value={dashboardValue(unsigned, (count) => count)}
           icon={ClipboardList}
           href="/doctor/records"
-          tone={summary && summary.pendingSignature > 0 ? "warning" : "default"}
+          tone={unsigned.data ? "warning" : "default"}
         />
         <StatCard
           label="Cancelamentos solicitados"
-          value={summary?.pendingCancellations ?? "—"}
+          value={dashboardValue(cancellations, (count) => count)}
           hint="Aguardando a recepção"
           icon={Ban}
           href="/doctor/calendar"
+          tone={cancellations.data ? "warning" : "default"}
         />
       </div>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">Hoje</h2>
-        {!summary ? (
-          <p className="text-sm text-slate-400">Carregando...</p>
-        ) : summary.today.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
-            Nenhuma consulta para hoje.
-          </p>
+      <DashboardSection
+        title="Atendimentos de hoje"
+        description="Horários em ordem cronológica, incluindo os atendimentos já realizados."
+      >
+        {today.loading ? (
+          <DashboardLoading />
+        ) : today.error ? (
+          <DashboardEmpty>
+            Não foi possível carregar a agenda do dia.
+          </DashboardEmpty>
+        ) : !today.data?.length ? (
+          <DashboardEmpty>
+            Nenhuma consulta para hoje. Abra a agenda para consultar as próximas
+            datas.
+          </DashboardEmpty>
         ) : (
-          <ul className="space-y-2">
-            {summary.today.map((appointment) => (
-              <li
-                key={appointment.id}
-                className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center"
-              >
-                <div className="space-y-0.5">
-                  <p className="font-medium text-slate-900">
-                    {appointment.patient.user.name}
-                  </p>
-                  <p className="flex items-center gap-2 text-sm text-slate-500">
-                    <Clock3 className="size-4 text-slate-400" />
-                    {formatDateTimePtBr(appointment.startDatetime)} ·{" "}
-                    {appointment.durationMinutes} min ·{" "}
-                    {appointment.modality === "ONLINE" ? "Online" : "Presencial"}
-                  </p>
-                </div>
-                <Link
-                  href={`/doctor/session/${appointment.id}`}
-                  className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"
-                >
-                  <ClipboardList className="size-3.5" />
-                  Abrir prontuário
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <DashboardAppointmentList
+            items={today.data}
+            perspective="doctor"
+            href={(item) => `/doctor/session/${item.id}`}
+          />
         )}
-      </section>
+      </DashboardSection>
     </div>
   );
 }

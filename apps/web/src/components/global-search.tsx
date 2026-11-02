@@ -23,6 +23,7 @@ const searchKeywords: Record<string, string> = {
   Calendário: "agenda consultas horarios disponibilidade",
   Usuários: "cadastro contas funcionarios pacientes",
   Financeiro: "pagamentos valores receitas despesas",
+  Recebimentos: "financeiro cobrancas pagamentos pendencias valores consultas",
   Estoque: "itens materiais produtos inventario",
   Prontuários: "registros sessoes clinicos",
 };
@@ -166,7 +167,7 @@ export function GlobalSearch({ role }: { role: Role }) {
         }}
         aria-label="Buscar no sistema"
         aria-haspopup="dialog"
-        className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-2.5 py-2 text-sm text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 px-2.5 py-2 text-sm text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
       >
         <Search className="size-4" />
         <span className="hidden lg:inline">Buscar</span>

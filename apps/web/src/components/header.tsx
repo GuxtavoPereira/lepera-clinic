@@ -84,7 +84,7 @@ export function Header() {
           type="button"
           aria-label="Voltar"
           onClick={() => router.back()}
-          className="flex size-7 shrink-0 items-center justify-center rounded-md hover:bg-accent"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-accent"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -105,7 +105,7 @@ export function Header() {
               <button
                 type="button"
                 aria-label="Abrir menu da minha conta"
-                className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                className="flex min-h-11 min-w-11 items-center gap-2 rounded-md p-1 hover:bg-accent"
               >
                 <Avatar className="size-8">
                   <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">

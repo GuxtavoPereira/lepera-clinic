@@ -1,188 +1,166 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Calendar,
   CalendarCheck,
   CalendarPlus,
-  Clock3,
   FileText,
   User,
-  UserRound,
 } from "lucide-react";
+import { DashboardHeader, StatCard } from "@/components/dashboard/stat-card";
 import {
-  DashboardHeader,
-  StatCard,
-} from "@/components/dashboard/stat-card";
-import { Alert } from "@/components/forms/form-field";
-import { ApiError, apiFetch } from "@/lib/api-client";
+  appointmentDuration,
+  dashboardDateTime,
+  dashboardValue,
+  loadOwnAppointments,
+  loadTodayAppointments,
+  useDashboardResource,
+} from "@/components/dashboard/dashboard-data";
+import {
+  dashboardActionClass,
+  DashboardActions,
+  DashboardAppointmentList,
+  DashboardEmpty,
+  DashboardLoading,
+  DashboardSection,
+  DashboardToolbar,
+} from "@/components/dashboard/dashboard-ui";
+import { apiFetch } from "@/lib/api-client";
 import { useCurrentUser } from "@/lib/use-current-user";
-import { formatDateTimePtBr } from "@/lib/date-format";
 
-type Appointment = {
-  id: string;
-  startDatetime: string;
-  durationMinutes: number;
-  modality: "IN_PERSON" | "ONLINE";
-  status: string;
-  doctor: { user: { name: string } };
-};
-
-type ScheduleRequest = { id: string; status: "PENDING" | "APPROVED" | "REJECTED" };
-
-type Summary = {
-  next: Appointment | null;
-  upcoming: number;
-  completed: number;
-  pendingRequests: number;
-};
-
-const ACTIVE = ["SCHEDULED", "CONFIRMED"];
+const loadPending = async (signal: AbortSignal) =>
+  (
+    await apiFetch<Array<{ status: string }>>("/schedule-requests/mine", {
+      signal,
+    })
+  ).filter((item) => item.status === "PENDING").length;
 
 export default function PatientDashboardPage() {
   const user = useCurrentUser();
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      apiFetch<Appointment[]>("/appointments/mine"),
-      apiFetch<ScheduleRequest[]>("/schedule-requests/mine"),
-    ])
-      .then(([appointments, requests]) => {
-        if (!active) return;
-        const now = Date.now();
-        const upcoming = appointments
-          .filter(
-            (item) =>
-              ACTIVE.includes(item.status) &&
-              new Date(item.startDatetime).getTime() >= now,
-          )
-          .sort(
-            (a, b) =>
-              new Date(a.startDatetime).getTime() -
-              new Date(b.startDatetime).getTime(),
-          );
-        setSummary({
-          next: upcoming[0] ?? null,
-          upcoming: upcoming.length,
-          completed: appointments.filter((item) => item.status === "COMPLETED")
-            .length,
-          pendingRequests: requests.filter((item) => item.status === "PENDING")
-            .length,
-        });
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        setError(
-          err instanceof ApiError
-            ? err.message
-            : "Não foi possível carregar o painel.",
-        );
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
+  const today = useDashboardResource(loadTodayAppointments);
+  const appointments = useDashboardResource(loadOwnAppointments);
+  const requests = useDashboardResource(loadPending);
+  const resources = [today, appointments, requests];
+  const next = appointments.data?.next[0];
   const firstName = user?.name.split(" ")[0];
-
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-7">
       <DashboardHeader
-        title={firstName ? `Olá, ${firstName}` : "Olá"}
-        subtitle="Acompanhe suas consultas e solicitações."
+        title={firstName ? `Olá, ${firstName}` : "Meu acompanhamento"}
+        subtitle="Suas consultas, solicitações e horários disponíveis em um só lugar."
       />
-
-      {error && <Alert kind="error">{error}</Alert>}
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-medium text-slate-500">Próxima consulta</h2>
-        {!summary ? (
-          <p className="mt-3 text-sm text-slate-400">Carregando...</p>
-        ) : summary.next ? (
-          <div className="mt-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+      <DashboardToolbar
+        loading={resources.some((item) => item.loading)}
+        errors={resources.map((item) => item.error)}
+        onRefresh={() => resources.forEach((item) => item.refresh())}
+      />
+      <DashboardActions
+        actions={[
+          {
+            label: "Solicitar atendimento",
+            href: "/patient/request-appointment",
+            icon: CalendarPlus,
+            primary: true,
+          },
+          {
+            label: "Ver calendário e horários livres",
+            href: "/patient/calendar",
+            icon: Calendar,
+          },
+          { label: "Meu perfil", href: "/patient/profile", icon: User },
+        ]}
+      />
+      <section className="space-y-3 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
+        <h2 className="text-lg font-semibold">Sua próxima consulta</h2>
+        {appointments.loading ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            Carregando…
+          </p>
+        ) : appointments.error ? (
+          <p className="text-sm text-muted-foreground">
+            Não foi possível carregar sua próxima consulta. Atualize o painel
+            para tentar novamente.
+          </p>
+        ) : next ? (
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="space-y-1">
-              <p className="text-xl font-semibold text-slate-900">
-                {formatDateTimePtBr(summary.next.startDatetime)}
+              <p className="text-xl font-semibold text-foreground">
+                {dashboardDateTime(next.startDatetime)}
               </p>
-              <p className="flex items-center gap-2 text-sm text-slate-600">
-                <UserRound className="size-4 text-slate-400" />
-                {summary.next.doctor.user.name}
+              <p className="text-sm text-muted-foreground">
+                Com {next.doctor?.user.name ?? "seu profissional"}
               </p>
-              <p className="flex items-center gap-2 text-sm text-slate-600">
-                <Clock3 className="size-4 text-slate-400" />
-                {summary.next.durationMinutes} minutos ·{" "}
-                {summary.next.modality === "ONLINE" ? "Online" : "Presencial"}
+              <p className="text-sm text-muted-foreground">
+                {appointmentDuration(next)} minutos ·{" "}
+                {next.modality === "ONLINE" ? "Online" : "Presencial"}
               </p>
             </div>
-            <Link
-              href="/patient/appointments"
-              className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:bg-muted"
-            >
+            <Link href="/patient/appointments" className={dashboardActionClass}>
               Ver detalhes ou cancelar
             </Link>
           </div>
         ) : (
-          <div className="mt-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <p className="text-sm text-slate-600">
-              Você não tem consultas marcadas.
-            </p>
-            <Link
-              href="/patient/request-appointment"
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"
-            >
-              <CalendarPlus className="size-4" />
-              Solicitar agendamento
-            </Link>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Você não tem consultas marcadas. Consulte os horários livres no
+            calendário e solicite um atendimento.
+          </p>
         )}
       </section>
-
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Consultas futuras"
-          value={summary?.upcoming ?? "—"}
+          label="Consultas hoje"
+          value={dashboardValue(today, (items) => items.length)}
+          icon={CalendarCheck}
+          href="/patient/calendar"
+        />
+        <StatCard
+          label="Próximas consultas"
+          value={dashboardValue(appointments, (data) => data.next.length)}
           icon={Calendar}
           href="/patient/appointments"
         />
         <StatCard
           label="Realizadas"
-          value={summary?.completed ?? "—"}
+          value={dashboardValue(
+            appointments,
+            (data) =>
+              data.items.filter((item) => item.status === "COMPLETED").length,
+          )}
           icon={CalendarCheck}
           href="/patient/appointments"
         />
         <StatCard
           label="Solicitações em análise"
-          value={summary?.pendingRequests ?? "—"}
+          value={dashboardValue(requests, (count) => count)}
           icon={FileText}
           href="/patient/appointments"
-          tone={summary && summary.pendingRequests > 0 ? "warning" : "default"}
+          tone={requests.data ? "warning" : "default"}
         />
       </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Link href="/patient/calendar" className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:bg-muted">
-          <Calendar className="size-4" />
-          Ver calendário e horários livres
-        </Link>
-        <Link
-          href="/patient/request-appointment"
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"
-        >
-          <CalendarPlus className="size-4" />
-          Solicitar agendamento
-        </Link>
-        <Link
-          href="/patient/profile"
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:bg-muted"
-        >
-          <User className="size-4" />
-          Meu perfil
-        </Link>
-      </div>
+      <DashboardSection
+        title="Hoje"
+        description="Somente as suas consultas, no horário de Brasília."
+      >
+        {today.loading ? (
+          <DashboardLoading />
+        ) : today.error ? (
+          <DashboardEmpty>
+            Não foi possível carregar suas consultas de hoje.
+          </DashboardEmpty>
+        ) : !today.data?.length ? (
+          <DashboardEmpty>
+            Você não tem consultas hoje. Seus próximos agendamentos continuam
+            disponíveis em “Minhas consultas”.
+          </DashboardEmpty>
+        ) : (
+          <DashboardAppointmentList
+            items={today.data}
+            perspective="patient"
+            href="/patient/appointments"
+          />
+        )}
+      </DashboardSection>
     </div>
   );
 }

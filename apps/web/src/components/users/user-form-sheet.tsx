@@ -1,17 +1,21 @@
 "use client";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import type { Role, UserResponse } from "@lepera/contracts";
-import { apiFetch, ApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { FormField, inputClassName } from "@/components/forms/form-field";
 import {
   RegistrationFields,
+  RegistrationProgress,
   EMPTY_REGISTRATION,
   registrationPayload,
-  validateRegistration,
-  type RegistrationForm,
 } from "@/components/forms/registration-fields";
+import { useRegistrationWizard } from "@/components/forms/use-registration-wizard";
+import type {
+  RegistrationErrors,
+  RegistrationStep,
+} from "@/lib/registration-validation";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -38,7 +42,7 @@ type Props = {
 export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
+      <SheetContent className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-lg">
         {open && (
           <UserFormContent
             key={user?.id ?? "new"}
@@ -54,50 +58,63 @@ export function UserFormSheet({ open, onOpenChange, user, onSaved }: Props) {
 function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
   const actor = useCurrentUser();
   const isEdit = !!user;
-  const [form, setForm] = useState<RegistrationForm>({
+  const [role, setRole] = useState<Role>(user?.role ?? "PATIENT");
+  const patient = role === "PATIENT";
+  const wizard = useRegistrationWizard("new-user", patient, {
     ...EMPTY_REGISTRATION,
     name: user?.name ?? "",
     email: user?.email ?? "",
   });
-  const [role, setRole] = useState<Role>(user?.role ?? "PATIENT");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  function update(patch: Partial<RegistrationForm>) {
-    setForm((current) => ({ ...current, ...patch }));
-    setError(null);
+  const lastStep = patient ? 3 : 2;
+  function doctorErrors(): RegistrationErrors {
+    if (role !== "DOCTOR") return {};
+    return {
+      ...(licenseNumber.trim().length < 3
+        ? { licenseNumber: "Informe o registro profissional (CRP/CRM)." }
+        : {}),
+      ...(specialty.trim().length < 2
+        ? { specialty: "Informe a especialidade." }
+        : {}),
+    };
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (saving) return;
-    const problem = isEdit
-      ? null
-      : validateRegistration(form, role === "PATIENT");
-    if (problem) {
-      setError(problem);
-      return;
-    }
-    if (
-      !isEdit &&
-      role === "DOCTOR" &&
-      (licenseNumber.trim().length < 3 || specialty.trim().length < 2)
-    ) {
-      setError("Informe registro profissional e especialidade.");
-      return;
+    if (isEdit) {
+      const errors: RegistrationErrors = {};
+      if (
+        wizard.form.name.trim().length < 2 ||
+        wizard.form.name.trim().length > 120
+      )
+        errors.name = "Informe o nome completo, entre 2 e 120 caracteres.";
+      if (!/^\S+@\S+\.\S+$/.test(wizard.form.email.trim()))
+        errors.email = "Informe um e-mail válido.";
+      if (!wizard.showErrors(errors)) return;
+    } else {
+      if (wizard.step < lastStep) {
+        if (
+          wizard.validate(wizard.step, wizard.step === 2 ? doctorErrors() : {})
+        )
+          wizard.goToStep((wizard.step + 1) as RegistrationStep);
+        return;
+      }
+      if (!wizard.validate(undefined, doctorErrors())) return;
     }
     setSaving(true);
-    setError(null);
+    wizard.setGeneralError(null);
     try {
-      const base = registrationPayload(form);
+      const base = registrationPayload(wizard.form);
       const path = isEdit
         ? `/users/${user.id}`
-        : role === "PATIENT"
+        : patient
           ? "/patients"
           : "/users";
       const payload = isEdit
-        ? { name: form.name.trim(), email: form.email.trim() }
-        : role === "PATIENT"
+        ? { name: wizard.form.name.trim(), email: wizard.form.email.trim() }
+        : patient
           ? base
           : {
               name: base.name,
@@ -120,33 +137,40 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
       onSaved(saved);
       onOpenChange(false);
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Não foi possível salvar o cadastro.",
+      wizard.handleApiError(
+        err,
+        "Não foi possível salvar o cadastro. Seus dados foram mantidos; tente novamente.",
       );
     } finally {
       setSaving(false);
     }
   }
   return (
-    <form onSubmit={submit} className="flex h-full flex-col">
-      <SheetHeader>
+    <form onSubmit={submit} noValidate className="flex h-full min-h-0 flex-col">
+      <SheetHeader className="shrink-0 pr-12">
         <SheetTitle>{isEdit ? "Editar usuário" : "Novo usuário"}</SheetTitle>
         <SheetDescription>
           {isEdit
             ? "Atualize nome e e-mail da conta."
-            : "Preencha os dados para criar o acesso ao sistema."}
+            : "Crie o acesso em etapas. Você pode voltar sem perder os dados."}
         </SheetDescription>
       </SheetHeader>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
-        {!isEdit && (
+      {!isEdit && (
+        <div className="shrink-0 border-b border-border px-4 pb-4">
+          <RegistrationProgress step={wizard.step} patient={patient} />
+        </div>
+      )}
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5">
+        {!isEdit && wizard.step === 1 && (
           <FormField id="new-user-role" label="Perfil">
             <select
               id="new-user-role"
               className={inputClassName}
               value={role}
-              onChange={(event) => setRole(event.target.value as Role)}
+              onChange={(event) => {
+                setRole(event.target.value as Role);
+                wizard.showErrors({});
+              }}
             >
               {ROLES.filter(
                 (value) => value !== "ADMIN" || actor?.role === "SUPER_ADMIN",
@@ -160,89 +184,150 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
         )}
         {isEdit ? (
           <>
-            <FormField id="edit-user-name" label="Nome completo">
+            <FormField
+              id="new-user-name"
+              label="Nome completo"
+              error={wizard.errors.name}
+            >
               <input
-                id="edit-user-name"
+                id="new-user-name"
                 required
                 minLength={2}
+                maxLength={120}
                 className={inputClassName}
-                value={form.name}
-                onChange={(event) => update({ name: event.target.value })}
+                value={wizard.form.name}
+                aria-invalid={!!wizard.errors.name}
+                aria-describedby={
+                  wizard.errors.name ? "new-user-name-error" : undefined
+                }
+                onChange={(event) =>
+                  wizard.update({ name: event.target.value })
+                }
               />
             </FormField>
-            <FormField id="edit-user-email" label="E-mail">
+            <FormField
+              id="new-user-email"
+              label="E-mail"
+              error={wizard.errors.email}
+            >
               <input
-                id="edit-user-email"
+                id="new-user-email"
                 type="email"
                 required
                 className={inputClassName}
-                value={form.email}
-                onChange={(event) => update({ email: event.target.value })}
+                value={wizard.form.email}
+                aria-invalid={!!wizard.errors.email}
+                aria-describedby={
+                  wizard.errors.email ? "new-user-email-error" : undefined
+                }
+                onChange={(event) =>
+                  wizard.update({ email: event.target.value })
+                }
               />
             </FormField>
           </>
         ) : (
           <RegistrationFields
-            value={form}
-            onChange={update}
-            patient={role === "PATIENT"}
+            value={wizard.form}
+            onChange={wizard.update}
+            patient={patient}
             prefix="new-user"
+            step={wizard.step}
+            errors={wizard.errors}
           />
         )}
-        {!isEdit && role !== "PATIENT" && (
+        {!isEdit && !patient && wizard.step === 2 && (
           <p className="text-xs text-muted-foreground">
-            Responsável legal, contato de emergência e plano de saúde são dados
-            do cadastro de pacientes.
+            Contato de emergência, responsável legal e plano de saúde são
+            exclusivos do cadastro de pacientes.
           </p>
         )}
-        {!isEdit && role === "DOCTOR" && (
+        {!isEdit && role === "DOCTOR" && wizard.step === 2 && (
           <>
             <FormField
-              id="doctor-license"
+              id="new-user-licenseNumber"
               label="Registro profissional (CRP/CRM)"
+              error={wizard.errors.licenseNumber}
             >
               <input
-                id="doctor-license"
+                id="new-user-licenseNumber"
                 required
                 minLength={3}
                 className={inputClassName}
                 value={licenseNumber}
-                onChange={(event) => setLicenseNumber(event.target.value)}
+                aria-invalid={!!wizard.errors.licenseNumber}
+                aria-describedby={
+                  wizard.errors.licenseNumber
+                    ? "new-user-licenseNumber-error"
+                    : undefined
+                }
+                onChange={(event) => {
+                  setLicenseNumber(event.target.value);
+                  wizard.clearFieldError("licenseNumber");
+                }}
               />
             </FormField>
-            <FormField id="doctor-specialty" label="Especialidade">
+            <FormField
+              id="new-user-specialty"
+              label="Especialidade"
+              error={wizard.errors.specialty}
+            >
               <input
-                id="doctor-specialty"
+                id="new-user-specialty"
                 required
                 minLength={2}
                 className={inputClassName}
                 value={specialty}
-                onChange={(event) => setSpecialty(event.target.value)}
+                aria-invalid={!!wizard.errors.specialty}
+                aria-describedby={
+                  wizard.errors.specialty
+                    ? "new-user-specialty-error"
+                    : undefined
+                }
+                onChange={(event) => {
+                  setSpecialty(event.target.value);
+                  wizard.clearFieldError("specialty");
+                }}
               />
             </FormField>
           </>
         )}
-        {error && (
+        {wizard.generalError && (
           <p
             role="alert"
             className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive"
           >
-            {error}
+            {wizard.generalError}
           </p>
         )}
       </div>
-      <SheetFooter className="flex-row justify-end gap-2">
+      <SheetFooter className="shrink-0 flex-row justify-between gap-3 border-t border-border bg-popover">
         <Button
           type="button"
           variant="outline"
+          className="min-h-11"
           disabled={saving}
-          onClick={() => onOpenChange(false)}
+          onClick={() =>
+            isEdit || wizard.step === 1
+              ? onOpenChange(false)
+              : wizard.goToStep((wizard.step - 1) as RegistrationStep)
+          }
         >
-          Cancelar
+          {!isEdit && wizard.step > 1 && <ArrowLeft className="size-4" />}
+          {isEdit || wizard.step === 1 ? "Cancelar" : "Voltar"}
         </Button>
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving} className="min-h-11">
           {saving && <Loader2 className="size-4 animate-spin" />}
-          {isEdit ? "Salvar alterações" : "Criar usuário"}
+          {isEdit ? (
+            "Salvar alterações"
+          ) : wizard.step < lastStep ? (
+            <>
+              Continuar
+              <ArrowRight className="size-4" />
+            </>
+          ) : (
+            "Criar usuário"
+          )}
         </Button>
       </SheetFooter>
     </form>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   Ban,
   CalendarCheck,
@@ -10,170 +8,120 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { DashboardHeader, StatCard } from "@/components/dashboard/stat-card";
 import {
-  DashboardHeader,
-  StatCard,
-} from "@/components/dashboard/stat-card";
-import { Alert } from "@/components/forms/form-field";
-import { ApiError, apiFetch } from "@/lib/api-client";
-import { formatDateTimePtBr } from "@/lib/date-format";
+  dashboardValue,
+  loadTodayAppointments,
+  useDashboardResource,
+} from "@/components/dashboard/dashboard-data";
+import {
+  DashboardActions,
+  DashboardAppointmentList,
+  DashboardEmpty,
+  DashboardLoading,
+  DashboardSection,
+  DashboardToolbar,
+} from "@/components/dashboard/dashboard-ui";
+import { apiFetch } from "@/lib/api-client";
 
-type Appointment = {
-  id: string;
-  startDatetime: string;
-  status: string;
-  patient: { user: { name: string } };
-  doctor: { user: { name: string } };
-};
-
-type Summary = {
-  todayCount: number;
-  next: Appointment[];
-  scheduleRequests: number;
-  cancellationRequests: number;
-  patients: number;
-};
+const loadRequests = (signal: AbortSignal) =>
+  apiFetch<unknown[]>("/schedule-requests/pending", { signal });
+const loadCancellations = (signal: AbortSignal) =>
+  apiFetch<unknown[]>("/cancellation-requests/pending", { signal });
+const loadPatients = (signal: AbortSignal) =>
+  apiFetch<{ total: number }>("/patients?pageSize=1", { signal });
 
 export default function ReceptionDashboardPage() {
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      apiFetch<{ items: Appointment[] }>(
-        "/appointments?scope=upcoming&pageSize=50",
-      ),
-      apiFetch<unknown[]>("/schedule-requests/pending"),
-      apiFetch<unknown[]>("/cancellation-requests/pending"),
-      apiFetch<{ total: number }>("/patients?pageSize=1"),
-    ])
-      .then(([appointments, scheduleRequests, cancellations, patients]) => {
-        if (!active) return;
-        const todayKey = new Date().toLocaleDateString("pt-BR");
-        const open = appointments.items.filter(
-          (item) => item.status !== "CANCELLED",
-        );
-        setSummary({
-          todayCount: open.filter(
-            (item) =>
-              new Date(item.startDatetime).toLocaleDateString("pt-BR") ===
-              todayKey,
-          ).length,
-          next: open.slice(0, 5),
-          scheduleRequests: scheduleRequests.length,
-          cancellationRequests: cancellations.length,
-          patients: patients.total,
-        });
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        setError(
-          err instanceof ApiError
-            ? err.message
-            : "Não foi possível carregar o painel.",
-        );
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
+  const today = useDashboardResource(loadTodayAppointments);
+  const requests = useDashboardResource(loadRequests);
+  const cancellations = useDashboardResource(loadCancellations);
+  const patients = useDashboardResource(loadPatients);
+  const resources = [today, requests, cancellations, patients];
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-7">
       <DashboardHeader
         title="Recepção"
-        subtitle="Pendências do dia e atalhos de atendimento."
+        subtitle="Atendimentos de hoje, solicitações e ações para organizar a clínica."
       />
-
-      {error && <Alert kind="error">{error}</Alert>}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <DashboardToolbar
+        loading={resources.some((item) => item.loading)}
+        errors={resources.map((item) => item.error)}
+        onRefresh={() => resources.forEach((item) => item.refresh())}
+      />
+      <DashboardActions
+        actions={[
+          {
+            label: "Cadastrar paciente",
+            href: "/reception/patients?new=1",
+            icon: UserPlus,
+            primary: true,
+          },
+          {
+            label: "Novo agendamento",
+            href: "/reception/appointments/new",
+            icon: CalendarPlus,
+          },
+          {
+            label: "Ver calendário",
+            href: "/reception/calendar",
+            icon: CalendarCheck,
+          },
+        ]}
+      />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Consultas hoje"
+          value={dashboardValue(today, (items) => items.length)}
+          hint="Inclui atendimentos já realizados"
+          icon={CalendarCheck}
+          href="/reception/calendar"
+        />
         <StatCard
           label="Solicitações de agendamento"
-          value={summary?.scheduleRequests ?? "—"}
+          value={dashboardValue(requests, (items) => items.length)}
           hint="Aguardando análise"
           icon={FileText}
           href="/reception/requests"
-          tone={summary && summary.scheduleRequests > 0 ? "warning" : "default"}
+          tone={requests.data?.length ? "warning" : "default"}
         />
         <StatCard
           label="Pedidos de cancelamento"
-          value={summary?.cancellationRequests ?? "—"}
-          hint="Dos profissionais"
+          value={dashboardValue(cancellations, (items) => items.length)}
+          hint="Solicitações dos profissionais"
           icon={Ban}
           href="/reception/appointments"
-          tone={
-            summary && summary.cancellationRequests > 0 ? "warning" : "default"
-          }
-        />
-        <StatCard
-          label="Consultas hoje"
-          value={summary?.todayCount ?? "—"}
-          icon={CalendarCheck}
-          href="/reception/appointments"
+          tone={cancellations.data?.length ? "warning" : "default"}
         />
         <StatCard
           label="Pacientes cadastrados"
-          value={summary?.patients ?? "—"}
+          value={dashboardValue(patients, (data) => data.total)}
           icon={Users}
           href="/reception/patients"
         />
       </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Link href="/reception/calendar" className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:bg-muted">
-          <CalendarCheck className="size-4" />
-          Ver calendário
-        </Link>
-        <Link
-          href="/reception/appointments/new"
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"
-        >
-          <CalendarPlus className="size-4" />
-          Novo agendamento
-        </Link>
-        <Link
-          href="/reception/patients"
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:bg-muted"
-        >
-          <UserPlus className="size-4" />
-          Cadastrar paciente
-        </Link>
-      </div>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Próximas consultas
-        </h2>
-        {!summary ? (
-          <p className="text-sm text-slate-400">Carregando...</p>
-        ) : summary.next.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
-            Nenhuma consulta futura na agenda.
-          </p>
+      <DashboardSection
+        title="Agenda de hoje"
+        description="Todos os horários do dia, inclusive os que já passaram. Canceladas e remarcadas não entram nesta lista."
+      >
+        {today.loading ? (
+          <DashboardLoading />
+        ) : today.error ? (
+          <DashboardEmpty>
+            A agenda está indisponível. Os outros atalhos continuam disponíveis.
+          </DashboardEmpty>
+        ) : !today.data?.length ? (
+          <DashboardEmpty>
+            Nenhuma consulta para hoje. Você pode consultar outras datas no
+            calendário ou criar um agendamento.
+          </DashboardEmpty>
         ) : (
-          <ul className="space-y-2">
-            {summary.next.map((appointment) => (
-              <li
-                key={appointment.id}
-                className="flex flex-col justify-between gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm sm:flex-row sm:items-center"
-              >
-                <span className="font-medium text-slate-900">
-                  {appointment.patient.user.name}
-                  <span className="font-normal text-slate-500">
-                    {" "}
-                    com {appointment.doctor.user.name}
-                  </span>
-                </span>
-                <span className="text-slate-500">
-                  {formatDateTimePtBr(appointment.startDatetime)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <DashboardAppointmentList
+            items={today.data}
+            perspective="reception"
+            href="/reception/calendar"
+          />
         )}
-      </section>
+      </DashboardSection>
     </div>
   );
 }

@@ -39,7 +39,7 @@ export function NotificationBell() {
       aria-label={
         count > 0 ? `Notificações (${count} não lidas)` : "Notificações"
       }
-      className="relative rounded-md p-2 transition-colors hover:bg-slate-100 hover:text-slate-600"
+      className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
     >
       <Bell className="h-5 w-5" />
       {count > 0 && (

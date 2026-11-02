@@ -20,29 +20,27 @@ export function StatCard({
 }: Props) {
   const content = (
     <div
-      className={`flex h-full items-start gap-4 rounded-2xl border bg-white p-5 shadow-sm transition ${
-        href ? "hover:border-teal-300 hover:shadow" : ""
-      } ${tone === "warning" ? "border-amber-200" : "border-slate-200"}`}
+      className={`flex h-full min-h-32 items-start gap-4 rounded-2xl border bg-card p-5 text-card-foreground shadow-sm transition ${href ? "hover:border-primary/50 hover:shadow" : ""} ${tone === "warning" ? "border-amber-500/50" : "border-border"}`}
     >
       <div
-        className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${
-          tone === "warning"
-            ? "bg-amber-50 text-amber-700"
-            : "bg-teal-50 text-teal-700"
-        }`}
+        className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${tone === "warning" ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary"}`}
       >
-        <Icon className="size-5" />
+        <Icon aria-hidden="true" className="size-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="text-2xl font-semibold text-slate-900">{value}</p>
-        {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-2xl font-semibold text-foreground">{value}</p>
+        {hint ? (
+          <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+        ) : null}
       </div>
     </div>
   );
-
   return href ? (
-    <Link href={href} className="block">
+    <Link
+      href={href}
+      className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       {content}
     </Link>
   ) : (
@@ -59,8 +57,10 @@ export function DashboardHeader({
 }) {
   return (
     <header>
-      <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-      {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+      <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+      {subtitle ? (
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      ) : null}
     </header>
   );
 }

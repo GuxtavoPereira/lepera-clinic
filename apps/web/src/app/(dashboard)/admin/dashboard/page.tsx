@@ -1,34 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Activity, Calendar, UserCheck, UserCog, Users } from "lucide-react";
-import type { Role } from "@lepera/contracts";
+import { useCallback } from "react";
 import {
-  DashboardHeader,
-  StatCard,
-} from "@/components/dashboard/stat-card";
-import { Alert } from "@/components/forms/form-field";
-import { ApiError, apiFetch } from "@/lib/api-client";
-import { formatDateTimePtBr } from "@/lib/date-format";
+  Activity,
+  CalendarCheck,
+  FileText,
+  ShieldCheck,
+  UserCheck,
+  UserCog,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import type { Role } from "@lepera/contracts";
+import { DashboardHeader, StatCard } from "@/components/dashboard/stat-card";
+import {
+  dashboardDateTime,
+  dashboardValue,
+  loadTodayAppointments,
+  useDashboardResource,
+} from "@/components/dashboard/dashboard-data";
+import {
+  DashboardActions,
+  DashboardAppointmentList,
+  DashboardEmpty,
+  DashboardLoading,
+  DashboardSection,
+  DashboardToolbar,
+} from "@/components/dashboard/dashboard-ui";
+import { apiFetch } from "@/lib/api-client";
+import { useRole } from "@/lib/use-role";
 
 type UserRow = { role: Role; isActive: boolean };
-
 type AuditEntry = {
   id: string;
   action: string;
-  resource: string;
   createdAt: string;
-  actor: { name: string; email: string } | null;
+  actor: { name: string } | null;
 };
-
-type Summary = {
-  total: number;
-  active: number;
-  byRole: Partial<Record<Role, number>>;
-  upcomingAppointments: number;
-  audit: AuditEntry[];
-};
-
 const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: "Super administradores",
   ADMIN: "Administração",
@@ -36,7 +44,6 @@ const ROLE_LABEL: Record<Role, string> = {
   RECEPTIONIST: "Recepção",
   PATIENT: "Pacientes",
 };
-
 const ACTION_LABEL: Record<string, string> = {
   "clinical_record.create": "Prontuário criado",
   "clinical_record.update": "Prontuário alterado",
@@ -46,133 +53,222 @@ const ACTION_LABEL: Record<string, string> = {
   "cancellation_request.approve": "Cancelamento aprovado",
   "cancellation_request.reject": "Cancelamento recusado",
   "user.password_change": "Senha alterada",
+  "user.profile_update": "Perfil atualizado",
 };
+const loadUsers = async (signal: AbortSignal) => {
+  const users = await apiFetch<UserRow[]>("/users", { signal });
+  const byRole: Partial<Record<Role, number>> = {};
+  for (const user of users) byRole[user.role] = (byRole[user.role] ?? 0) + 1;
+  return {
+    total: users.length,
+    active: users.filter((user) => user.isActive).length,
+    byRole,
+  };
+};
+const loadAudit = async (signal: AbortSignal) =>
+  (
+    await apiFetch<{ items: AuditEntry[] }>("/audit-logs?pageSize=8", {
+      signal,
+    })
+  ).items;
 
 export default function AdminDashboardPage() {
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      apiFetch<UserRow[]>("/users"),
-      apiFetch<{ total: number }>("/appointments?scope=upcoming&pageSize=1"),
-      apiFetch<{ items: AuditEntry[] }>("/audit-logs?pageSize=8"),
-    ])
-      .then(([users, appointments, audit]) => {
-        if (!active) return;
-        const byRole: Partial<Record<Role, number>> = {};
-        for (const user of users) {
-          byRole[user.role] = (byRole[user.role] ?? 0) + 1;
-        }
-        setSummary({
-          total: users.length,
-          active: users.filter((user) => user.isActive).length,
-          byRole,
-          upcomingAppointments: appointments.total,
-          audit: audit.items,
-        });
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        setError(
-          err instanceof ApiError
-            ? err.message
-            : "Não foi possível carregar o painel.",
-        );
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
+  const role = useRole();
+  const users = useDashboardResource(loadUsers);
+  const today = useDashboardResource(loadTodayAppointments);
+  const audit = useDashboardResource(loadAudit);
+  // The reception queues are intentionally not requested for ADMIN.
+  const loadRequests = useCallback(
+    async (signal: AbortSignal) =>
+      role === "SUPER_ADMIN"
+        ? (await apiFetch<unknown[]>("/schedule-requests/pending", { signal }))
+            .length
+        : null,
+    [role],
+  );
+  const requests = useDashboardResource(loadRequests);
+  const resources = [users, today, audit, requests];
+  const superAdmin = role === "SUPER_ADMIN";
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-7">
       <DashboardHeader
         title="Painel administrativo"
-        subtitle="Visão geral da clínica e atividade recente."
+        subtitle="Visão da clínica, consultas do dia e atividade recente."
       />
-
-      {error && <Alert kind="error">{error}</Alert>}
-
-      <div className="grid gap-4 sm:grid-cols-3">
+      <DashboardToolbar
+        loading={resources.some((item) => item.loading)}
+        errors={resources.map((item) => item.error)}
+        onRefresh={() => resources.forEach((item) => item.refresh())}
+      />
+      <DashboardActions
+        actions={[
+          {
+            label: "Gerenciar usuários",
+            href: "/admin/users",
+            icon: Users,
+            primary: true,
+          },
+          { label: "Meu perfil", href: "/profile", icon: ShieldCheck },
+          ...(superAdmin
+            ? [
+                {
+                  label: "Cadastrar paciente",
+                  href: "/reception/patients?new=1",
+                  icon: UserPlus,
+                },
+                {
+                  label: "Agenda da clínica",
+                  href: "/reception/calendar",
+                  icon: CalendarCheck,
+                },
+              ]
+            : []),
+        ]}
+      />
+      <div
+        className={`grid gap-4 sm:grid-cols-2 ${superAdmin ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}
+      >
         <StatCard
           label="Usuários"
-          value={summary?.total ?? "—"}
+          value={dashboardValue(users, (data) => data.total)}
           icon={Users}
           href="/admin/users"
         />
         <StatCard
           label="Usuários ativos"
-          value={summary?.active ?? "—"}
+          value={dashboardValue(users, (data) => data.active)}
           icon={UserCheck}
           href="/admin/users"
         />
         <StatCard
-          label="Consultas futuras"
-          value={summary?.upcomingAppointments ?? "—"}
-          icon={Calendar}
+          label="Consultas hoje"
+          value={dashboardValue(today, (items) => items.length)}
+          hint="Inclui atendimentos já realizados"
+          icon={CalendarCheck}
+          href={superAdmin ? "/reception/calendar" : undefined}
         />
+        {superAdmin ? (
+          <StatCard
+            label="Solicitações de agendamento"
+            value={requests.loading ? "…" : (requests.data ?? "—")}
+            icon={FileText}
+            href="/reception/requests"
+            tone={requests.data ? "warning" : "default"}
+          />
+        ) : null}
       </div>
-
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="space-y-3 lg:col-span-1">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-            <UserCog className="size-5 text-slate-400" />
-            Por perfil
-          </h2>
-          <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white text-sm shadow-sm">
-            {(Object.keys(ROLE_LABEL) as Role[])
-              .filter((role) => (summary?.byRole[role] ?? 0) > 0)
-              .map((role) => (
-                <li key={role} className="flex justify-between px-4 py-3">
-                  <span className="text-slate-600">{ROLE_LABEL[role]}</span>
-                  <span className="font-semibold text-slate-900">
-                    {summary?.byRole[role]}
-                  </span>
-                </li>
-              ))}
-            {!summary && (
-              <li className="px-4 py-3 text-slate-400">Carregando...</li>
-            )}
-          </ul>
-        </section>
-
-        <section className="space-y-3 lg:col-span-2">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-            <Activity className="size-5 text-slate-400" />
-            Atividade recente
-          </h2>
-          {!summary ? (
-            <p className="text-sm text-slate-400">Carregando...</p>
-          ) : summary.audit.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
-              Nenhuma atividade registrada ainda.
-            </p>
+        <DashboardSection title="Por perfil">
+          {users.loading ? (
+            <DashboardLoading />
+          ) : users.error ? (
+            <DashboardEmpty>
+              A lista de usuários está indisponível.
+            </DashboardEmpty>
           ) : (
-            <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white text-sm shadow-sm">
-              {summary.audit.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="flex flex-col justify-between gap-1 px-4 py-3 sm:flex-row sm:items-center"
-                >
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      {ACTION_LABEL[entry.action] ?? entry.action}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {entry.actor?.name ?? "Usuário removido"}
-                    </p>
-                  </div>
-                  <span className="text-xs text-slate-400">
-                    {formatDateTimePtBr(entry.createdAt)}
-                  </span>
+            <ul className="divide-y divide-border rounded-2xl border border-border bg-card text-sm text-card-foreground shadow-sm">
+              {(Object.keys(ROLE_LABEL) as Role[])
+                .filter((value) => (users.data?.byRole[value] ?? 0) > 0)
+                .map((value) => (
+                  <li
+                    key={value}
+                    className="flex items-center justify-between gap-3 px-4 py-3"
+                  >
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <UserCog aria-hidden="true" className="size-4" />
+                      {ROLE_LABEL[value]}
+                    </span>
+                    <span className="font-semibold">
+                      {users.data?.byRole[value]}
+                    </span>
+                  </li>
+                ))}
+              {users.data?.total === 0 ? (
+                <li className="p-4 text-muted-foreground">
+                  Nenhum usuário encontrado.
                 </li>
-              ))}
+              ) : null}
             </ul>
           )}
-        </section>
+        </DashboardSection>
+        <div className="lg:col-span-2">
+          <DashboardSection title="Atividade recente">
+            {audit.loading ? (
+              <DashboardLoading />
+            ) : audit.error ? (
+              <DashboardEmpty>
+                A atividade recente está indisponível.
+              </DashboardEmpty>
+            ) : !audit.data?.length ? (
+              <DashboardEmpty>
+                Nenhuma atividade registrada ainda.
+              </DashboardEmpty>
+            ) : (
+              <ul className="divide-y divide-border rounded-2xl border border-border bg-card text-sm text-card-foreground shadow-sm">
+                {audit.data.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className="flex flex-col justify-between gap-2 px-4 py-3 sm:flex-row sm:items-center"
+                  >
+                    <div>
+                      <p className="flex items-center gap-2 font-medium">
+                        <Activity
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-muted-foreground"
+                        />
+                        {ACTION_LABEL[entry.action] ?? "Atividade registrada"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {entry.actor?.name ?? "Usuário removido"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {dashboardDateTime(entry.createdAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DashboardSection>
+        </div>
       </div>
+      <DashboardSection
+        title="Consultas de hoje"
+        description="Resumo da agenda no horário de Brasília, sem prontuários clínicos."
+      >
+        {today.loading ? (
+          <DashboardLoading />
+        ) : today.error ? (
+          <DashboardEmpty>
+            Não foi possível carregar as consultas de hoje.
+          </DashboardEmpty>
+        ) : !today.data?.length ? (
+          <DashboardEmpty>Nenhuma consulta para hoje.</DashboardEmpty>
+        ) : superAdmin ? (
+          <DashboardAppointmentList
+            items={today.data}
+            perspective="reception"
+            href="/reception/calendar"
+          />
+        ) : (
+          <ul className="space-y-3">
+            {today.data.map((item) => (
+              <li
+                key={item.id}
+                className="rounded-2xl border border-border bg-card p-4 text-sm text-card-foreground"
+              >
+                <p className="font-medium">
+                  {item.patient?.user.name ?? "Paciente"} com{" "}
+                  {item.doctor?.user.name ?? "profissional"}
+                </p>
+                <p className="mt-1 text-muted-foreground">
+                  {dashboardDateTime(item.startDatetime)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DashboardSection>
     </div>
   );
 }

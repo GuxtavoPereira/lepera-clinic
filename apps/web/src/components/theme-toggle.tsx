@@ -41,7 +41,7 @@ export function ThemeToggle() {
       aria-label={dark ? "Ativar tema claro" : "Ativar tema escuro"}
       title={dark ? "Tema claro" : "Tema escuro"}
       aria-pressed={dark}
-      className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+      className="min-h-11 min-w-11 rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
     >
       {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}
     </button>
