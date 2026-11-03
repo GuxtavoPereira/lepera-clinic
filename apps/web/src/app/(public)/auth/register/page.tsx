@@ -89,7 +89,7 @@ export default function RegisterPage() {
             </Button>
           ) : (
             <Link
-              href="/auth/login"
+              href="/auth/login?next=/patient/request-appointment"
               className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition hover:text-foreground"
             >
               Já tenho conta

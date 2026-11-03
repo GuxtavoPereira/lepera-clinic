@@ -1,4 +1,7 @@
 import PDFDocument from 'pdfkit';
+// PDFKit loads these lazily; explicit imports retain them in serverless traces.
+import 'pdfkit/standard-fonts/Helvetica';
+import 'pdfkit/standard-fonts/HelveticaBold';
 import type { OperationalReport } from './report.types';
 
 /** Neutraliza fórmulas inclusive quando precedidas de espaços ou controles. */

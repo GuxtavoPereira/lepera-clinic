@@ -21,6 +21,7 @@ Data da consolidação: 02/11/2026. Destino: demonstração acadêmica em 25/11/
 - 49 verificações integradas de navegador/API com cadastro real de fixture, seleção e aprovação do horário pela interface, arquivos PDF/CSV, segurança do prontuário e redefinição de senha. Os registros temporários são removidos ao terminar.
 - Sete verificações adicionais de concorrência/encaixe/escopo Google aprovadas: uma consulta por vaga concorrida, resposta HTTP 409 em conflitos do adaptador Prisma e nenhuma sobreposição com encaixe.
 - PDF renderizado para conferir tabela, acentuação, cabeçalho e paginação.
+- A implantação requer as métricas Helvetica e HelveticaBold do PDFKit. Os imports explícitos preservam esses arquivos no rastreamento da função serverless; o download é conferido novamente na URL pública.
 - Banco: 48 registros anteriores preservados, 32 CPFs válidos e zero conflitos na agenda de novembro/dezembro. Carga adicional: 228 consultas (109/119 por mês), 16 pedidos com horário e 4 encaixes. Segunda execução: zero consultas acrescentadas.
 - Evidências privadas e scripts de homologação ficam em `work/v1-evidence` e não são enviados ao GitHub. Nenhuma imagem de referência faz parte do código publicado.
 
