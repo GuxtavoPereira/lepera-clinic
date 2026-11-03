@@ -22,7 +22,7 @@ export class ProfileService {
   async getMe(user: AuthUser) {
     const me = await this.prisma.db.user.findUnique({
       where: { id: user.sub },
-      omit: { passwordHash: true },
+      omit: { passwordHash: true, sessionVersion: true },
       include: {
         doctor: true,
         receptionist: true,

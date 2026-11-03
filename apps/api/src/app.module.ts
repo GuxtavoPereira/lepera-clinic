@@ -21,11 +21,15 @@ import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FinancialModule } from './modules/financial/financial.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { GooglePreviewModule } from './modules/google-preview/google-preview.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { PublicClinicModule } from './modules/public-clinic/public-clinic.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env.local', '.env'],
       validate: (config) => envSchema.parse(config),
     }),
     PrismaModule,
@@ -46,6 +50,9 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     NotificationsModule,
     FinancialModule,
     InventoryModule,
+    GooglePreviewModule,
+    ReportsModule,
+    PublicClinicModule,
   ],
   controllers: [HealthController],
 })

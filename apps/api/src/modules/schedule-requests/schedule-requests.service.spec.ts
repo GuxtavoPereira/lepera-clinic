@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { Prisma } from '@lepera/db';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AppointmentsService } from '../appointments/appointments.service';
+import { AppointmentCalendarService } from '../appointments/appointment-calendar.service';
 import { ScheduleRequestsService } from './schedule-requests.service';
 
 describe('ScheduleRequestsService', () => {
@@ -30,10 +31,17 @@ describe('ScheduleRequestsService', () => {
               patient: { findUnique: patientFindUnique },
               doctor: { findUnique: jest.fn() },
               scheduleRequest: { create: scheduleRequestCreate },
+              $transaction: jest.fn(
+                (callback: (tx: unknown) => Promise<unknown>) =>
+                  callback({
+                    scheduleRequest: { create: scheduleRequestCreate },
+                  }),
+              ),
             },
           },
         },
         { provide: AppointmentsService, useValue: {} },
+        { provide: AppointmentCalendarService, useValue: {} },
       ],
     }).compile();
 
@@ -44,6 +52,9 @@ describe('ScheduleRequestsService', () => {
     const request = await service.create(
       {
         type: 'novo_paciente',
+        mode: 'FLEXIBLE',
+        modality: 'IN_PERSON',
+        requestedStartDatetime: undefined,
         preferredShift: 'INDIFFERENT',
       },
       { sub: 'user-1', role: 'PATIENT' },
@@ -57,6 +68,10 @@ describe('ScheduleRequestsService', () => {
       data: {
         patientId: 'patient-1',
         type: 'novo_paciente',
+        mode: 'FLEXIBLE',
+        durationMinutes: 50,
+        modality: 'IN_PERSON',
+        requestedStartDatetime: undefined,
         preferredDoctorId: undefined,
         preferredDate: undefined,
         preferredShift: 'INDIFFERENT',
@@ -85,11 +100,15 @@ describe('ScheduleRequestsService', () => {
       id: 'request-1',
       patientId: 'patient-1',
       status: 'PENDING',
+      mode: 'FLEXIBLE',
+      modality: 'ONLINE',
+      patient: { userId: 'user-1' },
     });
     const requestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
     const appointment = { id: 'appointment-1' };
     const createForRequest = jest.fn().mockResolvedValue(appointment);
     const transactionClient = {
+      notification: { create: jest.fn().mockResolvedValue({}) },
       scheduleRequest: {
         findUnique: requestFindUnique,
         updateMany: requestUpdateMany,
@@ -117,6 +136,7 @@ describe('ScheduleRequestsService', () => {
           provide: AppointmentsService,
           useValue: { createForRequest },
         },
+        { provide: AppointmentCalendarService, useValue: {} },
       ],
     }).compile();
     const approvalService = module.get(ScheduleRequestsService);
@@ -126,8 +146,9 @@ describe('ScheduleRequestsService', () => {
         'request-1',
         {
           doctorId: 'doctor-1',
-          startDatetime: '2026-10-08T10:00:00.000Z',
+          startDatetime: '2099-10-08T10:00:00.000Z',
           durationMinutes: 50,
+          receptionNotes: 'Encaixe solicitado pelo paciente',
         },
         { sub: 'receptionist-user', role: 'RECEPTIONIST' },
       ),
@@ -138,9 +159,10 @@ describe('ScheduleRequestsService', () => {
       expect.objectContaining({
         patientId: 'patient-1',
         doctorId: 'doctor-1',
-        startDatetime: '2026-10-08T10:00:00.000Z',
+        startDatetime: '2099-10-08T10:00:00.000Z',
       }),
       'reception-1',
+      false,
     );
     expect(requestUpdateMany).toHaveBeenCalledTimes(1);
     expect(transaction).toHaveBeenCalledWith(expect.any(Function), {

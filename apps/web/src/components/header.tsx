@@ -5,6 +5,7 @@ import { ChevronLeft, LogOut, User as UserIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -123,6 +124,7 @@ export function Header() {
             }
           />
           <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuGroup>
             <DropdownMenuLabel className="font-normal">
               <p className="truncate text-sm font-medium text-foreground">
                 {user?.name}
@@ -133,13 +135,12 @@ export function Header() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {user && (
-              <DropdownMenuItem
-                onClick={() => router.push(profilePath(user.role))}
-              >
+              <DropdownMenuItem render={<Link href={profilePath(user.role)} />}>
                 <UserIcon className="size-4" />
                 Meu perfil
               </DropdownMenuItem>
             )}
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} variant="destructive">
               <LogOut className="size-4" />

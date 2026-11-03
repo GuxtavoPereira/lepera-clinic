@@ -29,9 +29,14 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Token ausente');
     }
 
-    let payload: AuthUser;
+    let payload: AuthUser & { purpose?: unknown; sessionVersion?: number };
     try {
-      payload = await this.jwt.verifyAsync<AuthUser>(token);
+      payload = await this.jwt.verifyAsync<typeof payload>(token, {
+        algorithms: ['HS256'],
+      });
+      if (payload.purpose !== undefined || !payload.sub || !payload.role) {
+        throw new Error('Not an application session');
+      }
     } catch {
       throw new UnauthorizedException('Token inválido ou expirado');
     }
@@ -40,10 +45,13 @@ export class JwtAuthGuard implements CanActivate {
     // mudado de perfil) nesse intervalo: confere no banco a cada requisição.
     const account = await this.prisma.db.user.findUnique({
       where: { id: payload.sub },
-      select: { isActive: true, role: true },
+      select: { isActive: true, role: true, sessionVersion: true },
     });
     if (!account || !account.isActive) {
       throw new UnauthorizedException('Conta desativada ou inexistente');
+    }
+    if ((payload.sessionVersion ?? 0) !== (account.sessionVersion ?? 0)) {
+      throw new UnauthorizedException('Senha alterada. Entre novamente.');
     }
 
     req.user = { sub: payload.sub, role: account.role };

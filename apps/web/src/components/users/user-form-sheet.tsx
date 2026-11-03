@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import type { Role, UserResponse } from "@lepera/contracts";
+import { PSYCHOLOGY_SPECIALTIES } from "@lepera/contracts";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { FormField, inputClassName } from "@/components/forms/form-field";
@@ -272,10 +273,9 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
               label="Especialidade"
               error={wizard.errors.specialty}
             >
-              <input
+              <select
                 id="new-user-specialty"
                 required
-                minLength={2}
                 className={inputClassName}
                 value={specialty}
                 aria-invalid={!!wizard.errors.specialty}
@@ -288,7 +288,18 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
                   setSpecialty(event.target.value);
                   wizard.clearFieldError("specialty");
                 }}
-              />
+              >
+                <option value="">Selecione uma especialidade</option>
+                {PSYCHOLOGY_SPECIALTIES.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Especialidades reconhecidas pelo CFP. A abordagem, como TCC ou
+                Psicanálise, é informada separadamente no perfil profissional.
+              </p>
             </FormField>
           </>
         )}

@@ -5,6 +5,10 @@ import { UsersModule } from '../users/users.module';
 import { PatientsModule } from '../patients/patients.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import {
+  PasswordRecoveryService,
+  RecoveryMailer,
+} from './password-recovery.service';
 
 @Module({
   imports: [
@@ -20,6 +24,6 @@ import { AuthService } from './auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, PasswordRecoveryService, RecoveryMailer],
 })
 export class AuthModule {}

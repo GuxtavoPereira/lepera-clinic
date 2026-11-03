@@ -5,7 +5,13 @@ import { PasswordService } from '../users/password.service';
 import { PatientsService } from '../patients/patients.service';
 import { RegisterPatientDto } from './dto/register.dto';
 
-type SessionUser = { id: string; name: string; email: string; role: string };
+type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  sessionVersion?: number;
+};
 
 @Injectable()
 export class AuthService {
@@ -44,6 +50,7 @@ export class AuthService {
     const accessToken = await this.jwt.signAsync({
       sub: user.id,
       role: user.role,
+      sessionVersion: user.sessionVersion ?? 0,
     });
 
     return {

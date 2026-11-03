@@ -7,6 +7,8 @@ import styles from "./page.module.css";
 import { login } from "@/lib/auth";
 import { ApiError } from "@/lib/api-client";
 import { HOME_BY_ROLE } from "@/config/access";
+import { GooglePreviewButton } from "@/components/auth/google-preview-button";
+import { requestedSlotPath } from "@/lib/google-preview";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,11 +25,14 @@ export default function LoginPage() {
 
     try {
       const user = await login(email.trim(), password);
-      const requestedPage = new URLSearchParams(window.location.search).get("next");
+      const requestedPage = new URLSearchParams(window.location.search).get(
+        "next",
+      );
       router.push(
-        user.role === "PATIENT" && requestedPage === "/patient/request-appointment"
-          ? requestedPage
-          : HOME_BY_ROLE[user.role] ?? "/",
+        user.role === "PATIENT" &&
+          requestedPage === "/patient/request-appointment"
+          ? requestedSlotPath()
+          : (HOME_BY_ROLE[user.role] ?? "/"),
       );
     } catch (err) {
       setError(
@@ -62,15 +67,16 @@ export default function LoginPage() {
           </svg>
 
           <h1>Bem-vindo de volta à Leperapia Clinic</h1>
-          <p>
-            Entre para acompanhar consultas e sua equipe de cuidado.
-          </p>
+          <p>Entre para acompanhar consultas e sua equipe de cuidado.</p>
         </div>
 
-        <form className={styles.formwrap} onSubmit={(event) => {
-          event.preventDefault();
-          void handleLogin();
-        }}>
+        <form
+          className={styles.formwrap}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleLogin();
+          }}
+        >
           <div
             className={`${styles.field} ${error ? styles.fieldError : styles.focused}`}
           >
@@ -143,7 +149,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p role="alert" className={styles.error}>{error}</p>}
+          {error && (
+            <p role="alert" className={styles.error}>
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -162,65 +172,18 @@ export default function LoginPage() {
             </svg>
           </button>
 
-          {/* Divisor */}
+          <Link
+            href="/auth/forgot-password"
+            className="inline-flex min-h-11 items-center text-sm text-primary underline"
+          >
+            Esqueci minha senha
+          </Link>
           <div className={styles.divider}>
-            <div className={styles.line}></div>
-
-            <span>outras formas em breve</span>
-
-            <div className={styles.line}></div>
+            <div className={styles.line} />
+            <span>ou consulte a agenda</span>
+            <div className={styles.line} />
           </div>
-
-          {/* Login alternativo */}
-          <div className={styles.altActions}>
-            <button type="button" disabled aria-label="Login com Google indisponível" title="Login com Google ainda não disponível" className={`${styles.altBtn} cursor-not-allowed opacity-50`}>
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M21.6 12.2c0-.7-.06-1.4-.18-2H12v3.8h5.4a4.6 4.6 0 01-2 3v2.5h3.2c1.9-1.75 3-4.35 3-7.3z"
-                  fill="#4285F4"
-                />
-
-                <path
-                  d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 .95-3.4.95-2.6 0-4.8-1.75-5.6-4.1H3.1v2.6C4.7 19.7 8.1 22 12 22z"
-                  fill="#34A853"
-                />
-
-                <path
-                  d="M6.4 13.95a6 6 0 010-3.9V7.45H3.1a10 10 0 000 9.1l3.3-2.6z"
-                  fill="#FBBC05"
-                />
-
-                <path
-                  d="M12 6.05c1.5 0 2.8.5 3.85 1.5l2.85-2.85C16.95 2.9 14.7 2 12 2 8.1 2 4.7 4.3 3.1 7.45l3.3 2.6c.8-2.35 3-4 5.6-4z"
-                  fill="#EA4335"
-                />
-              </svg>
-              Google
-            </button>
-
-            <button type="button" disabled aria-label="Login com Face ID indisponível" title="Login com Face ID ainda não disponível" className={`${styles.altBtn} cursor-not-allowed opacity-50`}>
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M9 3v3.5a3 3 0 003 3 3 3 0 003-3V3M6 21v-3.5a3 3 0 013-3h6a3 3 0 013 3V21"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                <rect
-                  x="7"
-                  y="10"
-                  width="10"
-                  height="4"
-                  rx="1.5"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-              </svg>
-              Face ID
-            </button>
-          </div>
+          <GooglePreviewButton />
 
           {/* Cadastro */}
           <p className={styles.signup}>

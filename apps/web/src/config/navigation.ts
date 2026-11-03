@@ -23,6 +23,8 @@ const SECURITY_ITEM: NavItem = {
   icon: ShieldCheck,
 };
 
+const REPORTS_ITEM: NavItem = { label: "Relatórios", href: "/reports", icon: FileText };
+
 const ADMIN_ITEMS: NavItem[] = [
   { label: "Painel", href: "/admin/dashboard", icon: Home },
   { label: "Usuários", href: "/admin/users", icon: UserCog },
@@ -39,9 +41,10 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Agenda geral", href: "/reception/appointments", icon: Calendar },
     { label: "Calendário", href: "/reception/calendar", icon: Calendar },
     { label: "Lista de espera", href: "/reception/waitlist", icon: ListTodo },
+    REPORTS_ITEM,
     SECURITY_ITEM,
   ],
-  ADMIN: [...ADMIN_ITEMS, SECURITY_ITEM],
+  ADMIN: [...ADMIN_ITEMS, REPORTS_ITEM, SECURITY_ITEM],
   DOCTOR: [
     { label: "Painel", href: "/doctor/dashboard", icon: Home },
     { label: "Agenda", href: "/doctor/calendar", icon: Calendar },
@@ -49,6 +52,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Prontuários", href: "/doctor/records", icon: ClipboardList },
     { label: "Disponibilidade", href: "/doctor/availability", icon: Clock },
     { label: "Perfil", href: "/doctor/profile", icon: User },
+    REPORTS_ITEM,
     SECURITY_ITEM,
   ],
   PATIENT: [
@@ -61,6 +65,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Calendário", href: "/patient/calendar", icon: Calendar },
     { label: "Lista de espera", href: "/patient/waitlist", icon: ListTodo },
     { label: "Perfil", href: "/patient/profile", icon: User },
+    REPORTS_ITEM,
     SECURITY_ITEM,
   ],
   RECEPTIONIST: [
@@ -72,6 +77,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Recebimentos", href: "/reception/payments", icon: Wallet },
     { label: "Lista de espera", href: "/reception/waitlist", icon: ListTodo },
     { label: "Perfil", href: "/reception/profile", icon: User },
+    REPORTS_ITEM,
     SECURITY_ITEM,
   ],
 };

@@ -86,8 +86,17 @@ export class AppointmentCalendarService {
   }
 
   async availableSlots(query: CalendarQueryDto, user: AuthUser) {
-    const range = calendarRange(query);
     const viewer = await this.viewer(user, query.doctorId);
+    return this.freeSlots(query, viewer);
+  }
+
+  /** Read-only preview has no patient identity and never selects occupied details. */
+  previewAvailableSlots(query: CalendarQueryDto) {
+    return this.freeSlots(query, { doctorId: query.doctorId });
+  }
+
+  private async freeSlots(query: CalendarQueryDto, viewer: Viewer) {
+    const range = calendarRange(query);
     const doctors = await this.prisma.db.doctor.findMany({
       where: {
         ...(viewer.doctorId ? { id: viewer.doctorId } : {}),

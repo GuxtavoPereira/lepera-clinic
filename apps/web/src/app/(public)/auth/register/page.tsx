@@ -13,6 +13,7 @@ import {
 import { useRegistrationWizard } from "@/components/forms/use-registration-wizard";
 import { registerPatient } from "@/lib/auth";
 import type { RegistrationStep } from "@/lib/registration-validation";
+import { clearPreview, requestedSlotPath } from "@/lib/google-preview";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,7 +31,9 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await registerPatient(registrationPayload(wizard.form));
-      router.push("/patient/dashboard");
+      const next = requestedSlotPath();
+      clearPreview();
+      router.push(next);
     } catch (err) {
       wizard.handleApiError(
         err,

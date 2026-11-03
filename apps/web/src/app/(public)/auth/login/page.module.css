@@ -1,7 +1,7 @@
 .page {
   min-height: 100vh;
   width: 100%;
-  background: #f3f6f1;
+  background: var(--background);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -13,16 +13,16 @@
 }
 
 .screen {
-  --ink: #3accc0;
-  --ink-soft: #5e766f;
-  --bg: #f3f6f1;
-  --surface: #ffffff;
-  --surface-tint: #e9f0e4;
-  --brand: #52b4ae;
-  --brand-deep: #3d948e;
-  --accent: #3d948e;
-  --line: #d8e1d3;
-  --danger: #3d948e;
+  --ink: var(--foreground);
+  --ink-soft: var(--muted-foreground);
+  --bg: var(--background);
+  --surface: var(--card);
+  --surface-tint: var(--muted);
+  --brand: var(--primary);
+  --brand-deep: #006f69;
+  --accent: #006f69;
+  --line: var(--border);
+  --danger: var(--destructive);
 
   width: 100%;
   max-width: 430px;

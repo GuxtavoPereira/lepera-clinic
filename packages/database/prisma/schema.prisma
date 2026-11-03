@@ -47,6 +47,11 @@ enum RequestStatus {
   REJECTED // Rejeitada
 }
 
+enum ScheduleRequestMode {
+  EXACT
+  FLEXIBLE
+}
+
 enum CancellationRequestStatus {
   PENDING // Aguardando a recepção
   APPROVED // Aprovada (a consulta foi cancelada)
@@ -105,6 +110,7 @@ model User {
   photoUrl     String? // URL da foto de perfil
   role         Role      @default(PATIENT) // Papel do usuário (RBAC)
   isActive     Boolean   @default(true) // Status de acesso (ativo)
+  sessionVersion Int    @default(0)
 
   createdAt DateTime @default(now()) // Criado em
   updatedAt DateTime @updatedAt // Atualizado em
@@ -119,6 +125,7 @@ model User {
   stockMovements StockMovement[]
   transactions   FinancialTransaction[]
   auditLogs      AuditLog[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -347,6 +354,10 @@ model ScheduleRequest {
   preferredShift Shift? // turno_preferido
   reason         String?       @db.Text // motivo
   status         RequestStatus @default(PENDING) // pendente, aprovada, rejeitada
+  mode           ScheduleRequestMode @default(FLEXIBLE)
+  requestedStartDatetime DateTime?
+  durationMinutes Int @default(50)
+  modality Modality @default(IN_PERSON)
 
   approvedById String? // FK -> recepcionistas
   approvedBy   Receptionist? @relation(fields: [approvedById], references: [id])
@@ -359,6 +370,19 @@ model ScheduleRequest {
   createdAt DateTime @default(now())
 
   @@map("schedule_requests")
+}
+
+model PasswordResetToken {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String @unique @db.Char(64)
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+  @@map("password_reset_tokens")
 }
 
 // Pedido do PROFISSIONAL para cancelar uma consulta. Quem decide é a recepção.

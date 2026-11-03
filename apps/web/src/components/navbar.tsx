@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 const publicLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "Sobre nós" },
+  { href: "/explore/calendar", label: "Horários disponíveis" },
   { href: "/contact", label: "Contato / Agende" },
 ];
 

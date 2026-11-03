@@ -19,6 +19,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "studio": "prisma studio",
     "db:seed": "prisma db seed",
+    "db:presentation": "tsx prisma/seed-presentation.ts",
     "create:super-admin": "tsx prisma/create-super-admin.ts"
   },
   "keywords": [],

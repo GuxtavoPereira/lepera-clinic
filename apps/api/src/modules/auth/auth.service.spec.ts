@@ -45,7 +45,11 @@ describe('AuthService', () => {
       phone: '12999998888',
     });
 
-    expect(signAsync).toHaveBeenCalledWith({ sub: 'user-1', role: 'PATIENT' });
+    expect(signAsync).toHaveBeenCalledWith({
+      sub: 'user-1',
+      role: 'PATIENT',
+      sessionVersion: 0,
+    });
     expect(session).toEqual({
       accessToken: 'token-123',
       user: {

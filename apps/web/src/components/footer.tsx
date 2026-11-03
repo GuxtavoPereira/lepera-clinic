@@ -6,41 +6,68 @@ export function Footer() {
     <footer className="border-t bg-muted/40">
       <div className="container mx-auto max-w-screen-xl px-4 md:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
           <div>
             <div className="flex items-center gap-2 mb-4">
               <HeartPulse className="h-5 w-5 text-primary" />
-              <span className="text-lg font-bold text-primary">Leperapia Clinic</span>
+              <span className="text-lg font-bold text-primary">
+                Leperapia Clinic
+              </span>
             </div>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Cuidando da sua saúde com excelência, tecnologia e atendimento humanizado.
+              Um espaço de escuta e acolhimento. Conheça a equipe e encontre um
+              tempo para você.
             </p>
           </div>
 
           <div>
             <h3 className="font-semibold mb-4 text-foreground">Links Úteis</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/" className="hover:text-primary">Página Inicial</Link></li>
-              <li><Link href="/about" className="hover:text-primary">Sobre Nós</Link></li>
-              <li><Link href="/contact" className="hover:text-primary">Contato / Agende</Link></li>
-              <li><Link href="/auth/login" className="hover:text-primary">Acesso Restrito</Link></li>
+              <li>
+                <Link href="/" className="hover:text-primary">
+                  Página Inicial
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="hover:text-primary">
+                  Sobre Nós
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-primary">
+                  Contato / Agende
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/login" className="hover:text-primary">
+                  Portal do paciente
+                </Link>
+              </li>
+              <li>
+                <Link href="/explore/calendar" className="hover:text-primary">
+                  Horários disponíveis
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
             <h3 className="font-semibold mb-4 text-foreground">Contato</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Av. Dr. Arthur da Costa Filho, 100 - Centro</li>
-              <li>Caraguatatuba - SP</li>
-              <li>(12) 99999-9999</li>
-              <li>contato@leperapia.com.br</li>
+              <li>
+                <a
+                  href="mailto:leperapiaoficial@gmail.com"
+                  className="break-all hover:text-primary"
+                >
+                  leperapiaoficial@gmail.com
+                </a>
+              </li>
+              <li>Agendamentos pelo portal do paciente.</li>
             </ul>
-            <p className="mt-3 text-xs text-muted-foreground">Dados demonstrativos do projeto acadêmico. Agendamentos pelo portal do paciente.</p>
           </div>
-
         </div>
         <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} Leperapia Clinic. Todos os direitos reservados.
+          &copy; {new Date().getFullYear()} Leperapia Clinic. Todos os direitos
+          reservados.
         </div>
       </div>
     </footer>

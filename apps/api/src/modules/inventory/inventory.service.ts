@@ -1,3 +1,4 @@
+import { isTransactionConflict } from '../../prisma/prisma-errors';
 import {
   BadRequestException,
   ConflictException,
@@ -299,12 +300,7 @@ export class InventoryService {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       });
     } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        error.code === 'P2034'
-      ) {
+      if (isTransactionConflict(error)) {
         throw this.changedError();
       }
       throw error;

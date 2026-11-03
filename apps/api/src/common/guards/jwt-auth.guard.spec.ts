@@ -82,4 +82,35 @@ describe('JwtAuthGuard', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(userFindUnique).not.toHaveBeenCalled();
   });
+
+  it('recusa credencial de consulta Google mesmo com role forjado', async () => {
+    verifyAsync.mockResolvedValue({
+      sub: 'user-1',
+      role: 'ADMIN',
+      purpose: 'google_preview',
+    });
+    await expect(
+      guard.canActivate(contextWith({ authorization: 'Bearer preview' }).ctx),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(userFindUnique).not.toHaveBeenCalled();
+  });
+
+  it('encerra sessões anteriores à redefinição de senha', async () => {
+    userFindUnique.mockResolvedValue({
+      isActive: true,
+      role: 'PATIENT',
+      sessionVersion: 1,
+    });
+    await expect(
+      guard.canActivate(contextWith({ authorization: 'Bearer old' }).ctx),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    verifyAsync.mockResolvedValue({
+      sub: 'user-1',
+      role: 'PATIENT',
+      sessionVersion: 1,
+    });
+    await expect(
+      guard.canActivate(contextWith({ authorization: 'Bearer new' }).ctx),
+    ).resolves.toBe(true);
+  });
 });

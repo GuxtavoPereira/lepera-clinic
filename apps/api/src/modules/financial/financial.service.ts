@@ -16,7 +16,10 @@ import type {
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { DbClient } from '../../prisma/prisma.types';
-import { isUniqueViolation } from '../../prisma/prisma-errors';
+import {
+  isUniqueViolation,
+  isTransactionConflict,
+} from '../../prisma/prisma-errors';
 import { AuditService } from '../audit/audit.service';
 import type { RequestContext } from '../audit/request-context';
 import {
@@ -543,12 +546,7 @@ export class FinancialService {
           'Esta consulta já possui um lançamento financeiro',
         );
       }
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        error.code === 'P2034'
-      ) {
+      if (isTransactionConflict(error)) {
         throw new ConflictException(
           'Outra operação alterou estes dados. Atualize e tente novamente',
         );

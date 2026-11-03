@@ -27,9 +27,13 @@ O objetivo é facilitar o cadastro e a localização de pacientes, organizar sol
 - **Recepção:** cadastro, busca e ficha de pacientes; análise de solicitações; agenda e cancelamentos.
 - **Profissionais:** agenda, disponibilidade de atendimento e prontuários das sessões vinculadas ao profissional.
 - **Calendário visual:** grade semanal ou diária, navegação por data e filtro por profissional; o paciente acompanha apenas as próprias consultas e os horários livres para solicitar atendimento.
+- **Agendamento por horário:** o paciente escolhe dia, profissional e vaga livre; a recepção aprova o mesmo horário ou recusa. A opção **Encaixe** permite solicitar flexibilidade, com atribuição e justificativa pela recepção.
+- **Consulta com Google:** acesso temporário aos profissionais e horários livres em `/explore/calendar`, sem criar conta ou liberar dados de pacientes. O cadastro completo continua exigindo CPF.
 - **Administração:** painel e gestão de usuários, com permissões específicas para o superadministrador.
 - **Financeiro:** receitas, despesas, cobranças vinculadas a consultas, quitações, pendências, estornos de registros e exportação CSV.
 - **Estoque:** materiais, saldo mínimo, reposição, entradas/saídas e histórico auditado.
+- **Relatórios:** consultas por período e perfil, financeiro e posição atual do estoque, com prévia e arquivos PDF/CSV. Não incluem o conteúdo dos prontuários.
+- **Recuperação de senha:** formulário, link de uso único com validade de 30 minutos e encerramento das sessões anteriores, mediante configuração do Gmail SMTP.
 - **Regras e segurança:** CPF obrigatório, único e validado por dígitos verificadores; controle de acesso na API; criptografia dos campos clínicos e auditoria das operações previstas.
 
 ## 🌐 Acessos na Vercel
@@ -280,6 +284,39 @@ Com o banco acessível, o health check retorna:
 
 Agora entre com uma das contas de demonstração e siga o roteiro de apresentação.
 
+### Demonstração de novembro e dezembro de 2026
+
+Depois do seed inicial e das migrações, a carga adicional é **aditiva e repetível**: mantém os cadastros e credenciais existentes e não apaga consultas. Ela respeita as disponibilidades registradas e deixa horários livres para a apresentação.
+
+```powershell
+$env:ALLOW_DEMO_SEED = "true"
+pnpm --filter @lepera/db db:presentation
+Remove-Item Env:ALLOW_DEMO_SEED
+```
+
+```bash
+ALLOW_DEMO_SEED=true pnpm --filter @lepera/db db:presentation
+```
+
+Na base de demonstração validada em 02/11/2026, foram acrescentadas **228 consultas** (109 em novembro e 119 em dezembro), 16 solicitações com horário, 4 encaixes e lançamentos financeiros. São 4 profissionais disponíveis para a agenda. A carga também adiciona `psicologo1@demo.invalid`, `psicologo2@demo.invalid` e `paciente01@demo.invalid` a `paciente16@demo.invalid`, com a senha de demonstração. Os endereços `.invalid` são fictícios e não recebem e-mail. Rodar novamente não recria as consultas existentes.
+
+### Configurar Google e recuperação pelo Gmail
+
+São configurações opcionais para rodar o restante do sistema. Coloque-as em `apps/api/.env.local` (ignorado pelo Git) ou nas variáveis do **backend** na Vercel. A API lê `.env.local` antes de `.env`; a interface consulta a configuração pública do Google em tempo de execução.
+
+```env
+GOOGLE_CLIENT_ID=SEU_ID_PUBLICO.apps.googleusercontent.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=leperapiaoficial@gmail.com
+SMTP_FROM=leperapiaoficial@gmail.com
+SMTP_PASSWORD=SENHA_DE_APP_PRIVADA
+```
+
+No cliente Web do Google Cloud, cadastre as origens JavaScript `https://lepera-clinic.vercel.app`, `http://localhost` e `http://localhost:3000`. Não é necessário segredo OAuth nem URI de redirecionamento para este fluxo por callback. O botão não é login completo de paciente: apenas permite consultar horários livres. Para solicitar atendimento, conclua o cadastro com CPF e senha ou entre na conta existente. Consulte a [documentação do Google Identity Services](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+
+No Gmail, habilite a verificação em duas etapas e gere uma senha de app em [Senhas de app](https://myaccount.google.com/apppasswords). Use essa senha em `SMTP_PASSWORD`, sem os espaços exibidos pelo Google. Na Vercel, mantenha-a como variável **Sensitive** de Production e publique uma nova implantação após salvar. Nunca envie a senha pelo chat nem faça commit de arquivos `.env`. Sem a configuração completa, o formulário informa que o envio ainda não foi ativado. A entrega real deve ser conferida com uma conta de teste cujo e-mail você controla.
+
 ## 🧭 Páginas e navegação
 
 | Página da entrega S10 | Rota | Acesso |
@@ -323,7 +360,7 @@ Os endpoints `GET /api/appointments/calendar` e `GET /api/appointments/available
 - **Buscar** ou a tecla `/` abre a busca por páginas e funcionalidades permitidas ao perfil. Recepção, administração e superadministração também podem escolher **Pacientes** e buscar por nome, e-mail ou CPF; os resultados abrem o cadastro correspondente.
 - O botão de tema alterna entre claro e escuro e preserva a escolha neste navegador. Na primeira visita, segue a preferência do sistema.
 - O cadastro interno de pacientes, pela recepção ou administração, pede os mesmos dados do cadastro público: acesso, confirmação de senha, CPF obrigatório, nascimento, telefone, contato de emergência/responsável, plano opcional e autorização. Funcionários utilizam os campos comuns de acesso e dados pessoais; profissionais também precisam de registro e especialidade.
-- Envio de e-mails e recuperação de senha continuam pendentes da configuração do remetente.
+- O fluxo de recuperação está implementado; o envio real depende da senha de app do Gmail configurada no backend.
 
 ## 💰 Financeiro e recebimentos
 
@@ -365,7 +402,7 @@ pnpm check-types
 pnpm lint
 ```
 
-Na revisão dos módulos de gestão, passaram **336 testes da API**, **6 testes dos valores/exportação no frontend** e **49 verificações de integração** no navegador e na API, incluindo quitações concorrentes, permissões e proteção contra estoque negativo. A compilação e a tipagem também foram verificadas. Os registros temporários utilizados nessa verificação foram removidos, preservando os dados existentes.
+Na consolidação de 02/11/2026, passaram **404 testes da API**, **6 testes dos valores/exportação no frontend** e a verificação integrada dos fluxos de cadastro, perfil, pedido/aprovação, prontuário, relatórios e redefinição de senha. Compilação, lint e tipagem também foram verificados. As contas e consultas temporárias dos testes foram removidas. A conferência do banco confirmou a preservação dos 48 registros anteriores e a ausência de conflitos em novembro/dezembro. Os detalhes e as dependências externas estão em [Preparação da versão 1.0](docs/release-1.0.md).
 
 ## ⚙️ Comandos úteis
 
@@ -434,13 +471,14 @@ A disponibilidade dos links acima não substitui a validação dos fluxos da ver
 
 ## 🚧 Limites atuais e próximos passos
 
-- Recuperação de senha por e-mail, lembretes externos e integrações com e-mail/WhatsApp.
+- Concluir a configuração privada do Gmail e conferir a entrega real de recuperação; lembretes automáticos e WhatsApp são evoluções futuras.
 - Parcelamento, pagamentos parciais, emissão fiscal e integração com provedores de pagamento; outras telas secundárias em construção.
-- Login com Google e Face ID, atualmente indicados como indisponíveis.
+- Conferir as origens e o primeiro acesso real no Google Cloud. O acesso Google desta versão é apenas para consultar disponibilidade. Login completo e vinculação de contas pelo Google são evoluções futuras; Face ID não está implementado.
+- Substituir as ilustrações dos ambientes por fotos autorizadas e aplicar a nova referência visual quando ela for fornecida.
 - Ampliação da homologação em dispositivos móveis e dos testes dos demais fluxos.
 - Medições de desempenho, rotinas de backup/restauração e revisão de segurança antes do uso com dados reais.
 
-A página **Contato / Agende** encaminha ao portal de solicitações; ela não envia mensagens externas. Endereço, telefone e registros demonstrativos não representam uma operação clínica real. Os controles implementados não equivalem a certificação de conformidade integral com a LGPD.
+A página **Contato / Agende** encaminha ao calendário e ao portal de solicitações; o formulário prepara uma mensagem para ser enviada pelo aplicativo de e-mail do visitante. Os ambientes ilustrados e os perfis demonstrativos não representam uma operação clínica real. Os controles implementados não equivalem a certificação de conformidade integral com a LGPD.
 
 ## 🎓 Contexto acadêmico e materiais
 

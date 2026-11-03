@@ -8,6 +8,17 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL é obrigatória'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET precisa de 16+ caracteres'),
   WEB_URL: z.string().url().default('http://localhost:3000'),
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/)
+    .optional()
+    .or(z.literal('')),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+  SMTP_USER: z.string().email().optional().or(z.literal('')),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.string().email().optional().or(z.literal('')),
   // Chave AES-256 dos dados clínicos (RNF01): 32 bytes em hexadecimal.
   ENCRYPTION_KEY: z
     .string()

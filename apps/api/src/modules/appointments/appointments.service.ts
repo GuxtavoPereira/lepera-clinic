@@ -1,3 +1,4 @@
+import { isTransactionConflict } from '../../prisma/prisma-errors';
 import {
   BadRequestException,
   ConflictException,
@@ -11,7 +12,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
-import { assertWithinAvailability } from '../availability/availability.check';
+import {
+  assertWithinAvailability,
+  toClinicTime,
+  toMinutes,
+} from '../availability/availability.check';
 import { notifyWaitlistOnFreedSlot } from '../waitlist/waitlist-notify';
 
 /** RN03: antecedência mínima para o PACIENTE cancelar (confirmado: 24h). */
@@ -196,31 +201,71 @@ export class AppointmentsService {
     tx: Prisma.TransactionClient,
     dto: CreateAppointmentDto,
     receptionistId?: string,
+    requirePublishedSlot = false,
   ) {
     const startDatetime = new Date(dto.startDatetime);
     const endDatetime = new Date(
       startDatetime.getTime() + dto.durationMinutes * 60_000,
     );
+    if (
+      !Number.isFinite(startDatetime.getTime()) ||
+      !Number.isInteger(dto.durationMinutes) ||
+      dto.durationMinutes < 1 ||
+      dto.durationMinutes > 240 ||
+      startDatetime.getTime() <= Date.now()
+    ) {
+      throw new BadRequestException(
+        'Escolha um horário futuro e uma duração entre 1 e 240 minutos',
+      );
+    }
     const [patient, doctor] = await Promise.all([
-      tx.patient.findUnique({ where: { id: dto.patientId } }),
-      tx.doctor.findUnique({ where: { id: dto.doctorId } }),
+      tx.patient.findUnique({
+        where: { id: dto.patientId },
+        include: { user: { select: { isActive: true } } },
+      }),
+      tx.doctor.findUnique({
+        where: { id: dto.doctorId },
+        include: { user: { select: { isActive: true } } },
+      }),
     ]);
 
-    if (!patient) {
+    if (!patient?.user.isActive) {
       throw new NotFoundException('Paciente não encontrado');
     }
 
-    if (!doctor) {
+    if (!doctor?.user.isActive) {
       throw new NotFoundException('Profissional não encontrado');
     }
 
-    if (!dto.allowOutsideAvailability) {
-      await assertWithinAvailability(
-        tx,
-        dto.doctorId,
-        startDatetime,
-        endDatetime,
-      );
+    if (requirePublishedSlot || !dto.allowOutsideAvailability) {
+      const hours = await tx.doctorAvailability.findMany({
+        where: { doctorId: dto.doctorId, isActive: true },
+        select: { dayOfWeek: true, startTime: true, endTime: true },
+      });
+      const from = toClinicTime(startDatetime);
+      const to = toClinicTime(endDatetime);
+      const fits =
+        from.dateKey === to.dateKey &&
+        hours.some((slot) => {
+          const beginning = toMinutes(slot.startTime);
+          return (
+            slot.dayOfWeek === from.day &&
+            beginning <= from.minutes &&
+            to.minutes <= toMinutes(slot.endTime) &&
+            (!requirePublishedSlot ||
+              (dto.durationMinutes === 50 &&
+                (from.minutes - beginning) % 50 === 0 &&
+                startDatetime.getUTCSeconds() === 0 &&
+                startDatetime.getUTCMilliseconds() === 0))
+          );
+        });
+      if (!fits) {
+        throw new ConflictException(
+          requirePublishedSlot
+            ? 'Este horário não está mais disponível na agenda do profissional. Recuse o pedido e oriente o paciente a escolher outro horário.'
+            : 'O profissional não atende neste horário. Escolha outro horário ou autorize explicitamente o encaixe fora da disponibilidade.',
+        );
+      }
     }
 
     const conflictingAppointment = await tx.appointment.findFirst({
@@ -335,10 +380,7 @@ export class AppointmentsService {
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2034'
-      ) {
+      if (isTransactionConflict(error)) {
         throw new ConflictException(
           'O horário foi reservado por outro agendamento; escolha outro horário',
         );
