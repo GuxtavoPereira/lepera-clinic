@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
 } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,18 +54,9 @@ type CalendarBlock =
       slot: CalendarSlot;
     };
 
-const COLORS = [
-  "border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100",
-  "border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100",
-  "border-pink-200 bg-pink-50 text-pink-800 hover:bg-pink-100",
-  "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100",
-];
-const DOT_COLORS = [
-  "bg-blue-500",
-  "bg-violet-500",
-  "bg-pink-500",
-  "bg-amber-500",
-];
+const NEUTRAL_COLOR = "var(--color-slate-400)";
+const CALENDAR_BLOCK_COLORS =
+  "[border-color:var(--calendar-color)] [background-color:color-mix(in_oklab,var(--calendar-color)_16%,var(--card))] shadow-[inset_3px_0_var(--calendar-color)] hover:[background-color:color-mix(in_oklab,var(--calendar-color)_26%,var(--card))]";
 const STATUS_LABELS: Record<CalendarEvent["status"], string> = {
   SCHEDULED: "Agendada",
   CONFIRMED: "Confirmada",
@@ -75,6 +67,8 @@ const STATUS_LABELS: Record<CalendarEvent["status"], string> = {
 };
 const WEEKDAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const HOUR_HEIGHT = 76;
+const HOUR_COLUMN_WIDTH = 56;
+const MIN_LANE_WIDTH = 72;
 const EMPTY_SLOTS: CalendarSlot[] = [];
 const compactQuery = "(max-width: 639px)";
 function subscribeCompact(callback: () => void) {
@@ -109,6 +103,7 @@ export function AppointmentCalendar({
   const [month, setMonth] = useState(() => calendarDateKey(new Date()));
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [showCancelled, setShowCancelled] = useState(false);
+  const showsAppointments = onSelectEvent !== undefined || events.length > 0;
   const today = calendarDateKey(new Date());
   const range = calendarRangeForDate(day, view);
 
@@ -150,11 +145,20 @@ export function AppointmentCalendar({
     ],
     [events, slots, showCancelled],
   );
-  const intervals = blocks.flatMap((item) =>
-    days.flatMap((value) => {
-      const interval = calendarIntervalOnDay(item.start, item.end, value);
-      return interval ? [interval] : [];
-    }),
+  const dayLayouts = days.map((value) => ({
+    value,
+    items: calendarLayoutItems(blocks, value),
+  }));
+  const intervals = dayLayouts.flatMap(({ items }) => items);
+  const dayWidths = dayLayouts.map(({ items }) =>
+    Math.max(88, ...items.map(({ lanes }) => lanes * MIN_LANE_WIDTH)),
+  );
+  const gridTemplateColumns = `${HOUR_COLUMN_WIDTH}px ${dayWidths
+    .map((width) => `minmax(${width}px, 1fr)`)
+    .join(" ")}`;
+  const gridMinWidth = Math.max(
+    view === "week" ? 680 : 280,
+    HOUR_COLUMN_WIDTH + dayWidths.reduce((total, width) => total + width, 0),
   );
   const firstMinute =
     Math.floor(Math.min(8 * 60, ...intervals.map((item) => item.from)) / 60) *
@@ -166,16 +170,20 @@ export function AppointmentCalendar({
     { length: (lastMinute - firstMinute) / 60 },
     (_, index) => firstMinute / 60 + index,
   );
-  const colorIds =
-    doctors?.map((doctor) => doctor.id) ??
-    [
-      ...new Set([
-        ...events.map((event) => event.doctorId ?? ""),
-        ...slots.map((slot) => slot.doctorId),
-      ]),
-    ].sort();
-  const colorIndex = (id: string | undefined) =>
-    Math.max(0, colorIds.indexOf(id ?? "")) % COLORS.length;
+  const doctorIds = new Set([
+    ...(doctors?.map(({ id }) => id).sort() ?? []),
+    ...[
+      ...events.map(({ doctorId }) => doctorId ?? ""),
+      ...slots.map(({ doctorId }) => doctorId),
+    ].sort(),
+  ]);
+  const doctorColors = new Map(
+    [...doctorIds].filter(Boolean).map((id, index) => {
+      // Space consecutive colors around the hue wheel to distinguish adjacent cards.
+      const hue = (185 + index * 137.508) % 360;
+      return [id, `oklch(0.67 0.16 ${hue.toFixed(2)})`];
+    }),
+  );
   const selectedDayEvents = visibleEvents.filter((event) =>
     calendarIntervalOnDay(event.start, event.end, day),
   );
@@ -285,10 +293,51 @@ export function AppointmentCalendar({
           {error}
         </p>
       )}
+      {doctors && onDoctorChange && doctors.length > 0 && (
+        <section className="rounded-xl border border-border bg-card p-3 sm:p-4">
+          <h3 className="mb-2 text-sm font-semibold">Profissionais</h3>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por profissional">
+            {[{ id: "", name: "Todos" }, ...doctors].map((doctor) => (
+              <button
+                type="button"
+                key={doctor.id}
+                aria-pressed={selectedDoctorId === doctor.id}
+                onClick={() => onDoctorChange(doctor.id)}
+                className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-lg border border-border px-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-pressed:border-primary/50 aria-pressed:bg-primary/10"
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: doctorColors.get(doctor.id) ?? NEUTRAL_COLOR }}
+                />
+                <span className="min-w-0 wrap-break-word">{doctor.name}</span>
+              </button>
+            ))}
+          </div>
+          {onSelectSlot && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              A cor identifica o profissional. O contorno tracejado marca um horário livre.
+            </p>
+          )}
+        </section>
+      )}
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_240px]">
         <div className="min-w-0 space-y-3">
+          {view === "week" && (
+            <p className="text-xs text-muted-foreground">
+              Escolha Dia para ampliar os horários ou deslize a grade para os lados.
+            </p>
+          )}
+          {view === "day" && gridMinWidth > 280 && (
+            <p className="text-xs text-muted-foreground sm:hidden">
+              Deslize a grade para ver os horários simultâneos.
+            </p>
+          )}
           <div
-            className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"
+            className="overflow-x-auto rounded-2xl border border-slate-200 bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            role="region"
+            aria-label="Grade de horários"
+            tabIndex={0}
             aria-busy={loading}
           >
             {loading ? (
@@ -304,14 +353,10 @@ export function AppointmentCalendar({
                 A agenda não pôde ser atualizada. Tente novamente.
               </p>
             ) : (
-              <div
-                className={view === "week" ? "min-w-[680px]" : "min-w-[280px]"}
-              >
+              <div style={{ minWidth: gridMinWidth }}>
                 <div
                   className="grid border-b border-slate-100"
-                  style={{
-                    gridTemplateColumns: `56px repeat(${days.length}, minmax(0,1fr))`,
-                  }}
+                  style={{ gridTemplateColumns }}
                 >
                   <div className="border-r border-slate-100" />
                   {days.map((value) => (
@@ -344,9 +389,7 @@ export function AppointmentCalendar({
                 </div>
                 <div
                   className="grid"
-                  style={{
-                    gridTemplateColumns: `56px repeat(${days.length}, minmax(0,1fr))`,
-                  }}
+                  style={{ gridTemplateColumns }}
                 >
                   <div
                     className="relative border-r border-slate-100"
@@ -362,7 +405,7 @@ export function AppointmentCalendar({
                       </span>
                     ))}
                   </div>
-                  {days.map((value) => (
+                  {dayLayouts.map(({ value, items }) => (
                     <div
                       key={value}
                       className={`relative border-r border-slate-100 last:border-r-0 ${value === day ? "bg-teal-50/15" : ""}`}
@@ -373,7 +416,7 @@ export function AppointmentCalendar({
                         backgroundSize: `100% ${HOUR_HEIGHT}px`,
                       }}
                     >
-                      {calendarLayoutItems(blocks, value).map(
+                      {items.map(
                         ({ item, from, to, lane, lanes }) => {
                           const isSlot = item.kind === "slot";
                           const key = isSlot
@@ -381,16 +424,18 @@ export function AppointmentCalendar({
                             : item.event.id;
                           const label = isSlot
                             ? `Livre · ${item.slot.doctorName}`
-                            : item.event.title;
+                            : [item.event.title, item.event.subtitle].filter(Boolean).join(" · ");
                           const status = isSlot
                             ? "Solicitar este horário"
                             : STATUS_LABELS[item.event.status];
-                          const className = isSlot
-                            ? "border-dashed border-emerald-300 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100"
-                            : item.event.status === "CANCELLED" ||
-                                item.event.status === "RESCHEDULED"
-                              ? "border-slate-200 bg-slate-100 text-muted-foreground"
-                              : COLORS[colorIndex(item.event.doctorId)];
+                          const cancelled = !isSlot && (
+                            item.event.status === "CANCELLED" || item.event.status === "RESCHEDULED"
+                          );
+                          const doctorId = isSlot ? item.slot.doctorId : item.event.doctorId;
+                          const color = cancelled
+                            ? NEUTRAL_COLOR
+                            : (doctorColors.get(doctorId ?? "") ?? NEUTRAL_COLOR);
+                          const time = calendarTimeLabel(item.start);
                           return (
                             <button
                               type="button"
@@ -402,13 +447,14 @@ export function AppointmentCalendar({
                                   onSelectEvent?.(item.event);
                                 }
                               }}
-                              aria-label={`${label}, ${calendarDayLabel(value, { day: "numeric", month: "long" })}, ${calendarTimeLabel(item.start)} às ${calendarTimeLabel(item.end)}, ${status}`}
+                              aria-label={`${label}, ${calendarDayLabel(value, { day: "numeric", month: "long" })}, ${time} às ${calendarTimeLabel(item.end)}, ${status}`}
                               aria-pressed={
-                                !isSlot && selectedEventId === item.event.id
+                                isSlot ? undefined : selectedEventId === item.event.id
                               }
-                              title={`${label}\n${calendarTimeLabel(item.start)}–${calendarTimeLabel(item.end)} · ${status}`}
-                              className={`absolute overflow-hidden rounded-lg border p-1.5 text-left text-xs leading-tight transition focus-visible:z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-700 ${className} ${!isSlot && selectedEventId === item.event.id ? "z-10 ring-2 ring-teal-600 ring-offset-1" : ""}`}
+                              title={`${label}\n${time}–${calendarTimeLabel(item.end)} · ${status}`}
+                              className={`absolute overflow-hidden rounded-lg border py-1 pr-1 pl-2 text-left text-xs leading-tight transition focus-visible:z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-700 ${CALENDAR_BLOCK_COLORS} ${isSlot ? "border-dashed" : ""} ${cancelled ? "text-muted-foreground" : "text-foreground"} ${!isSlot && selectedEventId === item.event.id ? "z-10 ring-2 ring-teal-600 ring-offset-1" : ""}`}
                               style={{
+                                "--calendar-color": color,
                                 top:
                                   ((from - firstMinute) / 60) * HOUR_HEIGHT + 3,
                                 height: Math.max(
@@ -417,16 +463,15 @@ export function AppointmentCalendar({
                                 ),
                                 left: `calc(${(lane * 100) / lanes}% + 4px)`,
                                 width: `calc(${100 / lanes}% - 8px)`,
-                              }}
+                              } as CSSProperties}
                             >
-                              <span className="block truncate font-semibold">
-                                {isSlot ? "Horário livre" : item.event.title}
+                              <span className="block truncate font-semibold tabular-nums">
+                                {isSlot ? time : item.event.title}
                               </span>
-                              <span className="block truncate">
-                                {calendarTimeLabel(item.start)} ·{" "}
+                              <span className="block truncate text-[11px]">
                                 {isSlot
-                                  ? item.slot.doctorName
-                                  : (item.event.subtitle ?? status)}
+                                  ? item.slot.doctorName.replace(/^dr(?:a)?\.?\s+/i, "")
+                                  : `${time} · ${item.event.subtitle ?? status}`}
                               </span>
                             </button>
                           );
@@ -440,18 +485,21 @@ export function AppointmentCalendar({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
-              Horários de Brasília · {visibleEvents.length} consulta
-              {visibleEvents.length === 1 ? "" : "s"} no período
+              Horários de Brasília
+              {showsAppointments && ` · ${visibleEvents.length} ${visibleEvents.length === 1 ? "consulta" : "consultas"}`}
+              {onSelectSlot && ` · ${slots.length} ${slots.length === 1 ? "horário livre" : "horários livres"}`}
             </span>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={showCancelled}
-                onChange={(event) => setShowCancelled(event.target.checked)}
-                className="accent-teal-700"
-              />
-              Mostrar canceladas e remarcadas
-            </label>
+            {showsAppointments && (
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showCancelled}
+                  onChange={(event) => setShowCancelled(event.target.checked)}
+                  className="accent-teal-700"
+                />
+                Mostrar canceladas e remarcadas
+              </label>
+            )}
           </div>
           {!loading &&
             !error &&
@@ -465,9 +513,6 @@ export function AppointmentCalendar({
                 para navegar.
               </p>
             )}
-          <p className="text-xs text-muted-foreground md:hidden">
-            Deslize a grade para os lados ou escolha a visualização Dia.
-          </p>
         </div>
 
         <aside
@@ -526,35 +571,6 @@ export function AppointmentCalendar({
             </div>
           </section>
 
-          {doctors && onDoctorChange && (
-            <section className="rounded-2xl border border-slate-200 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold text-foreground">
-                Profissionais
-              </h3>
-              <div
-                className="space-y-1"
-                role="group"
-                aria-label="Filtrar por profissional"
-              >
-                {[{ id: "", name: "Todos" }, ...doctors].map((doctor) => (
-                  <button
-                    type="button"
-                    key={doctor.id}
-                    aria-pressed={selectedDoctorId === doctor.id}
-                    onClick={() => onDoctorChange(doctor.id)}
-                    className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition ${selectedDoctorId === doctor.id ? "bg-slate-100 font-semibold text-foreground" : "text-muted-foreground hover:bg-slate-50"}`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`size-2.5 shrink-0 rounded-full ${doctor.id ? DOT_COLORS[colorIndex(doctor.id)] : "bg-slate-400"}`}
-                    />
-                    <span className="truncate">{doctor.name}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <h3 className="text-sm font-semibold text-foreground">
               Resumo do dia
@@ -572,22 +588,26 @@ export function AppointmentCalendar({
               </p>
             ) : (
               <dl className="mt-4 space-y-3 text-xs">
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Consultas</dt>
-                  <dd className="font-semibold text-foreground">
-                    {selectedDayEvents.length}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Confirmadas</dt>
-                  <dd className="font-semibold text-foreground">
-                    {
-                      selectedDayEvents.filter(
-                        (event) => event.status === "CONFIRMED",
-                      ).length
-                    }
-                  </dd>
-                </div>
+                {showsAppointments && (
+                  <>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Consultas</dt>
+                      <dd className="font-semibold text-foreground">
+                        {selectedDayEvents.length}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Confirmadas</dt>
+                      <dd className="font-semibold text-foreground">
+                        {
+                          selectedDayEvents.filter(
+                            (event) => event.status === "CONFIRMED",
+                          ).length
+                        }
+                      </dd>
+                    </div>
+                  </>
+                )}
                 {onSelectSlot && (
                   <div className="flex justify-between gap-2">
                     <dt className="text-muted-foreground">Horários livres</dt>
@@ -599,11 +619,10 @@ export function AppointmentCalendar({
               </dl>
             )}
             <p className="mt-4 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
-              <Clock3 className="mt-0.5 size-3 shrink-0" /> Clique em uma
-              consulta para ver os detalhes
+              <Clock3 aria-hidden="true" className="mt-0.5 size-3 shrink-0" />
               {onSelectSlot
-                ? " ou em um horário livre para solicitar atendimento."
-                : "."}
+                ? "Selecione um horário livre para solicitar atendimento."
+                : "Selecione uma consulta para ver os detalhes."}
             </p>
           </section>
         </aside>
