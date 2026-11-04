@@ -391,12 +391,225 @@ async function main() {
           },
         });
       }
+      const reportDates = {
+        first: new Date("2026-11-02T12:00:00-03:00"),
+        second: new Date("2026-11-03T12:00:00-03:00"),
+      };
+      const reportAppointments = [];
+      for (let i = 0; i < Math.min(doctors.length, 3); i++) {
+        const doctor = doctors[i]!;
+        const patient = patients[i % patients.length]!;
+        const id = uuid(`report-completed-appointment-${i}`);
+        const start = at("2026-11-02", 20 * 60 + i * 60);
+        const appointment = await tx.appointment.upsert({
+          where: { id },
+          update: {},
+          create: {
+            id,
+            doctorId: doctor.id,
+            patientId: patient.id,
+            receptionistId: reviewer?.id,
+            startDatetime: start,
+            endDatetime: new Date(start.getTime() + 50 * 60_000),
+            durationMinutes: 50,
+            status: "COMPLETED",
+            type: "SESSION",
+            modality: i % 2 === 0 ? "IN_PERSON" : "ONLINE",
+            roomOrLink: doctor.room,
+          },
+          select: { id: true, patientId: true, doctorId: true },
+        });
+        reportAppointments.push(appointment);
+        await tx.review.upsert({
+          where: { appointmentId: appointment.id },
+          update: {},
+          create: {
+            id: uuid(`report-review-${i}`),
+            appointmentId: appointment.id,
+            patientId: appointment.patientId,
+            doctorId: appointment.doctorId,
+            rating: [5, 4, 3][i]!,
+            comment: `${marker}: avaliação fictícia para apresentação.`,
+            createdAt: reportDates.first,
+          },
+        });
+      }
+      for (let i = 0; i < 2; i++) {
+        const doctor = doctors[i % doctors.length]!;
+        const patient = patients[(i + 5) % patients.length]!;
+        const id = uuid(`report-cancelled-appointment-${i}`);
+        const start = at(i === 0 ? "2026-11-02" : "2026-11-03", 19 * 60);
+        await tx.appointment.upsert({
+          where: { id },
+          update: {},
+          create: {
+            id,
+            doctorId: doctor.id,
+            patientId: patient.id,
+            receptionistId: reviewer?.id,
+            startDatetime: start,
+            endDatetime: new Date(start.getTime() + 50 * 60_000),
+            durationMinutes: 50,
+            status: "CANCELLED",
+            cancelReason: `${marker}: cancelamento fictício para apresentação.`,
+            type: "SESSION",
+            modality: "IN_PERSON",
+          },
+        });
+      }
+      const approvedAppointment =
+        reportAppointments[0] ??
+        (await tx.appointment.findFirst({
+          where: { startDatetime: { gte: begin, lt: end } },
+          select: { id: true },
+        }));
+      if (approvedAppointment) {
+        for (const [i, status] of (
+          ["APPROVED", "REJECTED", "PENDING"] as const
+        ).entries()) {
+          const id = uuid(`report-schedule-request-${i}`);
+          await tx.scheduleRequest.upsert({
+            where: { id },
+            update: {},
+            create: {
+              id,
+              patientId: patients[(i + 7) % patients.length]!.id,
+              preferredDoctorId: doctors[i % doctors.length]!.id,
+              type: "novo_paciente",
+              preferredDate: new Date(
+                `2026-11-${String(12 + i).padStart(2, "0")}T12:00:00Z`,
+              ),
+              mode: "FLEXIBLE",
+              status,
+              ...(status === "PENDING"
+                ? {}
+                : {
+                    approvedById: reviewer?.id,
+                    reviewedAt: reportDates.second,
+                    ...(status === "APPROVED"
+                      ? {
+                          approvedAt: reportDates.second,
+                          generatedApptId: approvedAppointment.id,
+                        }
+                      : {}),
+                  }),
+              createdAt: reportDates.first,
+            },
+          });
+        }
+      }
+      for (const [i, status] of [
+        "waiting",
+        "notified",
+        "scheduled",
+        "gave_up",
+      ].entries()) {
+        const id = uuid(`report-waitlist-${i}`);
+        await tx.waitlist.upsert({
+          where: { id },
+          update: {},
+          create: {
+            id,
+            patientId: patients[(i + 3) % patients.length]!.id,
+            preferredDoctorId: doctors[i % doctors.length]!.id,
+            priority: i === 0 ? "HIGH" : "MEDIUM",
+            status,
+            enteredAt: new Date(`2026-11-0${i + 1}T12:00:00-03:00`),
+            exitedAt:
+              status === "scheduled" || status === "gave_up"
+                ? new Date(`2026-11-0${i + 3}T12:00:00-03:00`)
+                : null,
+          },
+        });
+      }
+      const demoItems = [
+        {
+          key: "stock-gloves",
+          name: `${marker}: luvas descartáveis`,
+          stockQuantity: 18,
+          minimumStock: 5,
+          movements: [
+            { type: "ENTRY" as const, quantity: 12, day: "2026-11-01" },
+            { type: "EXIT" as const, quantity: 4, day: "2026-11-02" },
+          ],
+        },
+        {
+          key: "stock-paper",
+          name: `${marker}: papel para impressão`,
+          stockQuantity: 2,
+          minimumStock: 5,
+          movements: [
+            { type: "ENTRY" as const, quantity: 5, day: "2026-11-01" },
+            { type: "EXIT" as const, quantity: 3, day: "2026-11-03" },
+          ],
+        },
+      ];
+      for (const item of demoItems) {
+        const itemId = uuid(item.key);
+        await tx.inventoryItem.upsert({
+          where: { id: itemId },
+          update: {},
+          create: {
+            id: itemId,
+            name: item.name,
+            description: `${marker}: item fictício para apresentação.`,
+            stockQuantity: item.stockQuantity,
+            minimumStock: item.minimumStock,
+          },
+        });
+        for (const [i, movement] of item.movements.entries()) {
+          const id = uuid(`${item.key}-movement-${i}`);
+          await tx.stockMovement.upsert({
+            where: { id },
+            update: {},
+            create: {
+              id,
+              itemId,
+              userId: manager.id,
+              movementType: movement.type,
+              quantity: movement.quantity,
+              justification: `${marker}: movimentação fictícia para apresentação.`,
+              createdAt: new Date(`${movement.day}T12:00:00-03:00`),
+            },
+          });
+        }
+      }
+      for (const [i, event] of [
+        { action: "appointment.create", resource: "Appointment" },
+        { action: "financial.settle", resource: "FinancialTransaction" },
+        { action: "inventory.move", resource: "InventoryItem" },
+        { action: "patient.update", resource: "Patient" },
+      ].entries()) {
+        const id = uuid(`report-audit-${i}`);
+        await tx.auditLog.upsert({
+          where: { id },
+          update: {},
+          create: {
+            id,
+            actorId: manager.id,
+            actorRole: "ADMIN",
+            action: event.action,
+            resource: event.resource,
+            metadata: { demo: marker },
+            createdAt: reportDates.first,
+          },
+        });
+      }
       return {
         newAppointments: appointments,
         skippedConflicts,
         exactRequestsEnsured: requests,
         flexibleRequestsEnsured: 4,
         financialCreated: financial,
+        reportAppointmentsEnsured: reportAppointments.length + 2,
+        reportReviewsEnsured: reportAppointments.length,
+        reportWaitlistEnsured: 4,
+        reportStockItemsEnsured: demoItems.length,
+        reportStockMovementsEnsured: demoItems.reduce(
+          (total, item) => total + item.movements.length,
+          0,
+        ),
+        reportAuditActionsEnsured: 4,
         doctors: doctors.length,
         patients: patients.length,
         period: "2026-11-01 a 2026-12-31",

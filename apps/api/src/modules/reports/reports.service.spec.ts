@@ -10,11 +10,13 @@ import type { ReportQueryDto } from './dto/report-query.dto';
 import { ReportsService, reportMoney } from './reports.service';
 
 type AppointmentRow = {
+  doctorId: string;
   startDatetime: Date;
   endDatetime: Date;
-  status: 'CONFIRMED';
+  status: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
   type: 'SESSION';
   modality: 'IN_PERSON';
+  durationMinutes: number;
   patient: { user: { name: string } };
   doctor: { user: { name: string } };
 };
@@ -39,11 +41,13 @@ const query = (overrides: Partial<ReportQueryDto> = {}): ReportQueryDto => ({
   ...overrides,
 });
 const appointment = (): AppointmentRow => ({
+  doctorId: 'doctor-1',
   startDatetime: new Date('2026-11-05T13:00:00Z'),
   endDatetime: new Date('2026-11-05T13:50:00Z'),
   status: 'CONFIRMED',
   type: 'SESSION',
   modality: 'IN_PERSON',
+  durationMinutes: 50,
   patient: { user: { name: 'Paciente demonstração' } },
   doctor: { user: { name: 'Profissional demonstração' } },
 });
@@ -79,6 +83,12 @@ describe('ReportsService', () => {
     >,
     [unknown]
   >;
+  let waitlist: jest.Mock<Promise<unknown[]>, [unknown]>;
+  let requests: jest.Mock<Promise<unknown[]>, [unknown]>;
+  let patients: jest.Mock<Promise<unknown[]>, [unknown]>;
+  let stockMovements: jest.Mock<Promise<unknown[]>, [unknown]>;
+  let reviews: jest.Mock<Promise<unknown[]>, [unknown]>;
+  let audits: jest.Mock<Promise<unknown[]>, [unknown]>;
 
   beforeEach(() => {
     appointments = jest
@@ -106,13 +116,26 @@ describe('ReportsService', () => {
         [unknown]
       >()
       .mockResolvedValue([]);
+    waitlist = jest.fn<Promise<unknown[]>, [unknown]>().mockResolvedValue([]);
+    requests = jest.fn<Promise<unknown[]>, [unknown]>().mockResolvedValue([]);
+    patients = jest.fn<Promise<unknown[]>, [unknown]>().mockResolvedValue([]);
+    stockMovements = jest
+      .fn<Promise<unknown[]>, [unknown]>()
+      .mockResolvedValue([]);
+    reviews = jest.fn<Promise<unknown[]>, [unknown]>().mockResolvedValue([]);
+    audits = jest.fn<Promise<unknown[]>, [unknown]>().mockResolvedValue([]);
     service = new ReportsService({
       db: {
         appointment: { findMany: appointments },
         doctor: { findUnique: doctorProfile },
-        patient: { findUnique: patientProfile },
+        patient: { findUnique: patientProfile, findMany: patients },
         financialTransaction: { findMany: finances },
         inventoryItem: { findMany: inventory },
+        waitlist: { findMany: waitlist },
+        scheduleRequest: { findMany: requests },
+        stockMovement: { findMany: stockMovements },
+        review: { findMany: reviews },
+        auditLog: { findMany: audits },
       },
     } as unknown as PrismaService);
   });
@@ -188,7 +211,16 @@ describe('ReportsService', () => {
   it.each([doctor, patient, reception])(
     'bloqueia finanças e estoque para $role antes de ler os dados',
     async (actor) => {
-      for (const kind of ['financial', 'inventory'] as const) {
+      for (const kind of [
+        'financial',
+        'inventory',
+        'professionals',
+        'demand',
+        'patients',
+        'stock-movements',
+        'satisfaction',
+        'audit',
+      ] as const) {
         await expect(
           service.preview(query({ kind }), actor),
         ).rejects.toBeInstanceOf(ForbiddenException);
@@ -198,6 +230,12 @@ describe('ReportsService', () => {
       }
       expect(finances).not.toHaveBeenCalled();
       expect(inventory).not.toHaveBeenCalled();
+      expect(waitlist).not.toHaveBeenCalled();
+      expect(requests).not.toHaveBeenCalled();
+      expect(patients).not.toHaveBeenCalled();
+      expect(stockMovements).not.toHaveBeenCalled();
+      expect(reviews).not.toHaveBeenCalled();
+      expect(audits).not.toHaveBeenCalled();
     },
   );
 
@@ -265,6 +303,116 @@ describe('ReportsService', () => {
     expect(result.note).toContain('não representam um saldo histórico');
     expect(result.rows[0]).toContain('Repor estoque');
     expect(inventory.mock.calls[0][0]).not.toHaveProperty('where');
+  });
+
+  it('resume atividade profissional sem expor pacientes ou conteúdo clínico', async () => {
+    appointments.mockResolvedValue([
+      { ...appointment(), status: 'COMPLETED', durationMinutes: 50 },
+      { ...appointment(), status: 'CANCELLED', durationMinutes: 50 },
+    ]);
+    const result = await service.preview(
+      query({ kind: 'professionals' }),
+      admin,
+    );
+    expect(result.rows).toEqual([
+      ['Profissional demonstração', '2', '1', '1', '50'],
+    ]);
+    expect(result.note).toContain('Não mede ocupação');
+  });
+
+  it('resume fila e conversão de solicitações sem incluir dados dos pacientes', async () => {
+    waitlist.mockResolvedValue([
+      {
+        status: 'scheduled',
+        enteredAt: new Date('2026-11-01T12:00:00Z'),
+        exitedAt: new Date('2026-11-03T12:00:00Z'),
+      },
+    ]);
+    requests.mockResolvedValue([
+      { status: 'APPROVED', generatedApptId: 'appointment-1' },
+      { status: 'PENDING', generatedApptId: null },
+    ]);
+    const result = await service.preview(query({ kind: 'demand' }), admin);
+    expect(result.metrics).toContainEqual({
+      label: 'Solicitações com consulta gerada',
+      value: '1',
+    });
+    expect(result.metrics).toContainEqual({
+      label: 'Espera média até saída',
+      value: '2,0 dias',
+    });
+    expect(result.rows).toContainEqual(['Fila de espera', 'Atendido', '1']);
+  });
+
+  it('resume cadastros recentes sem exportar identificação dos pacientes', async () => {
+    patients.mockResolvedValue([
+      { status: 'active' },
+      { status: 'inactive' },
+      { status: 'active' },
+    ]);
+    const result = await service.preview(query({ kind: 'patients' }), admin);
+    expect(result.metrics).toContainEqual({
+      label: 'Novos cadastros',
+      value: '3',
+    });
+    expect(result.rows).toContainEqual(['Ativo', '2']);
+  });
+
+  it('agrega movimentações de estoque por item', async () => {
+    stockMovements.mockResolvedValue([
+      {
+        itemId: 'item-1',
+        movementType: 'ENTRY',
+        quantity: 5,
+        item: { name: 'Luvas' },
+      },
+      {
+        itemId: 'item-1',
+        movementType: 'EXIT',
+        quantity: 2,
+        item: { name: 'Luvas' },
+      },
+    ]);
+    const result = await service.preview(
+      query({ kind: 'stock-movements' }),
+      admin,
+    );
+    expect(result.rows).toEqual([['Luvas', '5', '2', '2']]);
+    expect(result.metrics).toContainEqual({
+      label: 'Unidades retiradas',
+      value: '2',
+    });
+  });
+
+  it('resume avaliações por profissional sem comentários nem pacientes', async () => {
+    reviews.mockResolvedValue([
+      {
+        doctorId: 'doctor-1',
+        rating: 5,
+        doctor: { user: { name: 'Profissional A' } },
+      },
+      {
+        doctorId: 'doctor-1',
+        rating: 3,
+        doctor: { user: { name: 'Profissional A' } },
+      },
+    ]);
+    const result = await service.preview(
+      query({ kind: 'satisfaction' }),
+      admin,
+    );
+    expect(result.rows).toEqual([['Profissional A', '2', '4,00']]);
+    expect(result.columns).not.toContain('Comentário');
+  });
+
+  it('resume auditoria sem expor metadados, identificadores ou IP', async () => {
+    audits.mockResolvedValue([
+      { action: 'patient.read', resource: 'Patient', actorRole: 'ADMIN' },
+      { action: 'patient.read', resource: 'Patient', actorRole: 'ADMIN' },
+    ]);
+    const result = await service.preview(query({ kind: 'audit' }), admin);
+    expect(result.rows).toEqual([['Patient', 'patient.read', 'ADMIN', '2']]);
+    expect(result.note).toContain('Não inclui identificadores');
   });
 
   it('limita apenas a prévia; CSV inclui registros após a linha 100', async () => {
