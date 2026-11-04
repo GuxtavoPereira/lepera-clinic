@@ -36,6 +36,8 @@ O objetivo é facilitar o cadastro e a localização de pacientes, organizar sol
 - **Recuperação de senha:** formulário, link de uso único com validade de 30 minutos e encerramento das sessões anteriores, mediante configuração do Gmail SMTP.
 - **Regras e segurança:** CPF obrigatório, único e validado por dígitos verificadores; controle de acesso na API; criptografia dos campos clínicos e auditoria das operações previstas.
 
+As fotos de referência da área pública são de [Beyza Kılıçdere](https://www.pexels.com/photo/modern-minimalist-living-room-interior-design-28905874/), [Dilan Turhan](https://www.pexels.com/photo/potted-indoor-plant-by-a-minimalist-couch-34909829/), [Renee B](https://www.pexels.com/photo/modern-office-waiting-area-with-chairs-and-plant-29637410/) e [Tori Gordon](https://www.pexels.com/photo/beige-sofa-with-cushions-in-the-middle-of-a-living-room-24304750/), sob a [licença do Pexels](https://www.pexels.com/license/).
+
 ## 🌐 Acessos na Vercel
 
 | Serviço | Endereço |
@@ -313,7 +315,7 @@ SMTP_FROM=leperapiaoficial@gmail.com
 SMTP_PASSWORD=SENHA_DE_APP_PRIVADA
 ```
 
-No cliente Web do Google Cloud, cadastre as origens JavaScript `https://lepera-clinic.vercel.app`, `http://localhost` e `http://localhost:3000`. Não é necessário segredo OAuth nem URI de redirecionamento para este fluxo por callback. O botão não é login completo de paciente: apenas permite consultar horários livres. Para solicitar atendimento, conclua o cadastro com CPF e senha ou entre na conta existente. Consulte a [documentação do Google Identity Services](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+No cliente Web do Google Cloud, cadastre as origens JavaScript `https://lepera-clinic.vercel.app`, `http://localhost` e `http://localhost:3000`. Para testar em outra porta, cadastre a origem completa, como `http://localhost:3012`, e use o mesmo endereço em `WEB_URL` na API. Abra a interface pelo endereço cadastrado, incluindo o mesmo host e a mesma porta. O fluxo usa um callback do Google Identity Services no navegador. O botão oferece consulta de horários livres. Para solicitar atendimento, conclua o cadastro com CPF e senha ou entre na conta existente. Consulte a [documentação do Google Identity Services](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
 
 No Gmail, habilite a verificação em duas etapas e gere uma senha de app em [Senhas de app](https://myaccount.google.com/apppasswords). Use essa senha em `SMTP_PASSWORD`, sem os espaços exibidos pelo Google. Na Vercel, mantenha-a como variável **Sensitive** de Production e publique uma nova implantação após salvar. Nunca envie a senha pelo chat nem faça commit de arquivos `.env`. Sem a configuração completa, o formulário informa que o envio ainda não foi ativado. A entrega real deve ser conferida com uma conta de teste cujo e-mail você controla.
 

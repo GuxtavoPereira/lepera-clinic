@@ -40,10 +40,13 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={dark ? "Ativar tema claro" : "Ativar tema escuro"}
       title={dark ? "Tema claro" : "Tema escuro"}
-      aria-pressed={dark}
-      className="min-h-11 min-w-11 rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+      className="inline-flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:focus-visible:outline-sidebar-primary"
     >
-      {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}
+      {dark ? (
+        <Sun aria-hidden="true" className="size-5" />
+      ) : (
+        <Moon aria-hidden="true" className="size-5" />
+      )}
     </button>
   );
 }

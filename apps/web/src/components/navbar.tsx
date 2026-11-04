@@ -1,68 +1,114 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { HeartPulse, LogIn, Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const publicLinks = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "Sobre nós" },
-  { href: "/explore/calendar", label: "Horários disponíveis" },
-  { href: "/contact", label: "Contato / Agende" },
+  { href: "/#inicio", label: "Início" },
+  { href: "/#atendimentos", label: "Atendimentos" },
+  { href: "/#equipe", label: "Equipe" },
+  { href: "/#sobre", label: "Sobre nós" },
+  { href: "/#espaco", label: "Nosso espaço" },
+  { href: "/#contato", label: "Contato" },
 ];
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
 
   return (
-    <header className="w-full border-b bg-background shadow-sm">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-
-        <Link href="/" onClick={() => setMenuOpen(false)} className="text-xl font-bold text-primary">
-          Leperapia Clinic
+    <header
+      className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-sm"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && menuOpen) {
+          setMenuOpen(false);
+          menuButton.current?.focus();
+        }
+      }}
+    >
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-1 px-3 sm:gap-2 sm:px-4 md:px-8">
+        <Link
+          href="/#inicio"
+          onClick={() => setMenuOpen(false)}
+          className="inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-lg text-sm font-bold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary min-[22.5rem]:gap-2 min-[22.5rem]:text-[0.9375rem] sm:text-lg dark:text-sidebar-primary"
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:size-9">
+            <HeartPulse aria-hidden="true" className="size-5" />
+          </span>
+          <span className="truncate">Leperapia Clinic</span>
         </Link>
 
-        <nav aria-label="Navegação principal" className="hidden md:flex gap-6 items-center">
+        <nav
+          aria-label="Navegação principal"
+          className="hidden items-center gap-4 lg:flex xl:gap-6"
+        >
           {publicLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-medium hover:text-primary transition-colors">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="inline-flex min-h-11 items-center rounded-md text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary dark:hover:text-sidebar-primary"
+            >
               {link.label}
             </Link>
           ))}
         </nav>
 
-
-        <div className="flex items-center gap-2">
-          <Link 
-            href="/auth/login" 
+        <div className="flex shrink-0 items-center gap-1 min-[22.5rem]:gap-2">
+          <ThemeToggle />
+          <Link
+            href="/auth/login"
             onClick={() => setMenuOpen(false)}
-            className="text-sm font-medium bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg bg-primary px-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary min-[22.5rem]:px-3 sm:px-4"
           >
-            Login
+            <LogIn aria-hidden="true" className="size-4 min-[22.5rem]:hidden sm:block" />
+            <span className="sr-only min-[22.5rem]:not-sr-only">Login</span>
           </Link>
           <button
+            ref={menuButton}
             type="button"
-            className="rounded-md p-2 hover:bg-muted md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:hidden"
             aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMenuOpen((open) => !open)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") setMenuOpen(false);
-            }}
           >
-            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            {menuOpen ? (
+              <X aria-hidden="true" className="size-5" />
+            ) : (
+              <Menu aria-hidden="true" className="size-5" />
+            )}
           </button>
         </div>
       </div>
-      {menuOpen && (
-        <nav id="mobile-navigation" aria-label="Navegação principal móvel" className="flex flex-col gap-1 border-t px-4 py-3 md:hidden">
+
+      <nav
+        id="mobile-navigation"
+        aria-label="Navegação principal móvel"
+        hidden={!menuOpen}
+        className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-y border-border bg-background px-4 py-3 shadow-lg lg:hidden"
+      >
+        <div className="mx-auto grid max-w-6xl gap-1">
           {publicLinks.map((link) => (
-            <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted hover:text-primary">
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+              className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-primary dark:hover:text-sidebar-primary"
+            >
               {link.label}
             </Link>
           ))}
-        </nav>
-      )}
+          <Link
+            href="/explore/calendar"
+            onClick={() => setMenuOpen(false)}
+            className="mt-2 flex min-h-11 items-center rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-primary dark:text-sidebar-primary"
+          >
+            Horários disponíveis
+          </Link>
+        </div>
+      </nav>
     </header>
   );
 }

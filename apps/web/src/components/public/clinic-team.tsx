@@ -66,15 +66,15 @@ export function ClinicTeam() {
     <section
       id="equipe"
       aria-labelledby="team-title"
-      className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 md:px-8 md:py-20"
+      className="mx-auto grid max-w-6xl scroll-mt-24 items-start gap-8 px-4 py-16 md:px-8 md:py-20 lg:grid-cols-[0.85fr_1.5fr] lg:gap-12"
     >
-      <div className="mb-8 max-w-2xl">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primary">
-          Pessoas que acolhem
+      <div className="max-w-2xl lg:pt-3">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primary dark:text-sidebar-primary">
+          Nossos profissionais
         </p>
         <h2
           id="team-title"
-          className="text-3xl font-semibold tracking-tight text-foreground"
+          className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
         >
           Conheça a nossa equipe.
         </h2>
@@ -84,116 +84,118 @@ export function ClinicTeam() {
           organizar seu atendimento.
         </p>
       </div>
-      {state.status === "loading" && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-border p-6 text-muted-foreground"
-        >
-          <Loader2 className="size-4 animate-spin" />
-          Carregando equipe…
-        </p>
-      )}
-      {state.status === "error" && (
-        <div
-          role="alert"
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <p className="mb-3 text-muted-foreground">
-            Não foi possível carregar a equipe agora.
-          </p>
-          <Button
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              setState({ status: "loading" });
-              setAttempt((value) => value + 1);
-            }}
+      <div className="min-w-0">
+        {state.status === "loading" && (
+          <p
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-border p-6 text-muted-foreground"
           >
-            Tentar novamente
-          </Button>
-        </div>
-      )}
-      {state.status === "ready" && (
-        <>
-          <h3 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
-            <Stethoscope className="size-5 text-primary" />
-            Profissionais de psicologia
-          </h3>
-          {state.team.doctors.length ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {state.team.doctors.map((doctor) => (
-                <article
-                  key={doctor.id}
-                  className="flex flex-col rounded-2xl border border-border bg-card p-6"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="mb-5 flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-xl font-semibold text-primary"
-                  >
-                    {initials(doctor.name)}
-                  </span>
-                  <h4 className="text-lg font-semibold text-foreground">
-                    {doctor.name}
-                  </h4>
-                  <p className="mt-1 text-sm font-medium text-primary">
-                    {doctor.specialty}
-                  </p>
-                  {doctor.clinicalApproach && (
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Abordagem: {doctor.clinicalApproach}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Registro profissional: {doctor.licenseNumber}
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-6 min-h-11 w-full"
-                    onClick={() => setSelected(doctor)}
-                    aria-label={`Conhecer ${doctor.name}`}
-                  >
-                    Conhecer profissional
-                    <ArrowUpRight className="size-4" />
-                  </Button>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="rounded-xl border border-border p-5 text-muted-foreground">
-              A apresentação dos profissionais estará disponível em breve.
+            <Loader2 className="size-4 animate-spin" />
+            Carregando equipe…
+          </p>
+        )}
+        {state.status === "error" && (
+          <div
+            role="alert"
+            className="rounded-xl border border-border bg-card p-6"
+          >
+            <p className="mb-3 text-muted-foreground">
+              Não foi possível carregar a equipe agora.
             </p>
-          )}
-          {state.team.receptionists.length > 0 && (
-            <div className="mt-10 rounded-2xl border border-border bg-card p-6">
-              <h3 className="flex items-center gap-2 font-semibold text-foreground">
-                <Users className="size-5 text-primary" />
-                Recepção
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Apoio para acompanhar solicitações, confirmações e encaixes.
-              </p>
-              <ul className="mt-5 flex flex-wrap gap-3">
-                {state.team.receptionists.map((person) => (
-                  <li
-                    key={person.id}
-                    className="flex items-center gap-3 rounded-xl bg-muted/60 px-4 py-3"
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={() => {
+                setState({ status: "loading" });
+                setAttempt((value) => value + 1);
+              }}
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        )}
+        {state.status === "ready" && (
+          <>
+            <h3 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
+              <Stethoscope className="size-5 text-primary" />
+              Profissionais de psicologia
+            </h3>
+            {state.team.doctors.length ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {state.team.doctors.map((doctor) => (
+                  <article
+                    key={doctor.id}
+                    className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-5 shadow-sm"
                   >
                     <span
                       aria-hidden="true"
-                      className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+                      className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-xl font-semibold text-primary dark:text-sidebar-primary"
                     >
-                      {initials(person.name)}
+                      {initials(doctor.name)}
                     </span>
-                    <span className="text-sm font-medium text-foreground">
-                      {person.name}
-                    </span>
-                  </li>
+                    <h4 className="text-lg font-semibold text-foreground">
+                      {doctor.name}
+                    </h4>
+                    <p className="mt-1 text-sm font-medium text-primary dark:text-sidebar-primary">
+                      {doctor.specialty}
+                    </p>
+                    {doctor.clinicalApproach && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Abordagem: {doctor.clinicalApproach}
+                      </p>
+                    )}
+                    <p className="mb-5 mt-2 text-xs text-muted-foreground">
+                      Registro profissional: {doctor.licenseNumber}
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="mt-auto min-h-11 w-full"
+                      onClick={() => setSelected(doctor)}
+                      aria-label={`Conhecer ${doctor.name}`}
+                    >
+                      Conhecer profissional
+                      <ArrowUpRight className="size-4" />
+                    </Button>
+                  </article>
                 ))}
-              </ul>
-            </div>
-          )}
-        </>
-      )}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-border p-5 text-muted-foreground">
+                A apresentação dos profissionais estará disponível em breve.
+              </p>
+            )}
+            {state.team.receptionists.length > 0 && (
+              <div className="mt-5 rounded-2xl border border-border bg-card p-5">
+                <h3 className="flex items-center gap-2 font-semibold text-foreground">
+                  <Users className="size-5 text-primary" />
+                  Recepção
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Apoio para acompanhar solicitações, confirmações e encaixes.
+                </p>
+                <ul className="mt-5 flex flex-wrap gap-3">
+                  {state.team.receptionists.map((person) => (
+                    <li
+                      key={person.id}
+                      className="flex items-center gap-3 rounded-xl bg-muted/60 px-4 py-3"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+                      >
+                        {initials(person.name)}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">
+                        {person.name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </div>
       <Sheet
         open={selected !== null}
         onOpenChange={(open) => {
