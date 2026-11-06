@@ -13,6 +13,7 @@ import type {
   ExportReportQueryDto,
   ReportQueryDto,
 } from './dto/report-query.dto';
+import { REPORT_KINDS } from './dto/report-query.dto';
 import { reportCsv, reportPdf } from './report-export';
 import {
   MAX_REPORT_ROWS,
@@ -119,7 +120,7 @@ export class ReportsService {
     ) {
       throw new ForbiddenException('Você não pode emitir relatórios');
     }
-    if (!['appointments', 'financial', 'inventory'].includes(query.kind)) {
+    if (!(REPORT_KINDS as readonly string[]).includes(query.kind)) {
       throw new BadRequestException('Selecione um tipo de relatório válido');
     }
     if (
@@ -136,15 +137,16 @@ export class ReportsService {
       period: { from: query.from, to: query.to },
       generatedAt: new Date().toISOString(),
     };
+    const nextDay = new Date(range.lte.getTime() + 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const dateTimeRange = {
+      gte: clinicInstant(query.from),
+      lt: clinicInstant(nextDay),
+    };
     if (query.kind === 'appointments') {
-      const nextDay = new Date(range.lte.getTime() + 86_400_000)
-        .toISOString()
-        .slice(0, 10);
       const where: Prisma.AppointmentWhereInput = {
-        startDatetime: {
-          gte: clinicInstant(query.from),
-          lt: clinicInstant(nextDay),
-        },
+        startDatetime: dateTimeRange,
       };
       let scopeLabel = 'Consultas da clínica';
       if (actor.role === 'DOCTOR') {
@@ -295,6 +297,356 @@ export class ReportsService {
           },
           { label: 'A receber', value: reportMoney(pendingIncome) },
           { label: 'A pagar', value: reportMoney(pendingExpenses) },
+        ],
+      };
+    }
+    if (query.kind === 'professionals') {
+      const entries = await this.prisma.db.appointment.findMany({
+        where: { startDatetime: dateTimeRange },
+        select: {
+          doctorId: true,
+          status: true,
+          durationMinutes: true,
+          doctor: { select: { user: { select: { name: true } } } },
+        },
+        orderBy: [{ doctorId: 'asc' }, { startDatetime: 'asc' }],
+        take: MAX_REPORT_ROWS + 1,
+      });
+      this.checkLimit(entries.length);
+      const grouped = new Map<
+        string,
+        {
+          name: string;
+          total: number;
+          completed: number;
+          cancelled: number;
+          minutes: number;
+        }
+      >();
+      for (const entry of entries) {
+        const group = grouped.get(entry.doctorId) ?? {
+          name: entry.doctor.user.name,
+          total: 0,
+          completed: 0,
+          cancelled: 0,
+          minutes: 0,
+        };
+        group.total += 1;
+        if (entry.status === 'COMPLETED') {
+          group.completed += 1;
+          group.minutes += entry.durationMinutes;
+        }
+        if (entry.status === 'CANCELLED') group.cancelled += 1;
+        grouped.set(entry.doctorId, group);
+      }
+      const rows = [...grouped.entries()]
+        .map(([, group]) => group)
+        .sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'))
+        .map((group) => [
+          group.name,
+          String(group.total),
+          String(group.completed),
+          String(group.cancelled),
+          String(group.minutes),
+        ]);
+      return {
+        ...base,
+        title: 'Atividade dos profissionais',
+        scopeLabel: 'Indicadores agregados da agenda da clínica',
+        note: 'Mostra consultas registradas no período e minutos de sessões realizadas. Não mede ocupação da disponibilidade nem faltas, pois esses dados não são registrados como histórico.',
+        columns: [
+          'Profissional',
+          'Consultas',
+          'Realizadas',
+          'Canceladas',
+          'Minutos realizados',
+        ],
+        rows,
+        totalRows: rows.length,
+        metrics: [
+          { label: 'Consultas no período', value: String(entries.length) },
+          { label: 'Profissionais com agenda', value: String(grouped.size) },
+          {
+            label: 'Realizadas',
+            value: String(
+              entries.filter((entry) => entry.status === 'COMPLETED').length,
+            ),
+          },
+        ],
+      };
+    }
+    if (query.kind === 'demand') {
+      const [waitlist, requests] = await Promise.all([
+        this.prisma.db.waitlist.findMany({
+          where: { enteredAt: dateTimeRange },
+          select: { status: true, exitedAt: true, enteredAt: true },
+          orderBy: [{ enteredAt: 'asc' }, { id: 'asc' }],
+          take: MAX_REPORT_ROWS + 1,
+        }),
+        this.prisma.db.scheduleRequest.findMany({
+          where: { createdAt: dateTimeRange },
+          select: { status: true, generatedApptId: true },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          take: MAX_REPORT_ROWS + 1,
+        }),
+      ]);
+      this.checkLimit(waitlist.length + requests.length);
+      const counts = new Map<string, number>();
+      const addCount = (label: string) =>
+        counts.set(label, (counts.get(label) ?? 0) + 1);
+      const waitlistLabels: Record<string, string> = {
+        waiting: 'Aguardando',
+        notified: 'Notificado',
+        scheduled: 'Atendido',
+        gave_up: 'Desistiu',
+      };
+      for (const entry of waitlist) {
+        addCount(
+          `Fila de espera|${waitlistLabels[entry.status] ?? entry.status}`,
+        );
+      }
+      const requestLabels: Record<string, string> = {
+        PENDING: 'Pendente',
+        APPROVED: 'Aprovada',
+        REJECTED: 'Recusada',
+      };
+      for (const entry of requests) {
+        addCount(`Solicitações|${requestLabels[entry.status] ?? entry.status}`);
+      }
+      const completedWait = waitlist.filter((entry) => entry.exitedAt);
+      const averageWaitDays = completedWait.length
+        ? completedWait.reduce(
+            (total, entry) =>
+              total +
+              (entry.exitedAt!.getTime() - entry.enteredAt.getTime()) /
+                86_400_000,
+            0,
+          ) / completedWait.length
+        : null;
+      const rows = [...counts.entries()]
+        .sort(([first], [second]) => first.localeCompare(second, 'pt-BR'))
+        .map(([key, count]) => [...key.split('|'), String(count)]);
+      return {
+        ...base,
+        title: 'Fila de espera e solicitações',
+        scopeLabel: 'Indicadores agregados de procura por atendimento',
+        note: 'Os grupos referem-se a registros criados no período, apresentados com a situação atual. O tempo médio considera somente entradas da fila que já têm data de saída.',
+        columns: ['Origem', 'Situação atual', 'Quantidade'],
+        rows,
+        totalRows: rows.length,
+        metrics: [
+          { label: 'Entradas na fila', value: String(waitlist.length) },
+          { label: 'Solicitações recebidas', value: String(requests.length) },
+          {
+            label: 'Solicitações com consulta gerada',
+            value: String(
+              requests.filter((entry) => entry.generatedApptId).length,
+            ),
+          },
+          {
+            label: 'Espera média até saída',
+            value:
+              averageWaitDays === null
+                ? 'Sem dados'
+                : `${averageWaitDays.toFixed(1).replace('.', ',')} dias`,
+          },
+        ],
+      };
+    }
+    if (query.kind === 'patients') {
+      const entries = await this.prisma.db.patient.findMany({
+        where: { user: { createdAt: dateTimeRange } },
+        select: { status: true },
+        take: MAX_REPORT_ROWS + 1,
+      });
+      this.checkLimit(entries.length);
+      const counts = new Map<string, number>();
+      const labels: Record<string, string> = {
+        active: 'Ativo',
+        inactive: 'Inativo',
+        em_espera: 'Em espera',
+      };
+      for (const entry of entries) {
+        const label = labels[entry.status] ?? entry.status;
+        counts.set(label, (counts.get(label) ?? 0) + 1);
+      }
+      const rows = [...counts.entries()]
+        .sort(([first], [second]) => first.localeCompare(second, 'pt-BR'))
+        .map(([status, count]) => [status, String(count)]);
+      return {
+        ...base,
+        title: 'Novos pacientes',
+        scopeLabel: 'Resumo agregado de cadastros da clínica',
+        note: 'O período filtra a data de cadastro. A situação apresentada é a situação atual do cadastro, não um histórico de status.',
+        columns: ['Situação atual', 'Quantidade'],
+        rows,
+        totalRows: rows.length,
+        metrics: [
+          { label: 'Novos cadastros', value: String(entries.length) },
+          {
+            label: 'Ativos entre os novos cadastros',
+            value: String(
+              entries.filter((entry) => entry.status === 'active').length,
+            ),
+          },
+        ],
+      };
+    }
+    if (query.kind === 'stock-movements') {
+      const entries = await this.prisma.db.stockMovement.findMany({
+        where: { createdAt: dateTimeRange },
+        select: {
+          itemId: true,
+          movementType: true,
+          quantity: true,
+          item: { select: { name: true } },
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        take: MAX_REPORT_ROWS + 1,
+      });
+      this.checkLimit(entries.length);
+      const grouped = new Map<
+        string,
+        { name: string; entries: number; exits: number; count: number }
+      >();
+      for (const entry of entries) {
+        const group = grouped.get(entry.itemId) ?? {
+          name: entry.item.name,
+          entries: 0,
+          exits: 0,
+          count: 0,
+        };
+        if (entry.movementType === 'ENTRY') group.entries += entry.quantity;
+        else group.exits += entry.quantity;
+        group.count += 1;
+        grouped.set(entry.itemId, group);
+      }
+      const rows = [...grouped.entries()]
+        .map(([, group]) => group)
+        .sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'))
+        .map((group) => [
+          group.name,
+          String(group.entries),
+          String(group.exits),
+          String(group.count),
+        ]);
+      return {
+        ...base,
+        title: 'Movimentações de estoque',
+        scopeLabel: 'Movimentações registradas no período',
+        note: 'Totais de entradas e saídas por item. Não representam custo financeiro ou posição histórica do estoque.',
+        columns: [
+          'Item',
+          'Unidades recebidas',
+          'Unidades retiradas',
+          'Movimentações',
+        ],
+        rows,
+        totalRows: rows.length,
+        metrics: [
+          { label: 'Movimentações', value: String(entries.length) },
+          {
+            label: 'Unidades recebidas',
+            value: String(
+              entries
+                .filter((entry) => entry.movementType === 'ENTRY')
+                .reduce((sum, entry) => sum + entry.quantity, 0),
+            ),
+          },
+          {
+            label: 'Unidades retiradas',
+            value: String(
+              entries
+                .filter((entry) => entry.movementType === 'EXIT')
+                .reduce((sum, entry) => sum + entry.quantity, 0),
+            ),
+          },
+        ],
+      };
+    }
+    if (query.kind === 'satisfaction') {
+      const entries = await this.prisma.db.review.findMany({
+        where: { createdAt: dateTimeRange },
+        select: {
+          doctorId: true,
+          rating: true,
+          doctor: { select: { user: { select: { name: true } } } },
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        take: MAX_REPORT_ROWS + 1,
+      });
+      this.checkLimit(entries.length);
+      const grouped = new Map<
+        string,
+        { name: string; total: number; score: number }
+      >();
+      for (const entry of entries) {
+        const group = grouped.get(entry.doctorId) ?? {
+          name: entry.doctor.user.name,
+          total: 0,
+          score: 0,
+        };
+        group.total += 1;
+        group.score += entry.rating;
+        grouped.set(entry.doctorId, group);
+      }
+      const rows = [...grouped.entries()]
+        .map(([, group]) => group)
+        .sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'))
+        .map((group) => [
+          group.name,
+          String(group.total),
+          (group.score / group.total).toFixed(2).replace('.', ','),
+        ]);
+      const score =
+        entries.reduce((sum, entry) => sum + entry.rating, 0) /
+        (entries.length || 1);
+      return {
+        ...base,
+        title: 'Avaliações dos pacientes',
+        scopeLabel: 'Resumo agregado de avaliações por profissional',
+        note: 'Inclui apenas quantidade e notas. Comentários e identificação dos pacientes não são exportados.',
+        columns: ['Profissional', 'Avaliações', 'Nota média (1 a 5)'],
+        rows,
+        totalRows: rows.length,
+        metrics: [
+          { label: 'Avaliações recebidas', value: String(entries.length) },
+          {
+            label: 'Nota média geral',
+            value: entries.length
+              ? score.toFixed(2).replace('.', ',')
+              : 'Sem dados',
+          },
+        ],
+      };
+    }
+    if (query.kind === 'audit') {
+      const entries = await this.prisma.db.auditLog.findMany({
+        where: { createdAt: dateTimeRange },
+        select: { action: true, resource: true, actorRole: true },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        take: MAX_REPORT_ROWS + 1,
+      });
+      this.checkLimit(entries.length);
+      const grouped = new Map<string, number>();
+      for (const entry of entries) {
+        const key = `${entry.resource}|${entry.action}|${entry.actorRole ?? 'Não informado'}`;
+        grouped.set(key, (grouped.get(key) ?? 0) + 1);
+      }
+      const rows = [...grouped.entries()]
+        .sort(([first], [second]) => first.localeCompare(second, 'pt-BR'))
+        .map(([key, count]) => [...key.split('|'), String(count)]);
+      return {
+        ...base,
+        title: 'Atividade operacional',
+        scopeLabel: 'Resumo agregado da trilha de auditoria',
+        note: 'Exibe somente tipo de ação, recurso e papel. Não inclui identificadores, endereços IP, metadados ou conteúdo clínico.',
+        columns: ['Recurso', 'Ação', 'Papel', 'Quantidade'],
+        rows,
+        totalRows: rows.length,
+        metrics: [
+          { label: 'Ações registradas', value: String(entries.length) },
+          { label: 'Tipos de atividade', value: String(rows.length) },
         ],
       };
     }

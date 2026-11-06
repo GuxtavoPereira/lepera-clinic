@@ -1,6 +1,16 @@
 import { IsIn, Matches } from 'class-validator';
 
-export const REPORT_KINDS = ['appointments', 'financial', 'inventory'] as const;
+export const REPORT_KINDS = [
+  'appointments',
+  'financial',
+  'inventory',
+  'professionals',
+  'demand',
+  'patients',
+  'stock-movements',
+  'satisfaction',
+  'audit',
+] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
 
 export class ReportQueryDto {
