@@ -79,6 +79,7 @@ export function GooglePreviewButton({
   useEffect(() => {
     if (!config?.enabled || !config.clientId || !scriptReady) return;
     let active = true;
+    let resizeObserver: ResizeObserver | undefined;
     async function initialize() {
       try {
         const challenge = await previewFetch<GooglePreviewChallenge>(
@@ -86,7 +87,8 @@ export function GooglePreviewButton({
           { method: "POST" },
         );
         const id = window.google?.accounts.id;
-        if (!active || !mount.current || !id || !config?.clientId) return;
+        const container = mount.current;
+        if (!active || !container || !id || !config?.clientId) return;
         id.initialize({
           client_id: config.clientId,
           nonce: challenge.nonce,
@@ -119,15 +121,25 @@ export function GooglePreviewButton({
               });
           },
         });
-        mount.current.replaceChildren();
-        id.renderButton(mount.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          width: 280,
-          locale: "pt_BR",
-        });
+        resizeObserver?.disconnect();
+        let renderedWidth = 0;
+        const render = () => {
+          const width = Math.min(280, container.clientWidth);
+          if (!active || width === 0 || width === renderedWidth) return;
+          renderedWidth = width;
+          container.replaceChildren();
+          id.renderButton(container, {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            text: "continue_with",
+            width,
+            locale: "pt_BR",
+          });
+        };
+        render();
+        resizeObserver = new ResizeObserver(render);
+        resizeObserver.observe(container);
       } catch {
         if (active) setError("O acesso Google não carregou. Tente novamente.");
       }
@@ -138,6 +150,7 @@ export function GooglePreviewButton({
     }, 4 * 60_000);
     return () => {
       active = false;
+      resizeObserver?.disconnect();
       window.clearInterval(refresh);
     };
   }, [config, scriptReady, retry, success]);
@@ -163,8 +176,8 @@ export function GooglePreviewButton({
         ref={mount}
         className={
           busy
-            ? "pointer-events-none flex justify-center opacity-60"
-            : "flex min-h-11 justify-center"
+            ? "pointer-events-none flex min-h-11 min-w-0 justify-center opacity-60"
+            : "flex min-h-11 min-w-0 justify-center"
         }
       />
       {!config && !error && (

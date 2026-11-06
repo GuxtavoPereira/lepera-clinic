@@ -1,7 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, LogOut, User as UserIcon } from "lucide-react";
+import { ChevronLeft, LogOut, Menu, User as UserIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,27 +55,35 @@ export function Header() {
     router.push("/auth/login");
   }
   return (
-    <header className="flex h-16 w-full shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 md:px-6">
-      <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-        <details key={pathname} className="relative md:hidden">
+    <header className="grid w-full shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 border-b border-border bg-card px-3 py-2 sm:h-16 sm:grid-cols-[auto_minmax(0,1fr)_auto] lg:px-6">
+      <div className="flex items-center gap-1 text-muted-foreground">
+        <details
+          key={pathname}
+          className="relative lg:hidden"
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || !event.currentTarget.open) return;
+            event.currentTarget.open = false;
+            event.currentTarget.querySelector("summary")?.focus();
+          }}
+        >
           <summary
-            className="cursor-pointer rounded-md border px-2 py-1"
+            className="flex size-11 cursor-pointer list-none items-center justify-center rounded-md border border-border hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
             aria-label="Abrir menu de navegação"
           >
-            Menu
+            <Menu aria-hidden="true" className="size-5" />
           </summary>
           <nav
             aria-label="Menu da área restrita"
-            className="absolute left-0 top-10 z-50 max-h-96 w-60 overflow-y-auto rounded-lg border bg-popover p-2 shadow-lg"
+            className="absolute left-0 top-full z-50 mt-1 max-h-[min(24rem,calc(100dvh_-_5rem))] w-60 max-w-[calc(100vw_-_1.5rem)] overflow-y-auto rounded-lg border bg-popover p-2 shadow-lg"
           >
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={pathname === item.href ? "page" : undefined}
-                className="flex items-center gap-2 rounded-md p-3 text-foreground hover:bg-accent"
+                className="flex min-h-11 items-center gap-2 rounded-md p-3 text-sm text-foreground hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:font-medium"
               >
-                <item.icon className="size-4" />
+                <item.icon aria-hidden="true" className="size-4 shrink-0" />
                 {item.label}
               </Link>
             ))}
@@ -89,14 +97,12 @@ export function Header() {
         >
           <ChevronLeft className="size-4" />
         </button>
-        <div className="min-w-0 truncate">
-          <span className="hidden sm:inline">Dashboard / </span>
-          <span className="font-semibold text-foreground">
-            {pageTitle(pathname)}
-          </span>
-        </div>
       </div>
-      <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+      <div className="col-span-2 col-start-1 row-start-2 min-w-0 truncate pb-1 text-sm text-muted-foreground sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:pb-0">
+        <span className="hidden sm:inline">Dashboard / </span>
+        <span className="font-semibold text-foreground">{pageTitle(pathname)}</span>
+      </div>
+      <div className="col-start-2 row-start-1 flex items-center justify-self-end gap-1 sm:col-start-3 sm:gap-3">
         {user && <GlobalSearch role={user.role} />}
         <ThemeToggle />
         <NotificationBell />
@@ -117,7 +123,7 @@ export function Header() {
                     )}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden max-w-48 truncate text-sm font-medium text-foreground md:block">
+                <span className="hidden max-w-48 truncate text-sm font-medium text-foreground xl:block">
                   {user?.name ?? "Minha conta"}
                 </span>
               </button>

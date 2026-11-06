@@ -78,7 +78,7 @@ export default function LoginPage() {
           }}
         >
           <div
-            className={`${styles.field} ${error ? styles.fieldError : styles.focused}`}
+            className={`${styles.field} ${error ? styles.fieldError : ""}`}
           >
             <label htmlFor="email">E-mail</label>
 

@@ -1,5 +1,5 @@
 .page {
-  min-height: 100vh;
+  min-height: calc(100svh - 4rem);
   width: 100%;
   background: var(--background);
   display: flex;
@@ -26,7 +26,7 @@
 
   width: 100%;
   max-width: 430px;
-  min-height: 100vh;
+  min-height: calc(100svh - 4rem);
 
   background: var(--bg);
   color: var(--ink);
@@ -46,7 +46,7 @@
 
 .brandpanel {
   background: var(--brand-deep);
-  padding: 52px 30px 46px;
+  padding: clamp(28px, 8vw, 52px) clamp(20px, 6vw, 30px) clamp(28px, 7vw, 46px);
 
   position: relative;
   overflow: hidden;
@@ -129,7 +129,8 @@
 .formwrap {
   flex: 1;
 
-  padding: 30px 26px 40px;
+  min-width: 0;
+  padding: 30px clamp(16px, 5vw, 26px) 40px;
 
   display: flex;
   flex-direction: column;
@@ -181,18 +182,19 @@
   background: transparent;
 
   font-family: inherit;
-  font-size: 14.5px;
+  font-size: 16px;
 
   color: var(--ink);
 
   width: 100%;
+  min-width: 0;
 }
 
 .inputShell input::placeholder {
   color: #9aaca4;
 }
 
-.focused .inputShell {
+.inputShell:focus-within {
   border-color: var(--brand);
 
   box-shadow: 0 0 0 3px rgba(82, 180, 174, 0.14);
