@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback } from "react";
+import Link from "next/link";
 import {
   Activity,
   CalendarCheck,
   FileText,
   ShieldCheck,
   UserCheck,
-  UserCog,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -20,6 +20,7 @@ import {
   useDashboardResource,
 } from "@/components/dashboard/dashboard-data";
 import {
+  dashboardActionClass,
   DashboardActions,
   DashboardAppointmentList,
   DashboardEmpty,
@@ -29,6 +30,9 @@ import {
 } from "@/components/dashboard/dashboard-ui";
 import { apiFetch } from "@/lib/api-client";
 import { useRole } from "@/lib/use-role";
+import { RoleBadge } from "@/components/users/role-badge";
+
+const todayHref = "/admin/appointments/today";
 
 type UserRow = { role: Role; isActive: boolean };
 type AuditEntry = {
@@ -138,14 +142,14 @@ export default function AdminDashboardPage() {
           label="Usuários ativos"
           value={dashboardValue(users, (data) => data.active)}
           icon={UserCheck}
-          href="/admin/users"
+          href="/admin/users?status=active"
         />
         <StatCard
           label="Consultas hoje"
           value={dashboardValue(today, (items) => items.length)}
           hint="Inclui atendimentos já realizados"
           icon={CalendarCheck}
-          href={superAdmin ? "/reception/calendar" : undefined}
+          href={todayHref}
         />
         {superAdmin ? (
           <StatCard
@@ -170,17 +174,14 @@ export default function AdminDashboardPage() {
               {(Object.keys(ROLE_LABEL) as Role[])
                 .filter((value) => (users.data?.byRole[value] ?? 0) > 0)
                 .map((value) => (
-                  <li
-                    key={value}
-                    className="flex items-center justify-between gap-3 px-4 py-3"
-                  >
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <UserCog aria-hidden="true" className="size-4" />
-                      {ROLE_LABEL[value]}
-                    </span>
-                    <span className="font-semibold">
-                      {users.data?.byRole[value]}
-                    </span>
+                  <li key={value}>
+                    <Link
+                      href={`/admin/users?role=${value}`}
+                      className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-4 py-2 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                    >
+                      <RoleBadge role={value} label={ROLE_LABEL[value]} />
+                      <span className="font-semibold">{users.data?.byRole[value]}</span>
+                    </Link>
                   </li>
                 ))}
               {users.data?.total === 0 ? (
@@ -244,29 +245,13 @@ export default function AdminDashboardPage() {
           </DashboardEmpty>
         ) : !today.data?.length ? (
           <DashboardEmpty>Nenhuma consulta para hoje.</DashboardEmpty>
-        ) : superAdmin ? (
-          <DashboardAppointmentList
-            items={today.data}
-            perspective="reception"
-            href="/reception/calendar"
-          />
         ) : (
-          <ul className="space-y-3">
-            {today.data.map((item) => (
-              <li
-                key={item.id}
-                className="rounded-2xl border border-border bg-card p-4 text-sm text-card-foreground"
-              >
-                <p className="font-medium">
-                  {item.patient?.user.name ?? "Paciente"} com{" "}
-                  {item.doctor?.user.name ?? "profissional"}
-                </p>
-                <p className="mt-1 text-muted-foreground">
-                  {dashboardDateTime(item.startDatetime)}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <>
+            <DashboardAppointmentList items={today.data.slice(0, 5)} perspective="reception" />
+            <Link href={todayHref} className={dashboardActionClass}>
+              Ver todas as consultas de hoje
+            </Link>
+          </>
         )}
       </DashboardSection>
     </div>

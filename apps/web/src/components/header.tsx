@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { navigation, profilePath } from "@/config/navigation";
 const EXTRA_TITLES: Record<string, string> = {
   "/profile": "Meu perfil",
+  "/admin/appointments/today": "Consultas de hoje",
   "/admin/patients": "Dados do paciente",
   "/patient/request-appointment": "Solicitar agendamento",
   "/reception/appointments/new": "Novo agendamento",

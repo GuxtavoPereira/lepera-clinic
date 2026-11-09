@@ -79,20 +79,20 @@ export default function DoctorDashboardPage() {
           value={dashboardValue(today, (items) => items.length)}
           hint="Inclui atendimentos já realizados"
           icon={CalendarCheck}
-          href="/doctor/calendar"
+          href="/doctor/calendar?view=day"
         />
         <StatCard
           label="Próximas consultas"
           value={dashboardValue(appointments, (data) => data.next.length)}
           hint="Inclui atendimento em andamento"
           icon={Calendar}
-          href="/doctor/calendar"
+          href="/doctor/calendar?view=upcoming"
         />
         <StatCard
           label="Aguardando assinatura"
           value={dashboardValue(unsigned, (count) => count)}
           icon={ClipboardList}
-          href="/doctor/records"
+          href="/doctor/records?status=PENDING"
           tone={unsigned.data ? "warning" : "default"}
         />
         <StatCard
@@ -100,7 +100,7 @@ export default function DoctorDashboardPage() {
           value={dashboardValue(cancellations, (count) => count)}
           hint="Aguardando a recepção"
           icon={Ban}
-          href="/doctor/calendar"
+          href="/doctor/calendar?view=pending-cancellations"
           tone={cancellations.data ? "warning" : "default"}
         />
       </div>

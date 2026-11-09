@@ -130,7 +130,7 @@ export function DashboardAppointmentList({
 }: {
   items: DashboardAppointment[];
   perspective: "reception" | "doctor" | "patient";
-  href: string | ((item: DashboardAppointment) => string);
+  href?: string | ((item: DashboardAppointment) => string);
 }) {
   return (
     <ul className="space-y-3">
@@ -158,13 +158,15 @@ export function DashboardAppointmentList({
               {STATUS_LABEL[item.status] ?? item.status}
             </span>
           </div>
-          <Link
-            className={`${dashboardActionClass} shrink-0`}
-            href={typeof href === "function" ? href(item) : href}
-          >
-            {perspective === "doctor" ? "Abrir atendimento" : "Ver consulta"}
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </Link>
+          {href ? (
+            <Link
+              className={`${dashboardActionClass} shrink-0`}
+              href={typeof href === "function" ? href(item) : href}
+            >
+              {perspective === "doctor" ? "Abrir atendimento" : "Ver consulta"}
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+          ) : null}
         </li>
       ))}
     </ul>

@@ -7,15 +7,7 @@ import { LogOut } from "lucide-react";
 import { useRole } from "@/lib/use-role";
 import { navigation } from "@/config/navigation";
 import { logout } from "@/lib/auth";
-import type { Role } from "@lepera/contracts";
-
-const ROLE_LABEL: Record<Role, string> = {
-  SUPER_ADMIN: "Super administrador",
-  ADMIN: "Administração",
-  DOCTOR: "Profissional",
-  PATIENT: "Paciente",
-  RECEPTIONIST: "Recepção",
-};
+import { RoleBadge } from "@/components/users/role-badge";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -35,10 +27,8 @@ export function Sidebar() {
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground overflow-hidden">
           LC
         </div>
-        <div className="flex flex-col overflow-hidden">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">
-            {role ? ROLE_LABEL[role] : ""}
-          </span>
+        <div className="flex min-w-0 flex-col gap-1">
+          {role ? <RoleBadge role={role} /> : null}
           <span className="text-sm font-bold text-slate-700 truncate">
             Leperapia Clinic
           </span>

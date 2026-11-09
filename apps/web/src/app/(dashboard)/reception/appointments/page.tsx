@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Calendar, CalendarPlus, Check, Clock3, Loader2, X } from "lucide-react";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 import { Button } from "@/components/ui/button";
@@ -205,6 +206,15 @@ function CancellationReviewCard({
 }
 
 export default function ReceptionAppointmentsPage() {
+  return (
+    <Suspense fallback={<p role="status">Carregando agenda…</p>}>
+      <ReceptionAppointments />
+    </Suspense>
+  );
+}
+
+function ReceptionAppointments() {
+  const onlyCancellations = useSearchParams().get("view") === "pending-cancellations";
   const [scope, setScope] = useState<Scope>("upcoming");
   const [status, setStatus] = useState<AppointmentStatus | "">("");
   const [page, setPage] = useState(1);
@@ -225,12 +235,14 @@ export default function ReceptionAppointmentsPage() {
     if (status) params.set("status", status);
 
     void Promise.all([
-      apiFetch<AppointmentsPage>(`/appointments?${params.toString()}`),
+      onlyCancellations
+        ? Promise.resolve(null)
+        : apiFetch<AppointmentsPage>(`/appointments?${params.toString()}`),
       apiFetch<PendingCancellation[]>("/cancellation-requests/pending"),
     ])
       .then(([appointments, requests]) => {
         if (!active) return;
-        setData(appointments);
+        if (appointments) setData(appointments);
         setPending(requests);
         setError(null);
       })
@@ -249,7 +261,7 @@ export default function ReceptionAppointmentsPage() {
     return () => {
       active = false;
     };
-  }, [scope, status, page, reloadKey]);
+  }, [scope, status, page, reloadKey, onlyCancellations]);
 
   function reload() {
     setReloadKey((key) => key + 1);
@@ -281,11 +293,12 @@ export default function ReceptionAppointmentsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">
-              Agenda geral
+              {onlyCancellations ? "Pedidos de cancelamento" : "Agenda geral"}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Todas as consultas da clínica, com cancelamento e análise dos
-              pedidos dos profissionais.
+              {onlyCancellations
+                ? "Pedidos de cancelamento de consulta aguardando análise da recepção."
+                : "Todas as consultas da clínica, com cancelamento e análise dos pedidos dos profissionais."}
             </p>
           </div>
         </div>
@@ -302,6 +315,11 @@ export default function ReceptionAppointmentsPage() {
         <Calendar className="size-4" />
         Ver calendário por semana ou dia
       </Link>
+      {onlyCancellations && (
+        <Link href="/reception/appointments" className="ml-2 inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-sm font-medium hover:bg-accent">
+          Ver todas as consultas
+        </Link>
+      )}
 
       {error && (
         <p
@@ -312,7 +330,7 @@ export default function ReceptionAppointmentsPage() {
         </p>
       )}
 
-      {pending.length > 0 && (
+      {(onlyCancellations || pending.length > 0) && !error && (
         <section className="space-y-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">
@@ -325,7 +343,11 @@ export default function ReceptionAppointmentsPage() {
               Aprovar cancela a consulta e libera o horário.
             </p>
           </div>
-          <ul className="space-y-3">
+          {loading ? (
+            <p role="status" className="text-sm text-muted-foreground">Carregando pedidos…</p>
+          ) : pending.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">Nenhum pedido de cancelamento em análise.</p>
+          ) : <ul className="space-y-3">
             {pending.map((request) => (
               <CancellationReviewCard
                 key={request.id}
@@ -333,11 +355,11 @@ export default function ReceptionAppointmentsPage() {
                 onDone={reload}
               />
             ))}
-          </ul>
+          </ul>}
         </section>
       )}
 
-      <section className="space-y-4">
+      {!onlyCancellations && <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
             {SCOPES.map((item) => (
@@ -372,7 +394,7 @@ export default function ReceptionAppointmentsPage() {
           </select>
         </div>
 
-        {loading ? (
+        {loading || (!data && !error) ? (
           <p className="text-sm text-slate-500">Carregando consultas...</p>
         ) : !data || data.items.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
@@ -471,7 +493,7 @@ export default function ReceptionAppointmentsPage() {
             </div>
           </>
         )}
-      </section>
+      </section>}
     </div>
   );
 }

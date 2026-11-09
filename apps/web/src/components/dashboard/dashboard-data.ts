@@ -65,8 +65,12 @@ export function useDashboardResource<T>(
 
 export const isCurrentAppointment = (item: DashboardAppointment) =>
   !["CANCELLED", "RESCHEDULED"].includes(item.status);
-export const isOpenAppointment = (item: DashboardAppointment) =>
-  ["SCHEDULED", "CONFIRMED", "WAITING"].includes(item.status);
+export const isUpcomingAppointment = (
+  item: Pick<DashboardAppointment, "status" | "endDatetime">,
+  now: number,
+) =>
+  ["SCHEDULED", "CONFIRMED", "WAITING"].includes(item.status) &&
+  Date.parse(item.endDatetime) > now;
 
 export async function loadTodayAppointments(signal: AbortSignal) {
   const from = calendarDateKey(new Date());
@@ -86,10 +90,7 @@ export async function loadOwnAppointments(signal: AbortSignal) {
   });
   const now = Date.now();
   const next = items
-    .filter(
-      (item) =>
-        isOpenAppointment(item) && new Date(item.endDatetime).getTime() > now,
-    )
+    .filter((item) => isUpcomingAppointment(item, now))
     .sort((a, b) => a.startDatetime.localeCompare(b.startDatetime));
   return { items, next };
 }

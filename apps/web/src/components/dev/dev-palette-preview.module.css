@@ -1,0 +1,62 @@
+.cream {
+  --preview-canvas: #faf6ed;
+  --preview-card: #fffdf8;
+  --preview-tint: #f2e7d4;
+  --preview-border: #d8c9b2;
+}
+
+.coral {
+  --preview-canvas: #fcf3ef;
+  --preview-card: #fffaf7;
+  --preview-tint: #f5e0d8;
+  --preview-border: #e3c4b7;
+}
+
+.blue {
+  --preview-canvas: #f2f6f9;
+  --preview-card: #f9fbfd;
+  --preview-tint: #e3ebf2;
+  --preview-border: #c6d4df;
+}
+
+:global(.dark) .cream {
+  --preview-canvas: #191610;
+  --preview-card: #231e16;
+  --preview-tint: #322a1f;
+  --preview-border: #514436;
+}
+
+:global(.dark) .coral {
+  --preview-canvas: #1c1513;
+  --preview-card: #251b18;
+  --preview-tint: #372924;
+  --preview-border: #554038;
+}
+
+:global(.dark) .blue {
+  --preview-canvas: #111920;
+  --preview-card: #19232b;
+  --preview-tint: #26343e;
+  --preview-border: #425464;
+}
+
+.cream,
+.coral,
+.blue {
+  --background: var(--preview-canvas);
+  --card: var(--preview-card);
+  --popover: var(--preview-card);
+  --secondary: var(--preview-tint);
+  --muted: var(--preview-tint);
+  --accent: var(--preview-tint);
+  --border: var(--preview-border);
+  --input: var(--preview-border);
+  --sidebar: var(--preview-card);
+  --sidebar-accent: var(--preview-tint);
+  --sidebar-border: var(--preview-border);
+  --color-slate-50: var(--preview-canvas);
+}
+
+:global(html:not(.dark)) :is(.cream, .coral, .blue) {
+  --muted-foreground: #525353;
+}

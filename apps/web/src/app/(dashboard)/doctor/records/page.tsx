@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ClipboardList, Lock } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api-client";
+import { DashboardLoading } from "@/components/dashboard/dashboard-ui";
 import { formatDateTimePtBr } from "@/lib/date-format";
 
 type RecordSummary = {
@@ -26,8 +28,17 @@ const FILTERS: Array<{ value: Filter; label: string }> = [
 ];
 
 export default function DoctorRecordsPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DoctorRecords />
+    </Suspense>
+  );
+}
+
+function DoctorRecords() {
+  const requested = useSearchParams().get("status");
+  const filter = FILTERS.find(({ value }) => value === requested)?.value ?? "ALL";
   const [records, setRecords] = useState<RecordSummary[]>([]);
-  const [filter, setFilter] = useState<Filter>("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,22 +104,18 @@ export default function DoctorRecordsPage() {
         </p>
       )}
 
-      <div className="flex w-fit gap-1 rounded-lg border border-slate-200 bg-white p-1">
+      <nav aria-label="Filtrar prontuários" className="flex w-fit max-w-full flex-wrap gap-1 rounded-lg border border-border bg-card p-1">
         {FILTERS.map((item) => (
-          <button
+          <Link
             key={item.value}
-            type="button"
-            onClick={() => setFilter(item.value)}
-            className={
-              filter === item.value
-                ? "rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
-                : "rounded-md px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-800"
-            }
+            href={item.value === "ALL" ? "/doctor/records" : `/doctor/records?status=${item.value}`}
+            aria-current={filter === item.value ? "true" : undefined}
+            className={`inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${filter === item.value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
           >
             {item.label}
-          </button>
+          </Link>
         ))}
-      </div>
+      </nav>
 
       {loading ? (
         <p className="text-sm text-slate-500">Carregando prontuários...</p>

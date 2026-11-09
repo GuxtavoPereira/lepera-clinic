@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Loader2, Stethoscope, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  CircleAlert,
+  Loader2,
+  Stethoscope,
+  Users,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,6 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 type PublicDoctor = {
   id: string;
@@ -38,10 +46,54 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+function securePhotoUrl(value: string | null) {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password
+      ? url.href
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function TeamPhoto({
+  name,
+  photoUrl,
+  className,
+}: {
+  name: string;
+  photoUrl: string | null;
+  className?: string;
+}) {
+  const source = securePhotoUrl(photoUrl);
+
+  return (
+    <Avatar
+      aria-hidden="true"
+      className={cn("overflow-hidden rounded-xl after:rounded-xl", className)}
+    >
+      {source && (
+        <AvatarImage
+          src={source}
+          alt=""
+          referrerPolicy="no-referrer"
+          className="rounded-none"
+        />
+      )}
+      <AvatarFallback className="rounded-none bg-primary/10 font-semibold text-primary dark:text-sidebar-primary">
+        {initials(name)}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
 export function ClinicTeam() {
   const [state, setState] = useState<TeamState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<PublicDoctor | null>(null);
+  const activeCard = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -90,16 +142,23 @@ export function ClinicTeam() {
             role="status"
             className="flex items-center gap-2 rounded-xl border border-border p-6 text-muted-foreground"
           >
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2
+              aria-hidden="true"
+              className="size-4 shrink-0 motion-safe:animate-spin"
+            />
             Carregando equipe…
           </p>
         )}
         {state.status === "error" && (
           <div
             role="alert"
-            className="rounded-xl border border-border bg-card p-6"
+            className="rounded-xl border border-destructive/35 bg-card p-6"
           >
-            <p className="mb-3 text-muted-foreground">
+            <p className="mb-3 flex items-center gap-2 text-foreground">
+              <CircleAlert
+                aria-hidden="true"
+                className="size-5 shrink-0 text-destructive"
+              />
               Não foi possível carregar a equipe agora.
             </p>
             <Button
@@ -117,7 +176,7 @@ export function ClinicTeam() {
         {state.status === "ready" && (
           <>
             <h3 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
-              <Stethoscope className="size-5 text-primary" />
+              <Stethoscope aria-hidden="true" className="size-5 text-primary" />
               Profissionais de psicologia
             </h3>
             {state.team.doctors.length ? (
@@ -125,14 +184,13 @@ export function ClinicTeam() {
                 {state.team.doctors.map((doctor) => (
                   <article
                     key={doctor.id}
-                    className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-5 shadow-sm"
+                    className="group relative flex min-w-0 flex-col rounded-xl border border-s-4 border-border border-s-primary/45 bg-card p-5 shadow-sm transition-colors hover:border-primary/50 focus-within:border-primary/50"
                   >
-                    <span
-                      aria-hidden="true"
-                      className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-xl font-semibold text-primary dark:text-sidebar-primary"
-                    >
-                      {initials(doctor.name)}
-                    </span>
+                    <TeamPhoto
+                      name={doctor.name}
+                      photoUrl={doctor.photoUrl}
+                      className="mb-4 size-16 sm:size-20"
+                    />
                     <h4 className="text-lg font-semibold text-foreground">
                       {doctor.name}
                     </h4>
@@ -147,15 +205,23 @@ export function ClinicTeam() {
                     <p className="mb-5 mt-2 text-xs text-muted-foreground">
                       Registro profissional: {doctor.licenseNumber}
                     </p>
-                    <Button
-                      variant="outline"
-                      className="mt-auto min-h-11 w-full"
-                      onClick={() => setSelected(doctor)}
-                      aria-label={`Conhecer ${doctor.name}`}
+                    <span
+                      aria-hidden="true"
+                      className="mt-auto flex items-center gap-2 text-sm font-semibold text-primary underline-offset-4 group-hover:underline group-focus-within:underline dark:text-sidebar-primary"
                     >
                       Conhecer profissional
-                      <ArrowUpRight className="size-4" />
-                    </Button>
+                      <ArrowUpRight className="size-4 shrink-0" />
+                    </span>
+                    <button
+                      type="button"
+                      className="absolute inset-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary dark:focus-visible:outline-sidebar-primary"
+                      aria-haspopup="dialog"
+                      aria-label={`Conhecer ${doctor.name}`}
+                      onClick={(event) => {
+                        activeCard.current = event.currentTarget;
+                        setSelected(doctor);
+                      }}
+                    />
                   </article>
                 ))}
               </div>
@@ -167,7 +233,7 @@ export function ClinicTeam() {
             {state.team.receptionists.length > 0 && (
               <div className="mt-5 rounded-2xl border border-border bg-card p-5">
                 <h3 className="flex items-center gap-2 font-semibold text-foreground">
-                  <Users className="size-5 text-primary" />
+                  <Users aria-hidden="true" className="size-5 text-primary" />
                   Recepção
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -179,12 +245,11 @@ export function ClinicTeam() {
                       key={person.id}
                       className="flex items-center gap-3 rounded-xl bg-muted/60 px-4 py-3"
                     >
-                      <span
-                        aria-hidden="true"
-                        className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
-                      >
-                        {initials(person.name)}
-                      </span>
+                      <TeamPhoto
+                        name={person.name}
+                        photoUrl={person.photoUrl}
+                        className="size-10"
+                      />
                       <span className="text-sm font-medium text-foreground">
                         {person.name}
                       </span>
@@ -202,12 +267,24 @@ export function ClinicTeam() {
           if (!open) setSelected(null);
         }}
       >
-        <SheetContent className="overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-xl">
-          <SheetHeader className="pr-10">
-            <SheetTitle>
-              {selected?.name ?? "Apresentação profissional"}
-            </SheetTitle>
-            <SheetDescription>{selected?.specialty}</SheetDescription>
+        <SheetContent
+          finalFocus={activeCard}
+          className="overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-xl"
+        >
+          <SheetHeader className="flex-row items-center gap-3 pr-12">
+            {selected && (
+              <TeamPhoto
+                name={selected.name}
+                photoUrl={selected.photoUrl}
+                className="size-16"
+              />
+            )}
+            <div className="min-w-0">
+              <SheetTitle>
+                {selected?.name ?? "Apresentação profissional"}
+              </SheetTitle>
+              <SheetDescription>{selected?.specialty}</SheetDescription>
+            </div>
           </SheetHeader>
           {selected && (
             <div className="space-y-6 p-4">
@@ -241,7 +318,7 @@ export function ClinicTeam() {
                 className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 Ver horários
-                <ArrowUpRight className="size-4" />
+                <ArrowUpRight aria-hidden="true" className="size-4" />
               </Link>
             </div>
           )}

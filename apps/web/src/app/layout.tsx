@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import { DevPalettePreview } from "@/components/dev/dev-palette-preview";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         )}
       >
         {children}
+        {process.env.NODE_ENV === "development" && <DevPalettePreview />}
       </body>
     </html>
   );

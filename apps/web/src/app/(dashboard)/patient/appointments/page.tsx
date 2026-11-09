@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Calendar, CalendarPlus, Clock3, UserRound } from "lucide-react";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
+import { DashboardLoading } from "@/components/dashboard/dashboard-ui";
+import { isCurrentAppointment, isUpcomingAppointment } from "@/components/dashboard/dashboard-data";
 import { ApiError, apiFetch } from "@/lib/api-client";
+import { calendarDateKey, calendarIntervalOnDay } from "@/lib/calendar";
 import { formatDatePtBr, formatDateTimePtBr } from "@/lib/date-format";
 
 type AppointmentStatus =
@@ -68,6 +72,14 @@ const requestStatusClasses: Record<ScheduleRequest["status"], string> = {
   REJECTED: "bg-slate-100 text-slate-700",
 };
 
+const APPOINTMENT_VIEWS = [
+  { value: "all", label: "Todas" },
+  { value: "today", label: "Hoje" },
+  { value: "upcoming", label: "Próximas" },
+  { value: "completed", label: "Realizadas" },
+  { value: "pending", label: "Pedidos em análise" },
+] as const;
+
 function appointmentTypeLabel(type: Appointment["type"]) {
   const labels: Record<Appointment["type"], string> = {
     SESSION: "Sessão",
@@ -78,11 +90,12 @@ function appointmentTypeLabel(type: Appointment["type"]) {
   return labels[type];
 }
 
-function fetchPage() {
-  return Promise.all([
+async function fetchPage() {
+  const [appointments, requests] = await Promise.all([
     apiFetch<Appointment[]>("/appointments/mine"),
     apiFetch<ScheduleRequest[]>("/schedule-requests/mine"),
   ]);
+  return { appointments, requests, loadedAt: Date.now() };
 }
 
 function AppointmentCard({
@@ -94,14 +107,6 @@ function AppointmentCard({
   isApprovedRequest?: boolean;
   onCancelled: () => void | Promise<void>;
 }) {
-  const statusLabel =
-    isApprovedRequest && appointment.status !== "CANCELLED"
-      ? "Aprovada"
-      : appointmentStatusLabels[appointment.status];
-  const statusClass =
-    isApprovedRequest && appointment.status !== "CANCELLED"
-      ? "bg-emerald-50 text-emerald-800"
-      : appointmentStatusClasses[appointment.status];
   const canCancel =
     appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED";
 
@@ -134,6 +139,9 @@ function AppointmentCard({
               Motivo do cancelamento: {appointment.cancelReason}
             </p>
           )}
+          {isApprovedRequest && (
+            <p className="text-xs text-muted-foreground">Originada de um pedido aprovado.</p>
+          )}
           {canCancel && (
             <CancelAppointmentButton
               appointmentId={appointment.id}
@@ -142,9 +150,9 @@ function AppointmentCard({
           )}
         </div>
         <span
-          className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusClass}`}
+          className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-medium ${appointmentStatusClasses[appointment.status]}`}
         >
-          {statusLabel}
+          {appointmentStatusLabels[appointment.status]}
         </span>
       </div>
     </li>
@@ -152,16 +160,23 @@ function AppointmentCard({
 }
 
 export default function PatientAppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [requests, setRequests] = useState<ScheduleRequest[]>([]);
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <PatientAppointments />
+    </Suspense>
+  );
+}
+
+function PatientAppointments() {
+  const requestedView = useSearchParams().get("view");
+  const view = APPOINTMENT_VIEWS.find(({ value }) => value === requestedView)?.value ?? "all";
+  const [data, setData] = useState<Awaited<ReturnType<typeof fetchPage>> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function reload() {
     try {
-      const [patientAppointments, patientRequests] = await fetchPage();
-      setAppointments(patientAppointments);
-      setRequests(patientRequests);
+      setData(await fetchPage());
       setError(null);
     } catch (err) {
       setError(
@@ -175,10 +190,9 @@ export default function PatientAppointmentsPage() {
   useEffect(() => {
     let active = true;
     void fetchPage()
-      .then(([patientAppointments, patientRequests]) => {
+      .then((result) => {
         if (!active) return;
-        setAppointments(patientAppointments);
-        setRequests(patientRequests);
+        setData(result);
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -196,17 +210,24 @@ export default function PatientAppointmentsPage() {
     };
   }, []);
 
-  const appointmentsCreatedFromRequests = new Set(
-    requests
-      .map((request) => request.generatedAppointment?.id)
-      .filter((id): id is string => !!id),
+  const appointments = data?.appointments ?? [];
+  const requests = data?.requests ?? [];
+  const linked = requests.flatMap((request) =>
+    request.status === "APPROVED" && request.generatedAppointment ? [request.generatedAppointment] : [],
   );
-  const directAppointments = appointments.filter(
-    (appointment) => !appointmentsCreatedFromRequests.has(appointment.id),
-  );
-  const requestsToDisplay = requests.filter(
-    (request) =>
-      request.status !== "APPROVED" || !request.generatedAppointment,
+  const linkedIds = new Set(linked.map(({ id }) => id));
+  const appointmentIds = new Set(appointments.map(({ id }) => id));
+  const day = data ? calendarDateKey(new Date(data.loadedAt)) : "";
+  const visibleAppointments = view === "all"
+    ? [...appointments, ...linked.filter(({ id }) => !appointmentIds.has(id))]
+    : appointments.filter((item) => {
+        if (view === "today") return isCurrentAppointment(item) && calendarIntervalOnDay(item.startDatetime, item.endDatetime, day);
+        if (view === "upcoming") return data && isUpcomingAppointment(item, data.loadedAt);
+        return view === "completed" && item.status === "COMPLETED";
+      });
+  const visibleRequests = requests.filter((request) => view === "pending"
+    ? request.status === "PENDING"
+    : request.status !== "APPROVED" || !request.generatedAppointment,
   );
 
   return (
@@ -235,6 +256,19 @@ export default function PatientAppointmentsPage() {
         Ver calendário e horários livres
       </Link>
 
+      <nav aria-label="Filtrar consultas e pedidos" className="flex flex-wrap gap-2">
+        {APPOINTMENT_VIEWS.map(({ value, label }) => (
+          <Link
+            key={value}
+            href={value === "all" ? "/patient/appointments" : `/patient/appointments?view=${value}`}
+            aria-current={view === value ? "true" : undefined}
+            className={`inline-flex min-h-11 items-center rounded-lg border px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${view === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground hover:bg-accent"}`}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+
       {error && (
         <p
           role="alert"
@@ -248,45 +282,30 @@ export default function PatientAppointmentsPage() {
         <p className="text-sm text-slate-500">Carregando suas consultas...</p>
       ) : (
         <>
-          <section className="space-y-4">
+          {view !== "pending" && <section className="space-y-4">
             <h2 className="text-lg font-semibold text-slate-900">
               Consultas
             </h2>
-            {directAppointments.length === 0 ? (
+            {visibleAppointments.length === 0 ? (
               <p className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
-                Você ainda não tem consultas cadastradas diretamente.
+                Nenhuma consulta encontrada neste filtro.
               </p>
             ) : (
               <ul className="space-y-3">
-                {directAppointments.map((appointment) => (
+                {visibleAppointments.map((appointment) => (
                   <AppointmentCard
                     key={appointment.id}
                     appointment={appointment}
+                    isApprovedRequest={linkedIds.has(appointment.id)}
                     onCancelled={reload}
                   />
                 ))}
               </ul>
             )}
 
-            {requests.flatMap((request) => {
-              if (
-                request.status !== "APPROVED" ||
-                !request.generatedAppointment
-              ) {
-                return [];
-              }
-              return [
-                <AppointmentCard
-                  key={request.id}
-                  appointment={request.generatedAppointment}
-                  isApprovedRequest
-                  onCancelled={reload}
-                />,
-              ];
-            })}
-          </section>
+          </section>}
 
-          <section className="space-y-4">
+          {(view === "all" || view === "pending") && <section className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
                 Solicitações
@@ -295,13 +314,13 @@ export default function PatientAppointmentsPage() {
                 Pedidos enviados à recepção e ainda sem consulta vinculada.
               </p>
             </div>
-            {requestsToDisplay.length === 0 ? (
+            {visibleRequests.length === 0 ? (
               <p className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
                 Você não tem solicitações aguardando análise.
               </p>
             ) : (
               <ul className="space-y-3">
-                {requestsToDisplay.map((request) => (
+                {visibleRequests.map((request) => (
                   <li
                     key={request.id}
                     className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center"
@@ -331,7 +350,7 @@ export default function PatientAppointmentsPage() {
                 ))}
               </ul>
             )}
-          </section>
+          </section>}
         </>
       )}
     </div>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   MoreVertical,
@@ -10,11 +12,12 @@ import {
   Mail,
   Calendar,
   Pencil,
-  ShieldCheck,
   UserCheck,
   Users as UsersIcon,
 } from "lucide-react";
 import { UserFormSheet } from "@/components/users/user-form-sheet";
+import { RoleBadge } from "@/components/users/role-badge";
+import { DashboardLoading } from "@/components/dashboard/dashboard-ui";
 import type { Role, UserResponse } from "@lepera/contracts";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Card } from "@/components/ui/card";
@@ -27,29 +30,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const ROLE_LABEL: Record<Role, string> = {
-  SUPER_ADMIN: "Super administrador",
-  ADMIN: "Administração",
-  DOCTOR: "Profissional",
-  PATIENT: "Paciente",
-  RECEPTIONIST: "Recepção",
-};
-
-const ROLE_DOT: Record<Role, string> = {
-  SUPER_ADMIN: "bg-slate-800",
-  ADMIN: "bg-blue-500",
-  DOCTOR: "bg-purple-500",
-  RECEPTIONIST: "bg-pink-500",
-  PATIENT: "bg-emerald-500",
-};
-
 const ROLE_FILTERS: Array<{ label: string; value: Role | "ALL" }> = [
   { label: "Todos", value: "ALL" },
+  { label: "Super administradores", value: "SUPER_ADMIN" },
   { label: "Administração", value: "ADMIN" },
   { label: "Profissionais", value: "DOCTOR" },
   { label: "Recepção", value: "RECEPTIONIST" },
   { label: "Pacientes", value: "PATIENT" },
 ];
+
+const STATUS_FILTERS = [
+  { label: "Todos", value: "all" },
+  { label: "Ativos", value: "active" },
+  { label: "Inativos", value: "inactive" },
+] as const;
+
+type UserStatus = (typeof STATUS_FILTERS)[number]["value"];
+
+function usersHref(role: Role | "ALL", status: UserStatus) {
+  const params = new URLSearchParams();
+  if (role !== "ALL") params.set("role", role);
+  if (status !== "all") params.set("status", status);
+  const query = params.toString();
+  return query ? `/admin/users?${query}` : "/admin/users";
+}
+
+function filterClass(selected: boolean) {
+  return `inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 text-sm font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-ring ${selected ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`;
+}
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -61,11 +69,23 @@ function formatDate(iso: string) {
 }
 
 export default function UsersManagementPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <UsersManagement />
+    </Suspense>
+  );
+}
+
+function UsersManagement() {
+  const params = useSearchParams();
+  const requestedRole = params.get("role");
+  const requestedStatus = params.get("status");
+  const roleFilter = ROLE_FILTERS.find(({ value }) => value === requestedRole)?.value ?? "ALL";
+  const statusFilter = STATUS_FILTERS.find(({ value }) => value === requestedStatus)?.value ?? "all";
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL");
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -111,13 +131,14 @@ export default function UsersManagementPage() {
     const term = search.trim().toLowerCase();
     return users.filter((u) => {
       const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+      const matchesStatus = statusFilter === "all" || u.isActive === (statusFilter === "active");
       const matchesSearch =
         term.length === 0 ||
         u.name.toLowerCase().includes(term) ||
         u.email.toLowerCase().includes(term);
-      return matchesRole && matchesSearch;
+      return matchesRole && matchesStatus && matchesSearch;
     });
-  }, [users, search, roleFilter]);
+  }, [users, search, roleFilter, statusFilter]);
 
   const stats = useMemo(() => {
     const active = users.filter((u) => u.isActive).length;
@@ -128,6 +149,9 @@ export default function UsersManagementPage() {
     }, {});
     return { active, inactive, total: users.length, byRole };
   }, [users]);
+  const roles = ROLE_FILTERS.filter(({ value }) =>
+    value !== "SUPER_ADMIN" || roleFilter === value || (stats.byRole[value] ?? 0) > 0,
+  );
 
   function handleCreate() {
     setEditingUser(null);
@@ -165,6 +189,7 @@ export default function UsersManagementPage() {
               <Search className="h-3.5 w-3.5 text-gray-400 mr-2 shrink-0" />
               <input
                 type="text"
+                aria-label="Buscar por nome ou e-mail"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nome ou e-mail..."
@@ -172,25 +197,43 @@ export default function UsersManagementPage() {
               />
             </div>
 
-            <div
+            <nav
               aria-label="Filtrar por perfil"
               className="flex min-w-0 max-w-full items-center gap-1 overflow-x-auto rounded-[10px] bg-white border border-gray-100 p-1.25"
             >
-              {ROLE_FILTERS.map((f) => (
-                <button
+              {roles.map((f) => (
+                <Link
                   key={f.value}
-                  onClick={() => setRoleFilter(f.value)}
-                  aria-pressed={roleFilter === f.value}
-                  className={
-                    roleFilter === f.value
-                      ? "min-h-11 shrink-0 rounded-[8px] bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground whitespace-nowrap"
-                      : "min-h-11 shrink-0 rounded-[8px] px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 whitespace-nowrap"
-                  }
+                  href={usersHref(f.value, statusFilter)}
+                  scroll={false}
+                  aria-current={roleFilter === f.value ? "true" : undefined}
+                  className={filterClass(roleFilter === f.value)}
                 >
                   {f.label}
-                </button>
+                </Link>
               ))}
-            </div>
+            </nav>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <nav aria-label="Filtrar por situação" className="flex gap-1 rounded-lg border border-border bg-card p-1">
+              {STATUS_FILTERS.map(({ label, value }) => (
+                <Link
+                  key={value}
+                  href={usersHref(roleFilter, value)}
+                  scroll={false}
+                  aria-current={statusFilter === value ? "true" : undefined}
+                  className={filterClass(statusFilter === value)}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+            {!loading && !error ? (
+              <p role="status" className="text-sm text-muted-foreground">
+                {filtered.length} {filtered.length === 1 ? "usuário encontrado" : "usuários encontrados"}
+              </p>
+            ) : null}
           </div>
 
           {error && (
@@ -249,10 +292,7 @@ export default function UsersManagementPage() {
                     </div>
 
                     <div className="mt-2">
-                      <span className="rounded-full bg-violet-50 text-violet-800 text-xs font-medium px-2.5 py-1 inline-flex items-center gap-1">
-                        <ShieldCheck className="h-3 w-3" />
-                        {ROLE_LABEL[u.role]}
-                      </span>
+                      <RoleBadge role={u.role} />
                     </div>
                   </div>
 
@@ -336,30 +376,18 @@ export default function UsersManagementPage() {
               Por Perfil
             </p>
             <div className="flex flex-col gap-2">
-              {(Object.keys(ROLE_LABEL) as Role[])
-                .filter(
-                  (role) =>
-                    role !== "SUPER_ADMIN" ||
-                    (stats.byRole.SUPER_ADMIN ?? 0) > 0,
-                )
-                .map((role) => (
-                  <div
+              {roles.flatMap(({ value: role }) => role === "ALL" ? [] : [
+                  <Link
                     key={role}
-                    className="flex items-center justify-between py-1.5"
+                    href={usersHref(role, "all")}
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-lg px-1 py-1.5 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
                   >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${ROLE_DOT[role]}`}
-                      />
-                      <span className="text-xs text-gray-500">
-                        {ROLE_LABEL[role]}
-                      </span>
-                    </div>
+                    <RoleBadge role={role} />
                     <span className="text-xs font-semibold text-gray-700">
                       {stats.byRole[role] ?? 0}
                     </span>
-                  </div>
-                ))}
+                  </Link>,
+                ])}
             </div>
           </Card>
         </div>

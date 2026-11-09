@@ -38,6 +38,7 @@ type Props = {
   selectedDoctorId?: string;
   onDoctorChange?: (id: string) => void;
   title?: string;
+  defaultView?: CalendarView;
 };
 
 type CalendarBlock =
@@ -90,6 +91,7 @@ export function AppointmentCalendar({
   selectedDoctorId = "",
   onDoctorChange,
   title = "Agenda",
+  defaultView,
 }: Props) {
   const [day, setDay] = useState(() => calendarDateKey(new Date()));
   const compact = useSyncExternalStore(
@@ -98,7 +100,7 @@ export function AppointmentCalendar({
     () => false,
   );
   const [chosenView, setView] = useState<CalendarView | null>(null);
-  const view = chosenView ?? (compact ? "day" : "week");
+  const view = chosenView ?? defaultView ?? (compact ? "day" : "week");
   const dateInputId = useId();
   const [month, setMonth] = useState(() => calendarDateKey(new Date()));
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);

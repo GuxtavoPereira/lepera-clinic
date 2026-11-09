@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { AppointmentStatus } from "@lepera/contracts";
 import { CalendarDays, CalendarPlus, List, RotateCw } from "lucide-react";
 import { AppointmentCalendar } from "@/components/appointments/appointment-calendar";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 import { Button } from "@/components/ui/button";
+import { DashboardLoading } from "@/components/dashboard/dashboard-ui";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { calendarDateKey, calendarTimeLabel, type CalendarEvent, type CalendarRange } from "@/lib/calendar";
 
@@ -24,6 +26,15 @@ type CalendarAppointment = {
 type DoctorOption = { id: string; user: { name: string } };
 
 export default function ReceptionCalendarPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <ReceptionCalendar />
+    </Suspense>
+  );
+}
+
+function ReceptionCalendar() {
+  const defaultView = useSearchParams().get("view") === "day" ? "day" : undefined;
   const [range, setRange] = useState<CalendarRange | null>(null);
   const rangeKey = useRef("");
   const [doctorId, setDoctorId] = useState("");
@@ -113,6 +124,8 @@ export default function ReceptionCalendarPage() {
       </header>
       {doctorError && <p role="alert" className="text-sm text-amber-800">{doctorError}</p>}
       <AppointmentCalendar
+        key={defaultView ?? "responsive"}
+        defaultView={defaultView}
         events={events}
         loading={loading}
         error={error}

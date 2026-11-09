@@ -112,13 +112,13 @@ export default function PatientDashboardPage() {
           label="Consultas hoje"
           value={dashboardValue(today, (items) => items.length)}
           icon={CalendarCheck}
-          href="/patient/calendar"
+          href="/patient/appointments?view=today"
         />
         <StatCard
           label="Próximas consultas"
           value={dashboardValue(appointments, (data) => data.next.length)}
           icon={Calendar}
-          href="/patient/appointments"
+          href="/patient/appointments?view=upcoming"
         />
         <StatCard
           label="Realizadas"
@@ -128,13 +128,13 @@ export default function PatientDashboardPage() {
               data.items.filter((item) => item.status === "COMPLETED").length,
           )}
           icon={CalendarCheck}
-          href="/patient/appointments"
+          href="/patient/appointments?view=completed"
         />
         <StatCard
           label="Solicitações em análise"
           value={dashboardValue(requests, (count) => count)}
           icon={FileText}
-          href="/patient/appointments"
+          href="/patient/appointments?view=pending"
           tone={requests.data ? "warning" : "default"}
         />
       </div>

@@ -74,7 +74,7 @@ export default function ReceptionDashboardPage() {
           value={dashboardValue(today, (items) => items.length)}
           hint="Inclui atendimentos já realizados"
           icon={CalendarCheck}
-          href="/reception/calendar"
+          href="/reception/calendar?view=day"
         />
         <StatCard
           label="Solicitações de agendamento"
@@ -89,7 +89,7 @@ export default function ReceptionDashboardPage() {
           value={dashboardValue(cancellations, (items) => items.length)}
           hint="Solicitações dos profissionais"
           icon={Ban}
-          href="/reception/appointments"
+          href="/reception/appointments?view=pending-cancellations"
           tone={cancellations.data?.length ? "warning" : "default"}
         />
         <StatCard
@@ -118,7 +118,7 @@ export default function ReceptionDashboardPage() {
           <DashboardAppointmentList
             items={today.data}
             perspective="reception"
-            href="/reception/calendar"
+            href="/reception/calendar?view=day"
           />
         )}
       </DashboardSection>

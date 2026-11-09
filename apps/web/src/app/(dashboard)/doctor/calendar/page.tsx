@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Calendar, ClipboardList, Clock3, UserRound } from "lucide-react";
 import { RequestCancellationButton } from "@/components/appointments/request-cancellation-button";
 import { AppointmentCalendar } from "@/components/appointments/appointment-calendar";
 import { Button } from "@/components/ui/button";
+import { isUpcomingAppointment } from "@/components/dashboard/dashboard-data";
+import { dashboardActionClass, DashboardLoading } from "@/components/dashboard/dashboard-ui";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatDateTimePtBr } from "@/lib/date-format";
 import type { CalendarEvent, CalendarRange } from "@/lib/calendar";
@@ -30,6 +33,7 @@ type AppointmentStatus =
 type Appointment = {
   id: string;
   startDatetime: string;
+  endDatetime: string;
   durationMinutes: number;
   modality: "IN_PERSON" | "ONLINE";
   type: "SESSION" | "EVALUATION" | "RETURN" | "CLOSURE";
@@ -176,8 +180,22 @@ function AppointmentCard({
 }
 
 export default function DoctorCalendarPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DoctorCalendar />
+    </Suspense>
+  );
+}
+
+function DoctorCalendar() {
+  const view = useSearchParams().get("view");
+  const upcomingOnly = view === "upcoming";
+  const pendingOnly = view === "pending-cancellations";
+  const filtered = upcomingOnly || pendingOnly;
+  const defaultView = view === "day" ? "day" : undefined;
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [requests, setRequests] = useState<CancellationRequest[]>([]);
+  const [loadedAt, setLoadedAt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -197,7 +215,7 @@ export default function DoctorCalendarPage() {
   }, []);
 
   useEffect(() => {
-    if (!range) return;
+    if (!range || filtered) return;
     let active = true;
     const params = new URLSearchParams({ from: range.from, to: range.to });
     void apiFetch<{ items: CalendarAppointment[] }>(`/appointments/calendar?${params}`)
@@ -213,7 +231,7 @@ export default function DoctorCalendarPage() {
       })
       .finally(() => { if (active) setCalendarLoading(false); });
     return () => { active = false; };
-  }, [range, calendarReloadKey]);
+  }, [range, calendarReloadKey, filtered]);
 
   async function reload() {
     setCalendarLoading(true);
@@ -222,6 +240,7 @@ export default function DoctorCalendarPage() {
       const [mine, myRequests] = await fetchPage();
       setAppointments(mine);
       setRequests(myRequests);
+      setLoadedAt(Date.now());
       setError(null);
     } catch (err) {
       setError(
@@ -239,6 +258,7 @@ export default function DoctorCalendarPage() {
         if (!active) return;
         setAppointments(mine);
         setRequests(myRequests);
+        setLoadedAt(Date.now());
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -265,12 +285,12 @@ export default function DoctorCalendarPage() {
     status: item.status,
     doctorId: item.doctorId,
   }));
-  const scheduled = appointments.filter(
-    (appointment) => appointment.status !== "CANCELLED",
-  );
-  const cancelled = appointments.filter(
-    (appointment) => appointment.status === "CANCELLED",
-  );
+  const scheduled = appointments.filter((appointment) => {
+    if (upcomingOnly) return isUpcomingAppointment(appointment, loadedAt);
+    if (pendingOnly) return requestByAppointment.get(appointment.id)?.status === "PENDING";
+    return appointment.status !== "CANCELLED";
+  });
+  const cancelled = filtered ? [] : appointments.filter((appointment) => appointment.status === "CANCELLED");
 
   return (
     <div className="mx-auto max-w-screen-2xl space-y-8">
@@ -279,7 +299,9 @@ export default function DoctorCalendarPage() {
           <Calendar className="size-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Minha agenda</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            {upcomingOnly ? "Próximas consultas" : pendingOnly ? "Cancelamentos solicitados" : "Minha agenda"}
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
             Consultas vinculadas ao seu perfil profissional. Para cancelar uma
             consulta, envie um pedido à recepção.
@@ -287,7 +309,11 @@ export default function DoctorCalendarPage() {
         </div>
       </header>
 
-      <AppointmentCalendar
+      {filtered ? (
+        <Link href="/doctor/calendar" className={dashboardActionClass}>Ver toda a agenda</Link>
+      ) : <AppointmentCalendar
+        key={defaultView ?? "responsive"}
+        defaultView={defaultView}
         title="Minha agenda"
         events={calendarEvents}
         loading={calendarLoading}
@@ -301,8 +327,8 @@ export default function DoctorCalendarPage() {
             block: "center",
           });
         }}
-      />
-      {calendarError && <Button type="button" variant="outline" onClick={() => void reload()}>Tentar novamente</Button>}
+      />}
+      {!filtered && calendarError && <Button type="button" variant="outline" onClick={() => void reload()}>Tentar novamente</Button>}
 
       {error && (
         <p
@@ -315,11 +341,11 @@ export default function DoctorCalendarPage() {
 
       {loading ? (
         <p className="text-sm text-slate-500">Carregando sua agenda...</p>
-      ) : appointments.length === 0 ? (
+      ) : scheduled.length === 0 && cancelled.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
           <UserRound className="mx-auto size-8 text-slate-300" />
           <p className="mt-3 text-sm text-slate-500">
-            Você ainda não tem consultas na agenda.
+            {pendingOnly ? "Nenhum cancelamento aguardando a recepção." : upcomingOnly ? "Nenhuma consulta futura ou em andamento." : "Você ainda não tem consultas na agenda."}
           </p>
         </div>
       ) : (
