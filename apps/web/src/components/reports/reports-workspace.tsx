@@ -326,12 +326,12 @@ function buildChart(report: Report): ReportChart {
     );
   }
   return countSeries(
-    "Ações por tipo",
+    "Ações por tipo e papel",
     "Distribuição agregada das ações registradas nesta prévia.",
     "Ações",
     rows
       .map((row) => ({
-        label: `${row[0]} · ${row[1]}`,
+        label: `${row[2]} · ${row[0]} · ${row[1]}`,
         value: countNumber(row[3] ?? ""),
         displayValue: row[3] ?? "0",
       }))

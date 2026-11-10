@@ -341,7 +341,7 @@ describe('ReportsService', () => {
       label: 'Espera média até saída',
       value: '2,0 dias',
     });
-    expect(result.rows).toContainEqual(['Fila de espera', 'Atendido', '1']);
+    expect(result.rows).toContainEqual(['Fila de espera', 'Agendado', '1']);
   });
 
   it('resume cadastros recentes sem exportar identificação dos pacientes', async () => {

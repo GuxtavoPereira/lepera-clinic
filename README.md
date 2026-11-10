@@ -32,7 +32,7 @@ O objetivo é facilitar o cadastro e a localização de pacientes, organizar sol
 - **Administração:** painel e gestão de usuários, com permissões específicas para o superadministrador.
 - **Financeiro:** receitas, despesas, cobranças vinculadas a consultas, quitações, pendências, estornos de registros e exportação CSV.
 - **Estoque:** materiais, saldo mínimo, reposição, entradas/saídas e histórico auditado.
-- **Relatórios:** a tela `/reports` exibe **Em produção** durante a revisão da emissão. A consulta e a exportação PDF/CSV estão implementadas na API com permissões por perfil.
+- **Relatórios:** a tela `/reports` permite consultar indicadores e exportar PDF ou CSV. Administração e superadmin têm acesso aos nove tipos de relatório. Recepção, profissionais e pacientes consultam relatórios de consultas conforme suas permissões.
 - **Recuperação de senha:** formulário, link de uso único com validade de 30 minutos e encerramento das sessões anteriores, mediante configuração do Gmail SMTP.
 - **Regras e segurança:** CPF obrigatório, único e validado por dígitos verificadores; controle de acesso na API; criptografia dos campos clínicos e auditoria das operações previstas.
 

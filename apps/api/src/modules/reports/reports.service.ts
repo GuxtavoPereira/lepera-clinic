@@ -397,7 +397,7 @@ export class ReportsService {
       const waitlistLabels: Record<string, string> = {
         waiting: 'Aguardando',
         notified: 'Notificado',
-        scheduled: 'Atendido',
+        scheduled: 'Agendado',
         gave_up: 'Desistiu',
       };
       for (const entry of waitlist) {
