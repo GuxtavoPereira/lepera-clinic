@@ -19,7 +19,9 @@ O banco de demonstração foi criado do zero em PGlite no disco F:. As sete migr
 - Duas recepcionistas aprovaram em paralelo solicitações para a mesma vaga. As respostas foram 200 e 409. Uma única consulta foi criada com horário, profissional, duração e modalidade originais.
 - O endpoint público de equipe e a listagem autenticada de horários livres retornaram somente os campos previstos. O paciente exportou o próprio relatório de consultas em CSV e recebeu 403 ao pedir auditoria.
 
-O PGlite multiplexa conexões em um processo. A concorrência sob PostgreSQL nativo e a carga precisam ser repetidas em homologação. O limite de requisições atual é por instância.
+Em 10/11/2026, o mesmo teste passou em PostgreSQL 17.11 nativo no Windows, em um cluster isolado no disco F:. Foram aplicadas as sete migrações em um banco novo e carregados os dados fictícios. As oito contas de teste cobriram os cinco papéis. As aprovações concorrentes retornaram 200 e 409 e deixaram uma única consulta para a vaga, com o horário e a modalidade solicitados.
+
+Um backup sintético de 72.189 bytes foi restaurado em outro banco do mesmo cluster. A origem e a restauração tinham 12 usuários, 19 consultas, 12 prontuários cifrados, sete migrações concluídas e três solicitações. As verificações foram feitas em loopback. O [relatório de carga local](relatorio-carga.md) registra as rajadas de 10 e 50 usuários virtuais.
 
 ## Navegação por papel
 
@@ -37,12 +39,14 @@ Na base SDK 57, a instalação limpa, a tipagem, o lint e a exportação web pas
 
 O SDK 58 passou na tipagem, no lint, na verificação de versões, nos 20 checks do Expo Doctor e nas exportações web e Android/Hermes. A prévia Expo autenticou um paciente fictício na API isolada. Os cenários do app em 320 e 390 px verificaram o envio exato, a recuperação após conflito simulado e o histórico de pedidos novos e antigos. A auditoria npm encontrou 12 entradas moderadas, zero altas e zero críticas.
 
-Os perfis EAS separam desenvolvimento, APK interno e AAB de produção. Os perfis de teste exigem uma URL explícita de API. A configuração de CI móvel está na branch do app e aguarda execução no GitHub.
+Os perfis EAS separam desenvolvimento, APK interno e AAB de produção. Os perfis de teste exigem uma URL explícita de API. A CI móvel passou no commit `a7fe849`, que gerou o APK ARM64 de prévia. A API de demonstração desse APK voltou a responder pela LAN e a consulta encontrou 18 horários livres em sete dias. [Prévia Android](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1) · [CI móvel](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/42831316430)
 
 ## Relatórios e próximos aceites
 
-O commit `e83f62e` acrescentou seis tipos de relatórios e gráficos à implementação anterior. Os 35 testes de relatórios passaram. `/reports` permanece em revisão com o aviso **Em produção**. Para a revisão, conferir a diferença entre **Agendado** e **Atendido** na fila e distinguir papéis nas categorias do gráfico de auditoria.
+O commit `e83f62e` acrescentou seis tipos de relatórios e gráficos à implementação anterior. A tela `/reports` voltou a usar essa implementação. A fila identifica como **Agendado** o status de agendamento. O gráfico de auditoria distingue recurso, ação e papel.
 
-Os próximos aceites de lançamento incluem APK e execução em aparelho, carga e concorrência em PostgreSQL nativo, recuperação de backup, autorização Google real, sessão distribuída e revisão das dependências. A regra de 24 horas e o destino do card público do profissional dependem das decisões do checklist.
+Os 35 testes do módulo e a suíte completa da API (410 testes) passaram. A compilação web do Next.js também passou. No navegador, uma conta administrativa abriu a prévia e baixou PDF e CSV. Em uma tela de 390 px, uma conta de paciente viu somente as próprias consultas. No PostgreSQL nativo, os nove tipos passaram em consulta e nos dois formatos de exportação com uma conta administrativa. O financeiro retornou 403 para a conta de paciente e o intervalo de datas invertido retornou 400.
+
+Os próximos aceites incluem a instalação no Android físico, carga sustentada em homologação, autorização Google real, sessão distribuída e revisão das dependências. A regra de 24 horas e o destino do card público do profissional dependem das decisões do checklist.
 
 Os logs e as capturas com dados sintéticos ficam nas pastas locais ignoradas `work/v1.2-qa/` e `work/v1.2/public/`. Os ZIPs `Clinical Project.zip` e `Clinical Project (1).zip` contêm exportações de design. As quatro fotos WebP da home são referências licenciadas, com créditos no README.
