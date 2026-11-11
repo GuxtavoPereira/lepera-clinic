@@ -19,6 +19,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
   let requestUpdateMany: jest.Mock;
   let patientFindUnique: jest.Mock;
   let waitlistFindMany: jest.Mock;
+  let notificationCreateMany: jest.Mock;
 
   function appointmentIn(
     hours: number,
@@ -30,6 +31,8 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
       doctorId: 'doctor-1',
       status: 'SCHEDULED',
       startDatetime: new Date(Date.now() + hours * HOUR),
+      patient: { userId: 'patient-user' },
+      doctor: { userId: 'doctor-user' },
       ...overrides,
     };
   }
@@ -40,6 +43,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
     requestUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
     patientFindUnique = jest.fn().mockResolvedValue({ id: 'patient-1' });
     waitlistFindMany = jest.fn().mockResolvedValue([]);
+    notificationCreateMany = jest.fn().mockResolvedValue({ count: 1 });
 
     const db = {
       appointment: {
@@ -48,6 +52,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
       },
       cancellationRequest: { updateMany: requestUpdateMany },
       waitlist: { findMany: waitlistFindMany },
+      notification: { createMany: notificationCreateMany },
       patient: { findUnique: patientFindUnique },
       $transaction: jest.fn(
         (callback: (client: unknown) => Promise<unknown>): Promise<unknown> =>
@@ -73,6 +78,24 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
         status: { in: ['SCHEDULED', 'CONFIRMED'] },
       },
       data: { status: 'CANCELLED', cancelReason: 'Paciente pediu' },
+    });
+    expect(notificationCreateMany).toHaveBeenCalledWith({
+      data: [
+        {
+          userId: 'patient-user',
+          type: 'consulta_cancelada',
+          title: 'Consulta cancelada',
+          message:
+            'Uma consulta foi cancelada. Consulte sua agenda para ver os detalhes.',
+        },
+        {
+          userId: 'doctor-user',
+          type: 'consulta_cancelada',
+          title: 'Consulta cancelada',
+          message:
+            'Uma consulta foi cancelada. Consulte sua agenda para ver os detalhes.',
+        },
+      ],
     });
   });
 
@@ -131,6 +154,14 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
       select: { id: true },
     });
     expect(appointmentUpdateMany).toHaveBeenCalledTimes(1);
+    expect(notificationCreateMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          userId: 'doctor-user',
+          type: 'consulta_cancelada',
+        }) as unknown,
+      ],
+    });
   });
 
   it('paciente não cancela sem a antecedência mínima', async () => {
@@ -216,5 +247,6 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
     ).rejects.toBeInstanceOf(ConflictException);
 
     expect(requestUpdateMany).not.toHaveBeenCalled();
+    expect(notificationCreateMany).not.toHaveBeenCalled();
   });
 });

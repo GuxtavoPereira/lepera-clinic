@@ -23,8 +23,9 @@ describe('CancellationRequestsService', () => {
   let requestCreate: jest.Mock;
   let requestFindFirst: jest.Mock;
   let requestFindUnique: jest.Mock;
-  let requestUpdate: jest.Mock;
-  let requestUpdateMany: jest.Mock;
+  let requestUpdateManyAndReturn: jest.Mock;
+  let notificationCreate: jest.Mock;
+  let notificationCreateMany: jest.Mock;
   let auditLog: jest.Mock;
   let waitlistFindMany: jest.Mock;
 
@@ -46,10 +47,11 @@ describe('CancellationRequestsService', () => {
     requestCreate = jest.fn().mockResolvedValue({ id: 'req-1' });
     requestFindFirst = jest.fn().mockResolvedValue(null);
     requestFindUnique = jest.fn();
-    requestUpdate = jest
+    requestUpdateManyAndReturn = jest
       .fn()
-      .mockResolvedValue({ id: 'req-1', status: 'APPROVED' });
-    requestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+      .mockResolvedValue([{ id: 'req-1', status: 'APPROVED' }]);
+    notificationCreate = jest.fn().mockResolvedValue({});
+    notificationCreateMany = jest.fn().mockResolvedValue({ count: 2 });
     auditLog = jest.fn().mockResolvedValue({});
     waitlistFindMany = jest.fn().mockResolvedValue([]);
 
@@ -61,12 +63,15 @@ describe('CancellationRequestsService', () => {
         updateMany: appointmentUpdateMany,
       },
       waitlist: { findMany: waitlistFindMany },
+      notification: {
+        create: notificationCreate,
+        createMany: notificationCreateMany,
+      },
       cancellationRequest: {
         create: requestCreate,
         findFirst: requestFindFirst,
         findUnique: requestFindUnique,
-        update: requestUpdate,
-        updateMany: requestUpdateMany,
+        updateManyAndReturn: requestUpdateManyAndReturn,
       },
       $transaction: jest.fn(
         (callback: (client: unknown) => Promise<unknown>): Promise<unknown> =>
@@ -160,9 +165,11 @@ describe('CancellationRequestsService', () => {
         status: 'PENDING',
         appointmentId: 'appointment-1',
         reason: 'Atestado',
+        requestedBy: { userId: 'doctor-user' },
         appointment: {
           doctorId: 'doctor-1',
           startDatetime: new Date(Date.now() + 48 * HOUR),
+          patient: { userId: 'patient-user' },
         },
       });
     });
@@ -174,7 +181,12 @@ describe('CancellationRequestsService', () => {
     });
 
     it('cancela a consulta e marca o pedido como aprovado', async () => {
-      await service.approve('req-1', {}, receptionUser);
+      await expect(
+        service.approve('req-1', {}, receptionUser),
+      ).resolves.toEqual({
+        id: 'req-1',
+        status: 'APPROVED',
+      });
 
       expect(appointmentUpdateMany).toHaveBeenCalledWith({
         where: {
@@ -183,12 +195,29 @@ describe('CancellationRequestsService', () => {
         },
         data: { status: 'CANCELLED', cancelReason: 'Atestado' },
       });
-      expect(requestUpdate).toHaveBeenCalledWith({
-        where: { id: 'req-1' },
+      expect(requestUpdateManyAndReturn).toHaveBeenCalledWith({
+        where: { id: 'req-1', status: 'PENDING' },
         data: expect.objectContaining({
           status: 'APPROVED',
           reviewedById: 'rec-1',
         }) as unknown,
+      });
+      expect(notificationCreateMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: 'patient-user',
+            type: 'consulta_cancelada',
+            title: 'Consulta cancelada',
+            message:
+              'Uma consulta foi cancelada. Consulte sua agenda para ver os detalhes.',
+          },
+          {
+            userId: 'doctor-user',
+            type: 'cancelamento_aprovado',
+            title: 'Pedido de cancelamento aprovado',
+            message: 'A recepção aprovou seu pedido. Consulte sua agenda.',
+          },
+        ],
       });
       expect(auditLog).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'cancellation_request.approve' }),
@@ -202,7 +231,8 @@ describe('CancellationRequestsService', () => {
       await expect(
         service.approve('req-1', {}, receptionUser),
       ).rejects.toBeInstanceOf(ConflictException);
-      expect(requestUpdate).not.toHaveBeenCalled();
+      expect(requestUpdateManyAndReturn).not.toHaveBeenCalled();
+      expect(notificationCreateMany).not.toHaveBeenCalled();
     });
 
     it('conflito se o pedido já foi analisado', async () => {
@@ -223,32 +253,55 @@ describe('CancellationRequestsService', () => {
       await service.approve('req-1', {}, { sub: 's', role: 'SUPER_ADMIN' });
 
       expect(receptionistFindUnique).not.toHaveBeenCalled();
-      expect(requestUpdate).toHaveBeenCalledTimes(1);
+      expect(requestUpdateManyAndReturn).toHaveBeenCalledTimes(1);
+    });
+
+    it('não notifica quando uma revisão concorrente já decidiu o pedido', async () => {
+      requestUpdateManyAndReturn.mockResolvedValue([]);
+
+      await expect(
+        service.approve('req-1', {}, receptionUser),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(notificationCreateMany).not.toHaveBeenCalled();
+      expect(waitlistFindMany).not.toHaveBeenCalled();
+      expect(auditLog).not.toHaveBeenCalled();
     });
   });
 
   describe('reject (recepção)', () => {
     it('recusa com justificativa e audita', async () => {
-      requestFindUnique.mockResolvedValue({ id: 'req-1', status: 'REJECTED' });
+      requestUpdateManyAndReturn.mockResolvedValue([
+        {
+          id: 'req-1',
+          status: 'REJECTED',
+          requestedBy: { userId: 'doctor-user' },
+        },
+      ]);
+      await expect(
+        service.reject('req-1', { note: ' Sem substituto ' }, receptionUser),
+      ).resolves.toEqual({ id: 'req-1', status: 'REJECTED' });
 
-      await service.reject(
-        'req-1',
-        { note: ' Sem substituto ' },
-        receptionUser,
-      );
-
-      expect(requestUpdateMany).toHaveBeenCalledWith({
+      expect(requestUpdateManyAndReturn).toHaveBeenCalledWith({
         where: { id: 'req-1', status: 'PENDING' },
         data: expect.objectContaining({
           status: 'REJECTED',
           reviewNote: 'Sem substituto',
         }) as unknown,
+        include: { requestedBy: { select: { userId: true } } },
+      });
+      expect(notificationCreate).toHaveBeenCalledWith({
+        data: {
+          userId: 'doctor-user',
+          type: 'cancelamento_recusado',
+          title: 'Pedido de cancelamento recusado',
+          message: 'A recepção recusou seu pedido. Consulte sua agenda.',
+        },
       });
       expect(auditLog).toHaveBeenCalledTimes(1);
     });
 
     it('404 se o pedido não existe e 409 se já foi analisado', async () => {
-      requestUpdateMany.mockResolvedValue({ count: 0 });
+      requestUpdateManyAndReturn.mockResolvedValue([]);
 
       requestFindUnique.mockResolvedValue(null);
       await expect(
@@ -259,6 +312,7 @@ describe('CancellationRequestsService', () => {
       await expect(
         service.reject('req-1', { note: 'ok ok' }, receptionUser),
       ).rejects.toBeInstanceOf(ConflictException);
+      expect(notificationCreate).not.toHaveBeenCalled();
     });
   });
 });

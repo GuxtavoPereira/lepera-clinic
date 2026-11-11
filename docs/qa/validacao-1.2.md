@@ -63,4 +63,19 @@ O aviso no login local vinha da configuração da API de demonstração, que sob
 
 Os seis testes do módulo passaram. Em `http://localhost:3000`, o navegador em 390 px carregou o botão oficial do Google e a API gerou o desafio de cinco minutos para essa origem. O cenário desabilitado mostrou a mensagem de indisponibilidade. A autenticação completa com uma conta real segue pendente.
 
+## Notificações de agendamento
+
+| Evento | Destinatário | Canal | Ação na central |
+| --- | --- | --- | --- |
+| Solicitação registrada | A recepção acompanha pela fila | Fila de solicitações | Abrir solicitações |
+| Solicitação aprovada | Paciente | Notificação interna | Ver minhas consultas |
+| Solicitação recusada | Paciente | Notificação interna | Ver horários livres |
+| Cancelamento direto | Paciente e profissional envolvidos, exceto o autor | Notificação interna | Ver minhas consultas ou Ver minha agenda |
+| Pedido de cancelamento aprovado | Paciente e profissional solicitante | Notificação interna | Ver minhas consultas ou Ver minha agenda |
+| Pedido de cancelamento recusado | Profissional solicitante | Notificação interna | Ver minha agenda |
+| Horário liberado por cancelamento | Até três pacientes da fila com preferências compatíveis | Notificação interna | Ver horários livres |
+| Remarcação, lembrete e indisponibilidade sem cancelamento | Pendente | Pendente | Pendente |
+
+Em PostgreSQL nativo, dois cancelamentos simultâneos geraram um só aviso para a mesma entrada da fila. Aprovação e recusa concorrentes sobre o mesmo pedido retornaram 200 e 409 e deixaram a consulta coerente com a decisão aceita. Os avisos de cancelamento mantiveram o motivo e a nota de revisão fora da mensagem. No navegador a 390 px, paciente e profissional abriram suas telas a partir de avisos gerados no banco de teste. Os 415 testes da API e a compilação web passaram.
+
 Os logs e as capturas com dados sintéticos ficam nas pastas locais ignoradas `work/v1.2-qa/` e `work/v1.2/public/`. Os ZIPs `Clinical Project.zip` e `Clinical Project (1).zip` contêm exportações de design. As quatro fotos WebP da home são referências licenciadas, com créditos no README.

@@ -8,7 +8,10 @@ import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import type { RequestContext } from '../audit/request-context';
-import { CANCELLABLE_STATUSES } from '../appointments/appointments.service';
+import {
+  APPOINTMENT_CANCELLED_NOTICE,
+  CANCELLABLE_STATUSES,
+} from '../appointments/appointments.service';
 import { notifyWaitlistOnFreedSlot } from '../waitlist/waitlist-notify';
 import {
   ApproveCancellationRequestDto,
@@ -142,7 +145,14 @@ export class CancellationRequestsService {
           status: true,
           appointmentId: true,
           reason: true,
-          appointment: { select: { doctorId: true, startDatetime: true } },
+          requestedBy: { select: { userId: true } },
+          appointment: {
+            select: {
+              doctorId: true,
+              startDatetime: true,
+              patient: { select: { userId: true } },
+            },
+          },
         },
       });
 
@@ -166,20 +176,38 @@ export class CancellationRequestsService {
         );
       }
 
-      // RF11: a vaga liberada avisa quem está na lista de espera
-      await notifyWaitlistOnFreedSlot(tx, {
-        doctorId: request.appointment.doctorId,
-        startDatetime: request.appointment.startDatetime,
-      });
-
-      const updated = await tx.cancellationRequest.update({
-        where: { id },
+      const [updated] = await tx.cancellationRequest.updateManyAndReturn({
+        where: { id, status: 'PENDING' },
         data: {
           status: 'APPROVED',
           reviewedById: reviewerId,
           reviewedAt: new Date(),
           reviewNote: dto.note?.trim() || undefined,
         },
+      });
+      if (!updated) {
+        throw new ConflictException('Este pedido já foi analisado');
+      }
+
+      await tx.notification.createMany({
+        data: [
+          {
+            ...APPOINTMENT_CANCELLED_NOTICE,
+            userId: request.appointment.patient.userId,
+          },
+          {
+            userId: request.requestedBy.userId,
+            type: 'cancelamento_aprovado',
+            title: 'Pedido de cancelamento aprovado',
+            message: 'A recepção aprovou seu pedido. Consulte sua agenda.',
+          },
+        ],
+      });
+
+      // RF11: a vaga liberada avisa quem está na lista de espera
+      await notifyWaitlistOnFreedSlot(tx, {
+        doctorId: request.appointment.doctorId,
+        startDatetime: request.appointment.startDatetime,
       });
 
       await this.audit.log(
@@ -207,7 +235,7 @@ export class CancellationRequestsService {
     const reviewerId = await this.resolveReviewerId(user);
 
     return this.prisma.db.$transaction(async (tx) => {
-      const updated = await tx.cancellationRequest.updateMany({
+      const [updated] = await tx.cancellationRequest.updateManyAndReturn({
         where: { id, status: 'PENDING' },
         data: {
           status: 'REJECTED',
@@ -215,9 +243,10 @@ export class CancellationRequestsService {
           reviewedAt: new Date(),
           reviewNote: dto.note.trim(),
         },
+        include: { requestedBy: { select: { userId: true } } },
       });
 
-      if (updated.count === 0) {
+      if (!updated) {
         const exists = await tx.cancellationRequest.findUnique({
           where: { id },
           select: { id: true },
@@ -227,6 +256,16 @@ export class CancellationRequestsService {
         }
         throw new ConflictException('Este pedido já foi analisado');
       }
+
+      const { requestedBy, ...request } = updated;
+      await tx.notification.create({
+        data: {
+          userId: requestedBy.userId,
+          type: 'cancelamento_recusado',
+          title: 'Pedido de cancelamento recusado',
+          message: 'A recepção recusou seu pedido. Consulte sua agenda.',
+        },
+      });
 
       await this.audit.log(
         {
@@ -239,7 +278,7 @@ export class CancellationRequestsService {
         tx,
       );
 
-      return tx.cancellationRequest.findUnique({ where: { id } });
+      return request;
     });
   }
 

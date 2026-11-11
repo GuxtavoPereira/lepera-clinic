@@ -11,7 +11,7 @@ describe('notifyWaitlistOnFreedSlot (RF11)', () => {
 
   let findMany: jest.Mock;
   let createMany: jest.Mock;
-  let updateMany: jest.Mock;
+  let updateManyAndReturn: jest.Mock;
   let db: DbClient;
 
   beforeEach(() => {
@@ -20,9 +20,11 @@ describe('notifyWaitlistOnFreedSlot (RF11)', () => {
       { id: 'w2', patient: { userId: 'user-2' } },
     ]);
     createMany = jest.fn().mockResolvedValue({});
-    updateMany = jest.fn().mockResolvedValue({});
+    updateManyAndReturn = jest
+      .fn()
+      .mockResolvedValue([{ id: 'w1' }, { id: 'w2' }]);
     db = {
-      waitlist: { findMany, updateMany },
+      waitlist: { findMany, updateManyAndReturn },
       notification: { createMany },
       doctor: {
         findUnique: jest
@@ -47,9 +49,39 @@ describe('notifyWaitlistOnFreedSlot (RF11)', () => {
         expect.objectContaining({ userId: 'user-2' }) as unknown,
       ],
     });
-    expect(updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['w1', 'w2'] } },
+    expect(updateManyAndReturn).toHaveBeenCalledWith({
+      where: { id: { in: ['w1', 'w2'] }, status: 'waiting' },
       data: { status: 'notified' },
+      select: { id: true },
+    });
+  });
+
+  it('avisa apenas quem ainda estava aguardando na hora da atualização', async () => {
+    updateManyAndReturn.mockResolvedValueOnce([{ id: 'w2' }]);
+    await expect(notifyWaitlistOnFreedSlot(db, morningSlot, now)).resolves.toBe(
+      1,
+    );
+    expect(createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ userId: 'user-2' }) as unknown],
+    });
+
+    updateManyAndReturn.mockResolvedValueOnce([]);
+    await expect(notifyWaitlistOnFreedSlot(db, morningSlot, now)).resolves.toBe(
+      0,
+    );
+    expect(createMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('envia um aviso quando duas preferências pertencem ao mesmo paciente', async () => {
+    findMany.mockResolvedValue([
+      { id: 'w1', patient: { userId: 'user-1' } },
+      { id: 'w2', patient: { userId: 'user-1' } },
+    ]);
+    await expect(notifyWaitlistOnFreedSlot(db, morningSlot, now)).resolves.toBe(
+      1,
+    );
+    expect(createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ userId: 'user-1' }) as unknown],
     });
   });
 

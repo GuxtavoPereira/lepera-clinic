@@ -53,6 +53,19 @@ export async function notifyWaitlistOnFreedSlot(
   });
   if (entries.length === 0) return 0;
 
+  const claimed = await db.waitlist.updateManyAndReturn({
+    where: { id: { in: entries.map((entry) => entry.id) }, status: 'waiting' },
+    data: { status: 'notified' },
+    select: { id: true },
+  });
+  if (claimed.length === 0) return 0;
+  const claimedIds = new Set(claimed.map(({ id }) => id));
+  const recipients = new Set(
+    entries
+      .filter(({ id }) => claimedIds.has(id))
+      .map(({ patient }) => patient.userId),
+  );
+
   const doctor = await db.doctor.findUnique({
     where: { id: slot.doctorId },
     select: { user: { select: { name: true } } },
@@ -64,8 +77,8 @@ export async function notifyWaitlistOnFreedSlot(
   });
 
   await db.notification.createMany({
-    data: entries.map((entry) => ({
-      userId: entry.patient.userId,
+    data: Array.from(recipients, (userId) => ({
+      userId,
       type: 'vaga_liberada',
       title: 'Um horário foi liberado',
       message: `Abriu uma vaga em ${when}${
@@ -73,10 +86,5 @@ export async function notifyWaitlistOnFreedSlot(
       }. Solicite o agendamento antes que seja preenchida.`,
     })),
   });
-  await db.waitlist.updateMany({
-    where: { id: { in: entries.map((entry) => entry.id) } },
-    data: { status: 'notified' },
-  });
-
-  return entries.length;
+  return recipients.size;
 }

@@ -28,6 +28,13 @@ export const CANCELLABLE_STATUSES: AppointmentStatus[] = [
   'CONFIRMED',
 ];
 
+export const APPOINTMENT_CANCELLED_NOTICE = {
+  type: 'consulta_cancelada',
+  title: 'Consulta cancelada',
+  message:
+    'Uma consulta foi cancelada. Consulte sua agenda para ver os detalhes.',
+} as const;
+
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -135,6 +142,8 @@ export class AppointmentsService {
         doctorId: true,
         status: true,
         startDatetime: true,
+        patient: { select: { userId: true } },
+        doctor: { select: { userId: true } },
       },
     });
 
@@ -185,6 +194,17 @@ export class AppointmentsService {
           reviewedAt: new Date(),
           reviewNote: 'Consulta cancelada antes da análise do pedido',
         },
+      });
+
+      const recipients = [
+        appointment.patient.userId,
+        appointment.doctor.userId,
+      ].filter((userId) => userId !== user.sub);
+      await tx.notification.createMany({
+        data: recipients.map((userId) => ({
+          ...APPOINTMENT_CANCELLED_NOTICE,
+          userId,
+        })),
       });
 
       // RF11: a vaga liberada avisa quem está na lista de espera
