@@ -33,6 +33,14 @@ Um backup sintético de 72.189 bytes foi restaurado em outro banco do mesmo clus
 | Profissional | `/doctor` | Agenda, pacientes vinculados, disponibilidade e prontuários próprios |
 | Paciente | `/patient` | Agenda, consultas, solicitações, lista de espera e perfil |
 
+## Ficha resumida e contas de demonstração
+
+O botão **Ver ficha** abre a ficha do paciente na agenda e em **Meus pacientes**. A ficha mostra nome, idade, contato básico e até cinco consultas recentes do profissional autenticado. O prontuário abre pela sessão. A resposta da ficha inclui `Cache-Control: private, no-store` e a leitura autorizada gera a ação `patient.summary.read`.
+
+O teste no PostgreSQL nativo retornou 200 para o profissional vinculado, 404 para o outro profissional e 403 para paciente, recepção, administração e superadmin. A chamada anônima recebeu 401. O navegador em 390 px abriu a ficha pelos dois atalhos e exibiu a negativa ao outro profissional. Os registros de leitura foram conferidos no banco. Os 412 testes da API e a compilação web passaram.
+
+Em um segundo banco vazio, as sete migrações e o seed atualizado criaram 16 contas com CPFs de teste distintos, incluindo três profissionais, três recepcionistas, três administradores, seis pacientes e um superadmin. Foram mantidas 18 consultas e 12 prontuários fictícios. Também foi conferida a recusa do seed em produção e em banco preenchido com `RESET_DATABASE=false`.
+
 ## App do paciente
 
 Na base SDK 57, a instalação limpa, a tipagem, o lint e a exportação web passaram. O Expo Doctor apontou quatro pacotes com patches antigos. A branch móvel atualiza para Expo 58.0.23, React 19.3 e React Native 0.88.1 com Expo Router e Dev Client compatíveis.

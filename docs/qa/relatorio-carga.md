@@ -27,3 +27,17 @@ As métricas de recursos usam cinco amostras em repouso e duas por fase. A memó
 ## Integridade após a carga
 
 O banco manteve 19 consultas, incluindo a única confirmação criada pelo teste de vaga concorrente. A restauração do backup em outro banco preservou as contagens verificadas. O teste funcional posterior também confirmou a prévia e os arquivos PDF/CSV dos nove tipos de relatório com o perfil administrativo. [Registro da validação](validacao-1.2.md)
+
+## Espaço dos artefatos no disco
+
+| Item no ambiente de teste | Tamanho lógico |
+| --- | ---: |
+| Arquivos rastreados no repositório web/API | 1,76 MiB |
+| Dependências na pasta `node_modules` da raiz do monorepo | 939,60 MiB |
+| `apps/web/.next`, incluindo saídas e cache locais | 1.414,68 MiB |
+| `apps/api/dist` | 0,93 MiB |
+| Imagens públicas rastreadas | 0,16 MiB |
+| Banco isolado `lepera_native_qa` | 9,01 MiB |
+| APK de prévia Android ARM64 | 29,58 MiB |
+
+Para reproduzir, some o tamanho em bytes dos arquivos regulares em cada pasta, sem seguir links simbólicos ou junções. Para os arquivos rastreados, parta de `git ls-files -z`. Para o banco, use `SELECT pg_database_size(current_database());` conectado ao banco de demonstração. Divida os resultados por 1.048.576 para obter MiB. A soma representa tamanho lógico. Arquivos que compartilham blocos, como dependências do pnpm, podem ocupar menos espaço físico.
