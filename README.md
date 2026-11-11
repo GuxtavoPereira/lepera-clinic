@@ -321,6 +321,8 @@ SMTP_PASSWORD=SENHA_DE_APP_PRIVADA
 
 No cliente Web do Google Cloud, cadastre as origens JavaScript `https://lepera-clinic.vercel.app`, `http://localhost` e `http://localhost:3000`. Para testar em outra porta, cadastre a origem completa, como `http://localhost:3012`, e use o mesmo endereço em `WEB_URL` na API. Abra a interface pelo endereço cadastrado, incluindo o mesmo host e a mesma porta. O fluxo usa um callback do Google Identity Services no navegador. O botão oferece consulta de horários livres. Para solicitar atendimento, conclua o cadastro com CPF e senha ou entre na conta existente. Consulte a [documentação do Google Identity Services](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
 
+Se a interface mostrar que o Google está indisponível no ambiente, consulte `GET /api/auth/google/config` na API usada pelo site. Com `enabled: false`, confira `GOOGLE_CLIENT_ID` e reinicie a API local após salvar a configuração. Se o botão aparecer e o Google retornar `origin_mismatch`, compare o endereço aberto no navegador com as origens autorizadas do cliente Web no Google Cloud.
+
 No Gmail, habilite a verificação em duas etapas e gere uma senha de app em [Senhas de app](https://myaccount.google.com/apppasswords). Use essa senha em `SMTP_PASSWORD`, sem os espaços exibidos pelo Google. Na Vercel, mantenha-a como variável **Sensitive** de Production e publique uma nova implantação após salvar. Nunca envie a senha pelo chat nem faça commit de arquivos `.env`. Sem a configuração completa, o formulário informa que o envio ainda não foi ativado. A entrega real deve ser conferida com uma conta de teste cujo e-mail você controla.
 
 ## 🧭 Páginas e navegação

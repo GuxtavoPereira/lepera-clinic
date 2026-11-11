@@ -55,6 +55,12 @@ O commit `e83f62e` acrescentou seis tipos de relatórios e gráficos à implemen
 
 Os 35 testes do módulo e a suíte completa da API (410 testes) passaram. A compilação web do Next.js também passou. No navegador, uma conta administrativa abriu a prévia e baixou PDF e CSV. Em uma tela de 390 px, uma conta de paciente viu somente as próprias consultas. No PostgreSQL nativo, os nove tipos passaram em consulta e nos dois formatos de exportação com uma conta administrativa. O financeiro retornou 403 para a conta de paciente e o intervalo de datas invertido retornou 400.
 
-Os próximos aceites incluem a instalação no Android físico, carga sustentada em homologação, autorização Google real, sessão distribuída e revisão das dependências. A regra de 24 horas e o destino do card público do profissional dependem das decisões do checklist.
+Os próximos aceites incluem a instalação no Android físico, carga sustentada em homologação, sessão distribuída e revisão das dependências. A regra de 24 horas e o destino do card público do profissional dependem das decisões do checklist.
+
+## Consulta de horários com Google
+
+O aviso no login local vinha da configuração da API de demonstração, que sobrescrevia `GOOGLE_CLIENT_ID` com um valor vazio. A API publicada retornou `enabled: true`. A demonstração passou a ler o ID público já salvo na configuração local.
+
+Os seis testes do módulo passaram. Em `http://localhost:3000`, o navegador em 390 px carregou o botão oficial do Google e a API gerou o desafio de cinco minutos para essa origem. O cenário desabilitado mostrou a mensagem de indisponibilidade. A autenticação completa com uma conta real segue pendente.
 
 Os logs e as capturas com dados sintéticos ficam nas pastas locais ignoradas `work/v1.2-qa/` e `work/v1.2/public/`. Os ZIPs `Clinical Project.zip` e `Clinical Project (1).zip` contêm exportações de design. As quatro fotos WebP da home são referências licenciadas, com créditos no README.

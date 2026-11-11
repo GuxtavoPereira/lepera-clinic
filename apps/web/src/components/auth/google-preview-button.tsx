@@ -155,6 +155,15 @@ export function GooglePreviewButton({
     };
   }, [config, scriptReady, retry, success]);
 
+  if (config && !config.enabled) {
+    return (
+      <p className="text-center text-sm text-muted-foreground">
+        A consulta de horários com Google está indisponível neste ambiente.
+        Entre com e-mail e senha ou crie sua conta.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-3 text-center">
       {config?.enabled && (
@@ -183,12 +192,6 @@ export function GooglePreviewButton({
       {!config && !error && (
         <p role="status" className="text-sm text-muted-foreground">
           Carregando Google…
-        </p>
-      )}
-      {config && !config.enabled && (
-        <p className="text-sm text-muted-foreground">
-          O acesso Google está em configuração. Você pode criar uma conta ou
-          usar seu e-mail e senha.
         </p>
       )}
       {busy && (
