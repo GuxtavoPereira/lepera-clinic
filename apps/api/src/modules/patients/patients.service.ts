@@ -9,6 +9,8 @@ import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { ageInYears, parseBirthDate } from '../../common/utils/dates';
 import { PrismaService } from '../../prisma/prisma.service';
 import { isUniqueViolation } from '../../prisma/prisma-errors';
+import { AuditService } from '../audit/audit.service';
+import type { RequestContext } from '../audit/request-context';
 import { UsersService } from '../users/users.service';
 import { ListPatientsQueryDto } from './dto/list-patients-query.dto';
 import { CreatePatientDto, UpdatePatientDto } from './dto/patient-data.dto';
@@ -20,6 +22,7 @@ export class PatientsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly users: UsersService,
+    private readonly audit: AuditService,
   ) {}
 
   /** Cadastro de paciente: usado pela recepção/admin e pelo cadastro público
@@ -143,17 +146,11 @@ export class PatientsService {
    * Minimização de dados: sem CPF; só contato básico e a consulta mais recente.
    */
   async findForDoctor(user: AuthUser, query: ListPatientsQueryDto) {
-    const doctor = await this.prisma.db.doctor.findUnique({
-      where: { userId: user.sub },
-      select: { id: true },
-    });
-    if (!doctor) {
-      throw new NotFoundException('Perfil profissional não encontrado');
-    }
+    const doctorId = await this.findDoctorId(user);
 
     const search = query.search?.trim();
     const where: Prisma.PatientWhereInput = {
-      appointments: { some: { doctorId: doctor.id } },
+      appointments: { some: { doctorId } },
       ...(search
         ? {
             user: {
@@ -179,13 +176,13 @@ export class PatientsService {
             take: 1,
           },
           appointments: {
-            where: { doctorId: doctor.id },
+            where: { doctorId },
             orderBy: { startDatetime: 'desc' },
             take: 1,
             select: { startDatetime: true, status: true },
           },
           _count: {
-            select: { appointments: { where: { doctorId: doctor.id } } },
+            select: { appointments: { where: { doctorId } } },
           },
         },
         orderBy: { user: { name: 'asc' } },
@@ -201,6 +198,56 @@ export class PatientsService {
       total,
       totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
     };
+  }
+
+  async getSummaryForDoctor(id: string, user: AuthUser, ctx: RequestContext) {
+    const doctorId = await this.findDoctorId(user);
+    const now = new Date();
+    const summary = await this.prisma.db.patient.findFirst({
+      where: { id, appointments: { some: { doctorId } } },
+      select: {
+        id: true,
+        user: { select: { name: true, email: true, birthDate: true } },
+        phones: {
+          select: { phone: true },
+          orderBy: { createdAt: 'asc' },
+          take: 1,
+        },
+        appointments: {
+          where: { doctorId, startDatetime: { lte: now } },
+          orderBy: [{ startDatetime: 'desc' }, { id: 'desc' }],
+          take: 5,
+          select: { id: true, startDatetime: true, status: true },
+        },
+      },
+    });
+
+    if (!summary) {
+      throw new NotFoundException('Paciente não encontrado');
+    }
+    await this.audit.log({
+      actor: user,
+      action: 'patient.summary.read',
+      resource: 'patient',
+      resourceId: summary.id,
+      ...ctx,
+    });
+    const { birthDate, ...identity } = summary.user;
+    return {
+      ...summary,
+      user: { ...identity, age: birthDate ? ageInYears(birthDate, now) : null },
+    };
+  }
+
+  private async findDoctorId(user: AuthUser) {
+    const doctor = await this.prisma.db.doctor.findUnique({
+      where: { userId: user.sub },
+      select: { id: true },
+    });
+    if (!doctor) {
+      throw new NotFoundException('Perfil profissional não encontrado');
+    }
+    return doctor.id;
   }
 
   /** Ficha cadastral + últimas consultas. Nada de conteúdo de prontuário. */

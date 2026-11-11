@@ -53,6 +53,7 @@ const ACTION_LABEL: Record<string, string> = {
   "clinical_record.update": "Prontuário alterado",
   "clinical_record.read": "Prontuário consultado",
   "clinical_record.sign": "Prontuário assinado",
+  "patient.summary.read": "Ficha resumida consultada",
   "cancellation_request.create": "Cancelamento solicitado",
   "cancellation_request.approve": "Cancelamento aprovado",
   "cancellation_request.reject": "Cancelamento recusado",

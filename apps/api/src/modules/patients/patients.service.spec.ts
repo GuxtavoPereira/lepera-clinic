@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
+import type { AuditService } from '../audit/audit.service';
 import { PatientsService } from './patients.service';
 
 describe('PatientsService', () => {
@@ -81,6 +82,7 @@ describe('PatientsService', () => {
     service = new PatientsService(
       { db } as unknown as PrismaService,
       { create: usersCreate, updatePersonalData } as unknown as UsersService,
+      {} as AuditService,
     );
   });
 

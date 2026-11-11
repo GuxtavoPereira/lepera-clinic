@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -17,7 +18,8 @@ import {
   type AuthUser,
 } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { Roles, StrictRoles } from '../../common/decorators/roles.decorator';
+import { requestContext } from '../audit/request-context';
 
 @Controller('patients')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -45,6 +47,26 @@ export class PatientsController {
     @Req() req: { user: AuthUser },
   ) {
     return this.patientsService.findForDoctor(req.user, query);
+  }
+
+  @Get('mine/:id')
+  @Roles('DOCTOR')
+  @StrictRoles()
+  @Header('Cache-Control', 'private, no-store')
+  getSummaryForDoctor(
+    @Param('id') id: string,
+    @Req()
+    req: {
+      user: AuthUser;
+      ip?: string;
+      headers: Record<string, string | string[] | undefined>;
+    },
+  ) {
+    return this.patientsService.getSummaryForDoctor(
+      id,
+      req.user,
+      requestContext(req),
+    );
   }
 
   // PATCH /api/patients/me — o paciente edita o próprio perfil.

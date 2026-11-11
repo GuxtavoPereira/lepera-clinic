@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Calendar, ClipboardList, Clock3, UserRound } from "lucide-react";
 import { RequestCancellationButton } from "@/components/appointments/request-cancellation-button";
 import { AppointmentCalendar } from "@/components/appointments/appointment-calendar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { isUpcomingAppointment } from "@/components/dashboard/dashboard-data";
 import { dashboardActionClass, DashboardLoading } from "@/components/dashboard/dashboard-ui";
 import { ApiError, apiFetch } from "@/lib/api-client";
@@ -39,6 +39,7 @@ type Appointment = {
   type: "SESSION" | "EVALUATION" | "RETURN" | "CLOSURE";
   status: AppointmentStatus;
   cancelReason: string | null;
+  patientId: string;
   patient: { user: { name: string } };
 };
 
@@ -152,6 +153,14 @@ function AppointmentCard({
           )}
 
           <div className="flex flex-wrap items-start gap-2">
+            <Link
+              href={`/doctor/clinical-history/${appointment.patientId}`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              aria-label={`Ver ficha de ${appointment.patient.user.name}`}
+            >
+              <UserRound aria-hidden="true" className="size-3.5" />
+              Ver ficha
+            </Link>
             {active && (
               <Link
                 href={`/doctor/session/${appointment.id}`}

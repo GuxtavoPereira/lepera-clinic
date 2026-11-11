@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Search, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert, inputClassName } from "@/components/forms/form-field";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { maskPhone } from "@/lib/br-format";
@@ -138,17 +139,26 @@ export default function DoctorPatientsPage() {
                       ` · ${maskPhone(patient.phones[0].phone)}`}
                   </p>
                 </div>
-                <div className="shrink-0 text-sm text-slate-600 sm:text-right">
-                  <p>
-                    {patient._count.appointments} consulta
-                    {patient._count.appointments === 1 ? "" : "s"}
-                  </p>
-                  {patient.appointments[0] && (
-                    <p className="text-xs text-slate-400">
-                      Mais recente:{" "}
-                      {formatDateTimePtBr(patient.appointments[0].startDatetime)}
+                <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                  <div className="text-sm text-slate-600 sm:text-right">
+                    <p>
+                      {patient._count.appointments} consulta
+                      {patient._count.appointments === 1 ? "" : "s"}
                     </p>
-                  )}
+                    {patient.appointments[0] && (
+                      <p className="text-xs text-slate-400">
+                        Mais recente:{" "}
+                        {formatDateTimePtBr(patient.appointments[0].startDatetime)}
+                      </p>
+                    )}
+                  </div>
+                  <Link
+                    href={`/doctor/clinical-history/${patient.id}`}
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                    aria-label={`Ver ficha de ${patient.user.name}`}
+                  >
+                    Ver ficha
+                  </Link>
                 </div>
               </li>
             ))}
