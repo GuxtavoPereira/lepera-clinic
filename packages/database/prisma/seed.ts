@@ -104,6 +104,47 @@ async function seed(prisma: Prisma.TransactionClient) {
   ]);
   const doctorProfiles = doctors.map((user) => user.doctor!);
 
+  await prisma.user.createMany({
+    data: [
+      { name: "Gestão de Demonstração 02", email: "admin2@demo.invalid", passwordHash, cpf: cpf("840100201"), role: "ADMIN" },
+      { name: "Gestão de Demonstração 03", email: "admin3@demo.invalid", passwordHash, cpf: cpf("840100202"), role: "ADMIN" },
+    ],
+  });
+  await prisma.user.create({
+    data: {
+      name: "Júlia Martins",
+      email: "recepcao3@demo.invalid",
+      passwordHash,
+      cpf: cpf("840100203"),
+      role: "RECEPTIONIST",
+      receptionist: { create: { extension: "103" } },
+    },
+  });
+  await prisma.user.create({
+    data: {
+      name: "Dra. Renata Lima",
+      email: "profissional3@demo.invalid",
+      passwordHash,
+      cpf: cpf("840100204"),
+      role: "DOCTOR",
+      doctor: {
+        create: {
+          licenseNumber: "CRP 06/900003",
+          specialty: "Psicologia Clínica",
+          clinicalApproach: "Abordagem centrada na pessoa",
+          bio: "Perfil fictício para demonstração acadêmica.",
+          room: "Sala 05",
+          availabilities: {
+            create: [
+              { dayOfWeek: 2, startTime: "13:00", endTime: "17:00" },
+              { dayOfWeek: 5, startTime: "13:00", endTime: "17:00" },
+            ],
+          },
+        },
+      },
+    },
+  });
+
   const mockPatients = [
     { name: "Lucas Pereira", email: "lucas.paciente@email.com", cpf: "286255878", birth: "1995-03-18", plan: "Unimed" },
     { name: "Beatriz Oliveira", email: "beatriz.oliveira@email.com", cpf: "714287938", birth: "2001-07-09", plan: "Particular" },
@@ -208,7 +249,7 @@ async function seed(prisma: Prisma.TransactionClient) {
   ] });
 
   console.log("Seed concluído com dados fictícios.");
-  console.log(`Usuários: ${2 + receptionists.length + doctors.length + patients.length}; consultas: ${appointmentCount}; prontuários cifrados: ${recordCount}.`);
+  console.log(`Usuários: ${await prisma.user.count()}; consultas: ${appointmentCount}; prontuários cifrados: ${recordCount}.`);
   console.log(`Super admin de demonstração: ${superAdmin.email}. Use a senha de demonstração configurada no seed.`);
 }
 

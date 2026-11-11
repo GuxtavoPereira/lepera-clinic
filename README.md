@@ -51,7 +51,7 @@ A interface e a API são hospedadas em projetos separados: `lepera-clinic-front`
 
 ## 🧪 Usuários de teste
 
-As contas abaixo são criadas pelo **seed de demonstração**. São dados fictícios para desenvolvimento e apresentação acadêmica. No ambiente publicado, o acesso depende de o banco conectado à API conter esse mesmo seed.
+As contas abaixo são criadas por `pnpm db:seed` em um banco de desenvolvimento vazio. São dados fictícios para testes locais e apresentação acadêmica. Os endereços `.invalid` não recebem e-mails.
 
 **Senha padrão de todas as contas: `Senha@123`**
 
@@ -59,19 +59,23 @@ As contas abaixo são criadas pelo **seed de demonstração**. São dados fictí
 | --- | --- | --- |
 | Superadministrador | `super@leperapia.com` | Gestão de administradores e recursos autorizados |
 | Administrador | `admin@leperapia.com` | Painel e gestão de usuários permitidos |
+| Administrador | `admin2@demo.invalid` | Segundo acesso administrativo |
+| Administrador | `admin3@demo.invalid` | Terceiro acesso administrativo |
 | Recepção | `recepcao@leperapia.com` | Pacientes, fichas, solicitações e agenda |
 | Recepção | `mariana.recepcao@leperapia.com` | Segundo acesso de recepção |
+| Recepção | `recepcao3@demo.invalid` | Terceiro acesso de recepção |
 | Profissional | `roberto.silva@leperapia.com` | Agenda, disponibilidade e prontuários próprios |
 | Profissional | `camila.almeida@leperapia.com` | Segundo profissional e isolamento dos atendimentos |
+| Profissional | `profissional3@demo.invalid` | Agenda inicial livre e configuração de disponibilidade |
 | Paciente | `lucas.paciente@email.com` | Perfil, consultas e solicitação de atendimento |
+| Paciente | `beatriz.oliveira@email.com` | Consultas e fila de espera |
+| Paciente | `rafael.santos@email.com` | Consultas e histórico de outro paciente |
 
 <details>
 <summary><strong>Ver os demais pacientes de demonstração</strong></summary>
 
 | Paciente | E-mail |
 | --- | --- |
-| Beatriz Oliveira | `beatriz.oliveira@email.com` |
-| Rafael Santos | `rafael.santos@email.com` |
 | Isabela Ferreira | `isabela.ferreira@email.com` |
 | Pedro Carvalho | `pedro.carvalho@email.com` |
 | Sofia Rodrigues | `sofia.rodrigues@email.com` |
@@ -236,7 +240,7 @@ Em um **banco de desenvolvimento vazio**:
 pnpm db:seed
 ```
 
-O seed cria **12 usuários, 6 pacientes, 18 consultas e 12 prontuários fictícios criptografados**, além de disponibilidade dos profissionais e dados de apoio. Os CPFs são valores de teste com dígitos verificadores válidos.
+O seed cria **16 usuários** (1 superadministrador, 3 administradores, 3 recepcionistas, 3 profissionais e 6 pacientes), **18 consultas** e **12 prontuários fictícios criptografados**, além de disponibilidade dos profissionais e dados de apoio. Os CPFs são valores de teste com dígitos verificadores válidos.
 
 A carga acontece em uma transação. A chave de criptografia e a senha são verificadas antes da alteração dos dados. O seed recusa execução com `NODE_ENV=production` e, por padrão, também recusa um banco que já contenha usuários.
 
@@ -300,7 +304,7 @@ Remove-Item Env:ALLOW_DEMO_SEED
 ALLOW_DEMO_SEED=true pnpm --filter @lepera/db db:presentation
 ```
 
-Na base de demonstração validada em 02/11/2026, foram acrescentadas **228 consultas** (109 em novembro e 119 em dezembro), 16 solicitações com horário, 4 encaixes e lançamentos financeiros. São 4 profissionais disponíveis para a agenda. A carga também adiciona `psicologo1@demo.invalid`, `psicologo2@demo.invalid` e `paciente01@demo.invalid` a `paciente16@demo.invalid`, com a senha de demonstração. Os endereços `.invalid` são fictícios e não recebem e-mail. Rodar novamente não recria as consultas existentes.
+Na base de demonstração validada em 02/11/2026, foram acrescentadas **228 consultas** (109 em novembro e 119 em dezembro), 16 solicitações com horário, 4 encaixes e lançamentos financeiros. Essa carga usa os dois profissionais originais e adiciona `psicologo1@demo.invalid`, `psicologo2@demo.invalid` e `paciente01@demo.invalid` a `paciente16@demo.invalid`, com a senha de demonstração. Rodar novamente preserva as consultas existentes.
 
 ### Configurar Google e recuperação pelo Gmail
 
