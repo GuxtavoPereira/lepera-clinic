@@ -395,6 +395,8 @@ pnpm build
 
 A migração `20261101120000_financial_management` adiciona os controles financeiros e mantém os registros antigos como quitados, com as datas da clínica. Antes de aplicar em outra base, confira se não há valores menores ou iguais a zero ou despesas vinculadas a consultas, pois a nova estrutura recusa esses dados. A atualização não exige reset nem execução do seed.
 
+A migração `20261110150000_notification_appointment_link` também deve ser aplicada antes de publicar o backend atualizado. Ela vincula as novas notificações às consultas e preserva os avisos antigos. Consulte as [evidências de validação da versão 1.2](docs/qa/validacao-1.2.md).
+
 ## 📦 Materiais e estoque
 
 Em `/admin/inventory`, administração e superadmin podem cadastrar e editar materiais, definir o estoque mínimo e registrar entradas e saídas com justificativa. Novos materiais começam com saldo zero; registre uma entrada para incluir as unidades existentes.
