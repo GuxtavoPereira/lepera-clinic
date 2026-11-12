@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CalendarPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +42,8 @@ export default function NewAppointmentPage() {
   const [type, setType] = useState("SESSION");
   const [roomOrLink, setRoomOrLink] = useState("");
   const [receptionNotes, setReceptionNotes] = useState("");
+  const [notesError, setNotesError] = useState<string | undefined>();
+  const notesField = useRef<HTMLTextAreaElement>(null);
   const [allowOutside, setAllowOutside] = useState(false);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -88,9 +90,17 @@ export default function NewAppointmentPage() {
       setError("Escolha o profissional.");
       return;
     }
+    const notes = receptionNotes.trim();
+    if (allowOutside && notes.length < 5) {
+      setError(null);
+      setNotesError("Informe uma justificativa com pelo menos 5 caracteres.");
+      notesField.current?.focus();
+      return;
+    }
 
     setSaving(true);
     setError(null);
+    setNotesError(undefined);
     setCreatedAt(null);
     try {
       const start = new Date(startDatetime).toISOString();
@@ -104,9 +114,7 @@ export default function NewAppointmentPage() {
           modality,
           type,
           ...(roomOrLink.trim() ? { roomOrLink: roomOrLink.trim() } : {}),
-          ...(receptionNotes.trim()
-            ? { receptionNotes: receptionNotes.trim() }
-            : {}),
+          ...(notes ? { receptionNotes: notes } : {}),
           ...(allowOutside ? { allowOutsideAvailability: true } : {}),
         }),
       });
@@ -253,12 +261,23 @@ export default function NewAppointmentPage() {
             />
           </FormField>
 
-          <FormField id="receptionNotes" label="Notas da recepção (opcional)">
+          <FormField
+            id="receptionNotes"
+            label={allowOutside ? "Justificativa do encaixe" : "Notas da recepção (opcional)"}
+            error={notesError}
+          >
             <textarea
+              ref={notesField}
               id="receptionNotes"
               className={textareaClassName}
               value={receptionNotes}
-              onChange={(e) => setReceptionNotes(e.target.value)}
+              aria-required={allowOutside}
+              aria-invalid={Boolean(notesError)}
+              aria-describedby={notesError ? "receptionNotes-error" : undefined}
+              onChange={(e) => {
+                setReceptionNotes(e.target.value);
+                setNotesError(undefined);
+              }}
             />
           </FormField>
 
@@ -267,7 +286,10 @@ export default function NewAppointmentPage() {
               type="checkbox"
               className="mt-0.5 size-4 rounded border-slate-300"
               checked={allowOutside}
-              onChange={(e) => setAllowOutside(e.target.checked)}
+              onChange={(e) => {
+                setAllowOutside(e.target.checked);
+                setNotesError(undefined);
+              }}
             />
             <span>
               <strong className="font-medium text-slate-800">Encaixe:</strong>{" "}

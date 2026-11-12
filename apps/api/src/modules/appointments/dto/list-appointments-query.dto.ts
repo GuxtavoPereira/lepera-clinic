@@ -1,5 +1,16 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { AppointmentStatus } from '@lepera/db';
 
 export class ListAppointmentsQueryDto {
@@ -23,4 +34,17 @@ export class ListAppointmentsQueryDto {
   @IsOptional()
   @IsIn(['upcoming', 'past', 'all'])
   scope: 'upcoming' | 'past' | 'all' = 'upcoming';
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  doctorId?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'Informe o dia no formato AAAA-MM-DD',
+  })
+  day?: string;
 }

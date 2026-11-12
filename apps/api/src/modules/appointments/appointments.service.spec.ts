@@ -157,12 +157,33 @@ describe('AppointmentsService', () => {
 
       await expect(
         service.create(
-          { ...dto, allowOutsideAvailability: true },
+          {
+            ...dto,
+            allowOutsideAvailability: true,
+            receptionNotes: '  Horário combinado com o profissional.  ',
+          },
           { sub: 'admin-1', role: 'ADMIN' },
         ),
       ).resolves.toEqual(appointment);
 
       expect(availabilityFindMany).not.toHaveBeenCalled();
+      expect(appointmentCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            receptionNotes: 'Horário combinado com o profissional.',
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('exige justificativa para encaixe fora da disponibilidade', async () => {
+      await expect(
+        service.create(
+          { ...dto, allowOutsideAvailability: true, receptionNotes: '   ' },
+          { sub: 'admin-1', role: 'ADMIN' },
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(appointmentCreate).not.toHaveBeenCalled();
     });
 
     it('aceita horário dentro da disponibilidade (quinta 07:00–07:50)', async () => {
@@ -238,5 +259,24 @@ describe('AppointmentsService', () => {
       total: 1,
       totalPages: 1,
     });
+  });
+
+  it('filtra por profissional e pelos limites do dia em Brasília', async () => {
+    await service.findAll({
+      page: 1,
+      pageSize: 10,
+      scope: 'all',
+      doctorId: 'doctor-1',
+      day: '2026-11-12',
+    });
+    const where = {
+      doctorId: 'doctor-1',
+      startDatetime: { lt: new Date('2026-11-13T03:00:00.000Z') },
+      AND: [{ endDatetime: { gt: new Date('2026-11-12T03:00:00.000Z') } }],
+    };
+    expect(appointmentCount).toHaveBeenCalledWith({ where });
+    expect(appointmentFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where }),
+    );
   });
 });

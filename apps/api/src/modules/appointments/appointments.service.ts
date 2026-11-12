@@ -11,6 +11,7 @@ import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import type { RequestContext } from '../audit/request-context';
+import { clinicInstant } from './calendar-time';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
@@ -49,6 +50,13 @@ export class AppointmentsService {
     const now = new Date();
     const where: Prisma.AppointmentWhereInput = {
       ...(query.status ? { status: query.status } : {}),
+      ...(query.doctorId ? { doctorId: query.doctorId } : {}),
+      ...(query.day
+        ? {
+            startDatetime: { lt: clinicInstant(query.day, 24 * 60) },
+            AND: [{ endDatetime: { gt: clinicInstant(query.day) } }],
+          }
+        : {}),
       ...(query.scope === 'upcoming'
         ? { endDatetime: { gte: now } }
         : query.scope === 'past'
@@ -346,6 +354,15 @@ export class AppointmentsService {
     user: AuthUser,
     ctx: RequestContext = {},
   ) {
+    const outsideAvailability = dto.allowOutsideAvailability === true;
+    const receptionNotes = outsideAvailability
+      ? dto.receptionNotes?.trim()
+      : dto.receptionNotes;
+    if (outsideAvailability && (!receptionNotes || receptionNotes.length < 5)) {
+      throw new BadRequestException(
+        'Informe uma justificativa para o encaixe (mínimo de 5 caracteres)',
+      );
+    }
     const startDatetime = new Date(dto.startDatetime);
     const endDatetime = new Date(
       startDatetime.getTime() + dto.durationMinutes * 60_000,
@@ -382,7 +399,7 @@ export class AppointmentsService {
             receptionistId = receptionist.id;
           }
 
-          if (!dto.allowOutsideAvailability) {
+          if (!outsideAvailability) {
             await assertWithinAvailability(
               tx,
               dto.doctorId,
@@ -418,7 +435,7 @@ export class AppointmentsService {
               modality: dto.modality,
               type: dto.type,
               roomOrLink: dto.roomOrLink,
-              receptionNotes: dto.receptionNotes,
+              receptionNotes,
             },
           });
           await this.audit.log(
@@ -427,6 +444,9 @@ export class AppointmentsService {
               action: 'appointment.create',
               resource: 'appointment',
               resourceId: appointment.id,
+              ...(outsideAvailability
+                ? { metadata: { allowOutsideAvailability: true } }
+                : {}),
               ...ctx,
             },
             tx,

@@ -88,4 +88,10 @@ O painel administrativo identifica a criação e o cancelamento direto de consul
 
 Em PostgreSQL isolado, validei as quatro operações, o acesso administrativo à trilha e a recusa para a recepção. Dois cancelamentos simultâneos retornaram 200 e 409 e produziram um único evento, com o autor e o motivo da operação aceita preservados nos respectivos registros. Os quatro rótulos apareceram no painel a 390 px. Os 416 testes da API e as compilações da API e da web passaram.
 
+## Agenda da recepção e encaixes
+
+A lista aplica filtros de profissional, dia, período e status antes de paginar. O dia segue o horário de Brasília e inclui consultas que atravessam a meia-noite. Escolher um dia ativa a visualização de todo o dia. **Limpar filtros** restaura as próximas consultas.
+
+O encaixe manual fora da disponibilidade exige justificativa de pelo menos cinco caracteres. A justificativa fica na consulta e a auditoria indica o uso da exceção. A verificação de conflito continua valendo. Em PostgreSQL isolado, confirmei os dois dias de uma consulta que atravessava a meia-noite, a recusa de data inválida e de horário em conflito e a aprovação de um pedido flexível com justificativa. No navegador a 390 px, a lista e a grade diária filtraram pelo profissional e o formulário levou o foco à justificativa antes de permitir o encaixe. Os 418 testes da API e as compilações passaram.
+
 Os logs e as capturas com dados sintéticos ficam nas pastas locais ignoradas `work/v1.2-qa/` e `work/v1.2/public/`. Os ZIPs `Clinical Project.zip` e `Clinical Project (1).zip` contêm exportações de design. As quatro fotos WebP da home são referências licenciadas, com créditos no README.

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Calendar, CalendarPlus, Check, Clock3, Loader2, X } from "lucide-react";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
+import { FormField, inputClassName } from "@/components/forms/form-field";
 import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatDateTimePtBr } from "@/lib/date-format";
@@ -49,6 +50,7 @@ type PendingCancellation = {
 };
 
 type Scope = "upcoming" | "past" | "all";
+type DoctorOption = { id: string; user: { name: string } };
 
 const PAGE_SIZE = 10;
 
@@ -75,9 +77,6 @@ const statusClasses: Record<AppointmentStatus, string> = {
   RESCHEDULED: "bg-amber-50 text-amber-800",
   WAITING: "bg-violet-50 text-violet-800",
 };
-
-const selectClassName =
-  "h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15";
 
 function CancellationReviewCard({
   request,
@@ -217,6 +216,10 @@ function ReceptionAppointments() {
   const onlyCancellations = useSearchParams().get("view") === "pending-cancellations";
   const [scope, setScope] = useState<Scope>("upcoming");
   const [status, setStatus] = useState<AppointmentStatus | "">("");
+  const [doctorId, setDoctorId] = useState("");
+  const [day, setDay] = useState("");
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [doctorError, setDoctorError] = useState(false);
   const [page, setPage] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -226,6 +229,21 @@ function ReceptionAppointments() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (onlyCancellations) return;
+    const controller = new AbortController();
+    void apiFetch<DoctorOption[]>("/doctors", { signal: controller.signal })
+      .then((items) => {
+        if (controller.signal.aborted) return;
+        setDoctors(items);
+        setDoctorError(false);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setDoctorError(true);
+      });
+    return () => controller.abort();
+  }, [onlyCancellations]);
+
+  useEffect(() => {
     let active = true;
     const params = new URLSearchParams({
       page: String(page),
@@ -233,6 +251,8 @@ function ReceptionAppointments() {
       scope,
     });
     if (status) params.set("status", status);
+    if (doctorId) params.set("doctorId", doctorId);
+    if (day) params.set("day", day);
 
     void Promise.all([
       onlyCancellations
@@ -248,6 +268,7 @@ function ReceptionAppointments() {
       })
       .catch((err: unknown) => {
         if (!active) return;
+        setData(null);
         setError(
           err instanceof ApiError
             ? err.message
@@ -261,13 +282,14 @@ function ReceptionAppointments() {
     return () => {
       active = false;
     };
-  }, [scope, status, page, reloadKey, onlyCancellations]);
+  }, [scope, status, doctorId, day, page, reloadKey, onlyCancellations]);
 
   function reload() {
     setReloadKey((key) => key + 1);
   }
 
   function changeScope(next: Scope) {
+    if (next === scope) return;
     setLoading(true);
     setPage(1);
     setScope(next);
@@ -277,6 +299,28 @@ function ReceptionAppointments() {
     setLoading(true);
     setPage(1);
     setStatus(next);
+  }
+
+  function changeDoctor(next: string) {
+    setLoading(true);
+    setPage(1);
+    setDoctorId(next);
+  }
+
+  function changeDay(next: string) {
+    setLoading(true);
+    setPage(1);
+    setDay(next);
+    if (next) setScope("all");
+  }
+
+  function clearFilters() {
+    setLoading(true);
+    setPage(1);
+    setScope("upcoming");
+    setStatus("");
+    setDoctorId("");
+    setDay("");
   }
 
   function goToPage(next: number) {
@@ -366,6 +410,7 @@ function ReceptionAppointments() {
               <button
                 key={item.value}
                 type="button"
+                aria-pressed={scope === item.value}
                 onClick={() => changeScope(item.value)}
                 className={
                   scope === item.value
@@ -377,24 +422,64 @@ function ReceptionAppointments() {
               </button>
             ))}
           </div>
-          <select
-            aria-label="Filtrar por status"
-            className={selectClassName}
-            value={status}
-            onChange={(event) =>
-              changeStatus(event.target.value as AppointmentStatus | "")
-            }
-          >
-            <option value="">Todos os status</option>
-            {(Object.keys(statusLabels) as AppointmentStatus[]).map((value) => (
-              <option key={value} value={value}>
-                {statusLabels[value]}
-              </option>
-            ))}
-          </select>
+          {(scope !== "upcoming" || status || doctorId || day) && (
+            <Button type="button" variant="outline" onClick={clearFilters}>
+              Limpar filtros
+            </Button>
+          )}
         </div>
 
-        {loading || (!data && !error) ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <FormField id="agenda-doctor" label="Profissional">
+            <select
+              id="agenda-doctor"
+              className={inputClassName}
+              value={doctorId}
+              disabled={doctors.length === 0}
+              onChange={(event) => changeDoctor(event.target.value)}
+            >
+              <option value="">Todos os profissionais</option>
+              {doctors.map((doctor) => (
+                <option key={doctor.id} value={doctor.id}>
+                  {doctor.user.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <FormField id="agenda-day" label="Dia da consulta">
+            <input
+              id="agenda-day"
+              type="date"
+              className={inputClassName}
+              value={day}
+              onChange={(event) => changeDay(event.target.value)}
+            />
+          </FormField>
+          <FormField id="agenda-status" label="Status da consulta">
+            <select
+              id="agenda-status"
+              className={inputClassName}
+              value={status}
+              onChange={(event) =>
+                changeStatus(event.target.value as AppointmentStatus | "")
+              }
+            >
+              <option value="">Todos os status</option>
+              {(Object.keys(statusLabels) as AppointmentStatus[]).map((value) => (
+                <option key={value} value={value}>
+                  {statusLabels[value]}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+        {doctorError && (
+          <p role="status" className="text-sm text-muted-foreground">
+            Não foi possível carregar os profissionais para filtrar a agenda.
+          </p>
+        )}
+
+        {error ? null : loading || !data ? (
           <p className="text-sm text-slate-500">Carregando consultas...</p>
         ) : !data || data.items.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
