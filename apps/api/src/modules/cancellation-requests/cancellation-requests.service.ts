@@ -193,9 +193,11 @@ export class CancellationRequestsService {
         data: [
           {
             ...APPOINTMENT_CANCELLED_NOTICE,
+            appointmentId: request.appointmentId,
             userId: request.appointment.patient.userId,
           },
           {
+            appointmentId: request.appointmentId,
             userId: request.requestedBy.userId,
             type: 'cancelamento_aprovado',
             title: 'Pedido de cancelamento aprovado',
@@ -260,6 +262,7 @@ export class CancellationRequestsService {
       const { requestedBy, ...request } = updated;
       await tx.notification.create({
         data: {
+          appointmentId: request.appointmentId,
           userId: requestedBy.userId,
           type: 'cancelamento_recusado',
           title: 'Pedido de cancelamento recusado',

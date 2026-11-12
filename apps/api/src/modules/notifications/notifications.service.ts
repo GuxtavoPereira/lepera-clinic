@@ -12,6 +12,7 @@ export class NotificationsService {
       where: { userId: user.sub },
       select: {
         id: true,
+        appointmentId: true,
         type: true,
         title: true,
         message: true,

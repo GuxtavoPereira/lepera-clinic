@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Calendar, CalendarPlus, Clock3, UserRound } from "lucide-react";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
+import {
+  NotificationAppointment,
+  UnavailableNotificationAppointment,
+} from "@/components/appointments/notification-appointment";
 import { DashboardLoading } from "@/components/dashboard/dashboard-ui";
 import { isCurrentAppointment, isUpcomingAppointment } from "@/components/dashboard/dashboard-data";
 import { ApiError, apiFetch } from "@/lib/api-client";
@@ -111,7 +115,10 @@ function AppointmentCard({
     appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED";
 
   return (
-    <li className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <li
+      id={`appointment-${appointment.id}`}
+      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+    >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div className="space-y-3">
           <div>
@@ -168,7 +175,9 @@ export default function PatientAppointmentsPage() {
 }
 
 function PatientAppointments() {
-  const requestedView = useSearchParams().get("view");
+  const searchParams = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const notificationAppointmentId = searchParams.get("appointment");
   const view = APPOINTMENT_VIEWS.find(({ value }) => value === requestedView)?.value ?? "all";
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchPage>> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -216,6 +225,27 @@ function PatientAppointments() {
     request.status === "APPROVED" && request.generatedAppointment ? [request.generatedAppointment] : [],
   );
   const linkedIds = new Set(linked.map(({ id }) => id));
+  const notificationAppointment = notificationAppointmentId
+    ? appointments.find(({ id }) => id === notificationAppointmentId)
+    : undefined;
+
+  if (notificationAppointment) {
+    return (
+      <NotificationAppointment
+        key={notificationAppointment.id}
+        backHref="/patient/appointments"
+        backLabel="Ver todas as consultas"
+        error={error}
+      >
+        <AppointmentCard
+          appointment={notificationAppointment}
+          isApprovedRequest={linkedIds.has(notificationAppointment.id)}
+          onCancelled={reload}
+        />
+      </NotificationAppointment>
+    );
+  }
+
   const appointmentIds = new Set(appointments.map(({ id }) => id));
   const day = data ? calendarDateKey(new Date(data.loadedAt)) : "";
   const visibleAppointments = view === "all"
@@ -268,6 +298,10 @@ function PatientAppointments() {
           </Link>
         ))}
       </nav>
+
+      {notificationAppointmentId && !loading && !error && (
+        <UnavailableNotificationAppointment />
+      )}
 
       {error && (
         <p

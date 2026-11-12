@@ -6,14 +6,40 @@ describe('NotificationsService', () => {
   const user = { sub: 'user-1', role: 'PATIENT' as const };
   let updateMany: jest.Mock;
   let count: jest.Mock;
+  let findMany: jest.Mock;
   let service: NotificationsService;
 
   beforeEach(() => {
     updateMany = jest.fn().mockResolvedValue({ count: 1 });
     count = jest.fn().mockResolvedValue(3);
+    findMany = jest.fn();
     service = new NotificationsService({
-      db: { notification: { updateMany, count, findMany: jest.fn() } },
+      db: { notification: { updateMany, count, findMany } },
     } as unknown as PrismaService);
+  });
+
+  it('lista só as notificações do usuário com a referência opcional da consulta', async () => {
+    const rows = [
+      { id: 'n1', appointmentId: 'appt-1' },
+      { id: 'n2', appointmentId: null },
+    ];
+    findMany.mockResolvedValue(rows);
+
+    await expect(service.findMine(user)).resolves.toEqual(rows);
+    expect(findMany).toHaveBeenCalledWith({
+      where: { userId: user.sub },
+      select: {
+        id: true,
+        appointmentId: true,
+        type: true,
+        title: true,
+        message: true,
+        isRead: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
   });
 
   it('conta só as não lidas do próprio usuário', async () => {

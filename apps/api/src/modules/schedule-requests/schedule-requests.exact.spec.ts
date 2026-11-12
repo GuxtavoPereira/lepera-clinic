@@ -141,7 +141,11 @@ describe('Schedule requests: exact slots and concurrency', () => {
     });
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ userId: actor.sub }) as unknown,
+        data: expect.objectContaining({
+          userId: actor.sub,
+          appointmentId: 'appointment',
+          type: 'confirmacao',
+        }) as unknown,
       }),
     );
   });

@@ -18,12 +18,30 @@ type Notification = {
   message: string;
   isRead: boolean;
   createdAt: string;
+  appointmentId?: string | null;
 };
+
+function appointmentAction(
+  path: string,
+  label: string,
+  appointmentId?: string | null,
+) {
+  return appointmentId
+    ? {
+        href: `${path}?appointment=${encodeURIComponent(appointmentId)}`,
+        label: "Ver consulta",
+      }
+    : { href: path, label };
+}
 
 function notificationAction(item: Notification, role: Role | null) {
   if (role === "PATIENT") {
     if (item.type === "confirmacao" || item.type === "consulta_cancelada") {
-      return { href: "/patient/appointments", label: "Ver minhas consultas" };
+      return appointmentAction(
+        "/patient/appointments",
+        "Ver minhas consultas",
+        item.appointmentId,
+      );
     }
     if (
       item.type === "vaga_liberada" ||
@@ -38,7 +56,11 @@ function notificationAction(item: Notification, role: Role | null) {
       item.type === "cancelamento_aprovado" ||
       item.type === "cancelamento_recusado")
   ) {
-    return { href: "/doctor/calendar", label: "Ver minha agenda" };
+    return appointmentAction(
+      "/doctor/calendar",
+      "Ver minha agenda",
+      item.appointmentId,
+    );
   }
   return null;
 }

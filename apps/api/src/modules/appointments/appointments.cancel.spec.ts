@@ -83,6 +83,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
       data: [
         {
           userId: 'patient-user',
+          appointmentId: 'appointment-1',
           type: 'consulta_cancelada',
           title: 'Consulta cancelada',
           message:
@@ -90,6 +91,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
         },
         {
           userId: 'doctor-user',
+          appointmentId: 'appointment-1',
           type: 'consulta_cancelada',
           title: 'Consulta cancelada',
           message:

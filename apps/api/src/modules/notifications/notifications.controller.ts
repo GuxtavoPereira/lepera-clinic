@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Param,
+  Patch,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   JwtAuthGuard,
   type AuthUser,
@@ -12,6 +20,7 @@ export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Get()
+  @Header('Cache-Control', 'private, no-store')
   findMine(@Req() req: { user: AuthUser }) {
     return this.notifications.findMine(req.user);
   }

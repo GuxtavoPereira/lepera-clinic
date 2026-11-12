@@ -203,6 +203,7 @@ export class AppointmentsService {
       await tx.notification.createMany({
         data: recipients.map((userId) => ({
           ...APPOINTMENT_CANCELLED_NOTICE,
+          appointmentId: appointment.id,
           userId,
         })),
       });

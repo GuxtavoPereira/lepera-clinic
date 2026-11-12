@@ -278,6 +278,7 @@ model Appointment {
   transaction          FinancialTransaction? // Ligação financeira (da imagem)
   requests             ScheduleRequest[]
   cancellationRequests CancellationRequest[]
+  notifications        Notification[]
 
   // Índices das consultas de conflito (RN01) e das listagens
   @@index([doctorId, startDatetime])
@@ -466,6 +467,9 @@ model Notification {
   userId String // FK -> usuarios
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
   type    String // "lembrete", "alerta", "confirmacao"
   title   String // titulo
   message String  @db.Text // mensagem
@@ -473,6 +477,7 @@ model Notification {
 
   createdAt DateTime @default(now())
 
+  @@index([appointmentId])
   @@map("notifications")
 }
 

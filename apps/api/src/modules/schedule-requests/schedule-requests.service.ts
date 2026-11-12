@@ -296,6 +296,7 @@ export class ScheduleRequestsService {
             throw new ConflictException('Esta solicitação já foi analisada');
           await tx.notification.create({
             data: {
+              appointmentId: appointment.id,
               userId: request.patient.userId,
               type: 'confirmacao',
               title: 'Consulta confirmada',

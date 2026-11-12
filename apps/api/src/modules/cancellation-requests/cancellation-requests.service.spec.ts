@@ -206,6 +206,7 @@ describe('CancellationRequestsService', () => {
         data: [
           {
             userId: 'patient-user',
+            appointmentId: 'appointment-1',
             type: 'consulta_cancelada',
             title: 'Consulta cancelada',
             message:
@@ -213,6 +214,7 @@ describe('CancellationRequestsService', () => {
           },
           {
             userId: 'doctor-user',
+            appointmentId: 'appointment-1',
             type: 'cancelamento_aprovado',
             title: 'Pedido de cancelamento aprovado',
             message: 'A recepção aprovou seu pedido. Consulte sua agenda.',
@@ -273,13 +275,18 @@ describe('CancellationRequestsService', () => {
       requestUpdateManyAndReturn.mockResolvedValue([
         {
           id: 'req-1',
+          appointmentId: 'appt-1',
           status: 'REJECTED',
           requestedBy: { userId: 'doctor-user' },
         },
       ]);
       await expect(
         service.reject('req-1', { note: ' Sem substituto ' }, receptionUser),
-      ).resolves.toEqual({ id: 'req-1', status: 'REJECTED' });
+      ).resolves.toEqual({
+        id: 'req-1',
+        appointmentId: 'appt-1',
+        status: 'REJECTED',
+      });
 
       expect(requestUpdateManyAndReturn).toHaveBeenCalledWith({
         where: { id: 'req-1', status: 'PENDING' },
@@ -292,6 +299,7 @@ describe('CancellationRequestsService', () => {
       expect(notificationCreate).toHaveBeenCalledWith({
         data: {
           userId: 'doctor-user',
+          appointmentId: 'appt-1',
           type: 'cancelamento_recusado',
           title: 'Pedido de cancelamento recusado',
           message: 'A recepção recusou seu pedido. Consulte sua agenda.',

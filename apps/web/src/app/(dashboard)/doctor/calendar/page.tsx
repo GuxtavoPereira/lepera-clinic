@@ -6,6 +6,10 @@ import { useSearchParams } from "next/navigation";
 import { Calendar, ClipboardList, Clock3, UserRound } from "lucide-react";
 import { RequestCancellationButton } from "@/components/appointments/request-cancellation-button";
 import { AppointmentCalendar } from "@/components/appointments/appointment-calendar";
+import {
+  NotificationAppointment,
+  UnavailableNotificationAppointment,
+} from "@/components/appointments/notification-appointment";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { isUpcomingAppointment } from "@/components/dashboard/dashboard-data";
 import { dashboardActionClass, DashboardLoading } from "@/components/dashboard/dashboard-ui";
@@ -197,7 +201,9 @@ export default function DoctorCalendarPage() {
 }
 
 function DoctorCalendar() {
-  const view = useSearchParams().get("view");
+  const searchParams = useSearchParams();
+  const view = searchParams.get("view");
+  const notificationAppointmentId = searchParams.get("appointment");
   const upcomingOnly = view === "upcoming";
   const pendingOnly = view === "pending-cancellations";
   const filtered = upcomingOnly || pendingOnly;
@@ -286,6 +292,27 @@ function DoctorCalendar() {
   }, []);
 
   const requestByAppointment = latestByAppointment(requests);
+  const notificationAppointment = notificationAppointmentId
+    ? appointments.find(({ id }) => id === notificationAppointmentId)
+    : undefined;
+
+  if (notificationAppointment) {
+    return (
+      <NotificationAppointment
+        key={notificationAppointment.id}
+        backHref="/doctor/calendar"
+        backLabel="Ver toda a agenda"
+        error={error}
+      >
+        <AppointmentCard
+          appointment={notificationAppointment}
+          request={requestByAppointment.get(notificationAppointment.id)}
+          onRequested={reload}
+        />
+      </NotificationAppointment>
+    );
+  }
+
   const calendarEvents: CalendarEvent[] = calendarItems.map((item) => ({
     id: item.id,
     start: item.startDatetime,
@@ -317,6 +344,10 @@ function DoctorCalendar() {
           </p>
         </div>
       </header>
+
+      {notificationAppointmentId && !loading && !error && (
+        <UnavailableNotificationAppointment />
+      )}
 
       {filtered ? (
         <Link href="/doctor/calendar" className={dashboardActionClass}>Ver toda a agenda</Link>
