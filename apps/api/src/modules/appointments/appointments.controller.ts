@@ -15,12 +15,15 @@ import {
   type AuthUser,
 } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { requestContext } from '../audit/request-context';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { AppointmentsService } from './appointments.service';
 import { AppointmentCalendarService } from './appointment-calendar.service';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
+
+type AuditRequest = Parameters<typeof requestContext>[0] & { user: AuthUser };
 
 @Controller('appointments')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -62,11 +65,12 @@ export class AppointmentsController {
   }
 
   @Post()
-  create(
-    @Body() dto: CreateAppointmentDto,
-    @Req() request: { user: AuthUser },
-  ) {
-    return this.appointmentsService.create(dto, request.user);
+  create(@Body() dto: CreateAppointmentDto, @Req() request: AuditRequest) {
+    return this.appointmentsService.create(
+      dto,
+      request.user,
+      requestContext(request),
+    );
   }
 
   @Patch(':id/cancel')
@@ -74,8 +78,13 @@ export class AppointmentsController {
   cancel(
     @Param('id') id: string,
     @Body() dto: CancelAppointmentDto,
-    @Req() request: { user: AuthUser },
+    @Req() request: AuditRequest,
   ) {
-    return this.appointmentsService.cancel(id, dto, request.user);
+    return this.appointmentsService.cancel(
+      id,
+      dto,
+      request.user,
+      requestContext(request),
+    );
   }
 }

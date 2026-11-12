@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Prisma } from '@lepera/db';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { AppointmentsService } from './appointments.service';
 
 describe('AppointmentsService', () => {
@@ -33,6 +34,7 @@ describe('AppointmentsService', () => {
   let doctorForUserFindUnique: jest.Mock;
   let appointmentFindMany: jest.Mock;
   let appointmentCount: jest.Mock;
+  let auditLog: jest.Mock;
 
   beforeEach(async () => {
     patientFindUnique = jest.fn().mockResolvedValue({ id: dto.patientId });
@@ -50,6 +52,7 @@ describe('AppointmentsService', () => {
     doctorForUserFindUnique = jest.fn().mockResolvedValue({ id: dto.doctorId });
     appointmentFindMany = jest.fn().mockResolvedValue([appointment]);
     appointmentCount = jest.fn().mockResolvedValue(1);
+    auditLog = jest.fn();
 
     const tx = {
       patient: { findUnique: patientFindUnique },
@@ -68,6 +71,7 @@ describe('AppointmentsService', () => {
     const module = await Test.createTestingModule({
       providers: [
         AppointmentsService,
+        { provide: AuditService, useValue: { log: auditLog } },
         {
           provide: PrismaService,
           useValue: {
@@ -110,6 +114,15 @@ describe('AppointmentsService', () => {
     expect(transaction).toHaveBeenCalledWith(expect.any(Function), {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     });
+    expect(auditLog).toHaveBeenCalledWith(
+      {
+        actor: { sub: 'user-1', role: 'RECEPTIONIST' },
+        action: 'appointment.create',
+        resource: 'appointment',
+        resourceId: 'appointment-1',
+      },
+      expect.anything(),
+    );
   });
 
   it('rejects an appointment that overlaps an existing appointment', async () => {
@@ -120,6 +133,7 @@ describe('AppointmentsService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
 
     expect(appointmentCreate).not.toHaveBeenCalled();
+    expect(auditLog).not.toHaveBeenCalled();
   });
 
   describe('disponibilidade do profissional', () => {

@@ -3,6 +3,7 @@ import { Prisma } from '@lepera/db';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AppointmentCalendarService } from '../appointments/appointment-calendar.service';
 import { AppointmentsService } from '../appointments/appointments.service';
+import { AuditService } from '../audit/audit.service';
 import { ScheduleRequestsService } from './schedule-requests.service';
 
 describe('Schedule requests: exact slots and concurrency', () => {
@@ -14,6 +15,7 @@ describe('Schedule requests: exact slots and concurrency', () => {
   let request: jest.Mock;
   let update: jest.Mock;
   let notify: jest.Mock;
+  let auditLog: jest.Mock;
   let appt: jest.Mock;
   let free: jest.Mock;
   let transaction: jest.Mock;
@@ -34,6 +36,7 @@ describe('Schedule requests: exact slots and concurrency', () => {
     });
     update = jest.fn().mockResolvedValue({ count: 1 });
     notify = jest.fn().mockResolvedValue({});
+    auditLog = jest.fn();
     appt = jest.fn().mockResolvedValue({ id: 'appointment' });
     free = jest.fn().mockResolvedValue({ items: [{ doctorId: 'd', start }] });
     const tx = {
@@ -65,6 +68,7 @@ describe('Schedule requests: exact slots and concurrency', () => {
       } as unknown as PrismaService,
       { createForRequest: appt } as unknown as AppointmentsService,
       { availableSlots: free } as unknown as AppointmentCalendarService,
+      { log: auditLog } as unknown as AuditService,
     );
   });
   const exact = {
@@ -148,6 +152,16 @@ describe('Schedule requests: exact slots and concurrency', () => {
         }) as unknown,
       }),
     );
+    expect(auditLog).toHaveBeenCalledWith(
+      {
+        actor: reviewer,
+        action: 'schedule_request.approve',
+        resource: 'schedule_request',
+        resourceId: 'request',
+        metadata: { appointmentId: 'appointment' },
+      },
+      expect.anything(),
+    );
   });
   it('rejects overriding an exact request', async () => {
     await expect(
@@ -171,6 +185,7 @@ describe('Schedule requests: exact slots and concurrency', () => {
       service.approve('request', {}, reviewer),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(notify).not.toHaveBeenCalled();
+    expect(auditLog).not.toHaveBeenCalled();
     transaction.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('race', {
         code: 'P2034',
@@ -237,6 +252,15 @@ describe('Schedule requests: exact slots and concurrency', () => {
       expect.objectContaining({
         data: expect.objectContaining({ userId: actor.sub }) as unknown,
       }),
+    );
+    expect(auditLog).toHaveBeenCalledWith(
+      {
+        actor: reviewer,
+        action: 'schedule_request.reject',
+        resource: 'schedule_request',
+        resourceId: 'request',
+      },
+      expect.anything(),
     );
   });
 });

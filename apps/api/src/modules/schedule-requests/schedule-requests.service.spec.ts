@@ -4,6 +4,7 @@ import { Prisma } from '@lepera/db';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { AppointmentCalendarService } from '../appointments/appointment-calendar.service';
+import { AuditService } from '../audit/audit.service';
 import { ScheduleRequestsService } from './schedule-requests.service';
 
 describe('ScheduleRequestsService', () => {
@@ -24,6 +25,7 @@ describe('ScheduleRequestsService', () => {
     const module = await Test.createTestingModule({
       providers: [
         ScheduleRequestsService,
+        { provide: AuditService, useValue: { log: jest.fn() } },
         {
           provide: PrismaService,
           useValue: {
@@ -121,6 +123,7 @@ describe('ScheduleRequestsService', () => {
     const module = await Test.createTestingModule({
       providers: [
         ScheduleRequestsService,
+        { provide: AuditService, useValue: { log: jest.fn() } },
         {
           provide: PrismaService,
           useValue: {

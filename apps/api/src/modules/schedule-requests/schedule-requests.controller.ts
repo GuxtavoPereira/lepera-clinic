@@ -14,9 +14,12 @@ import {
   type AuthUser,
 } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { requestContext } from '../audit/request-context';
 import { ApproveScheduleRequestDto } from './dto/approve-schedule-request.dto';
 import { CreateScheduleRequestDto } from './dto/create-schedule-request.dto';
 import { ScheduleRequestsService } from './schedule-requests.service';
+
+type AuditRequest = Parameters<typeof requestContext>[0] & { user: AuthUser };
 
 @Controller('schedule-requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,14 +52,23 @@ export class ScheduleRequestsController {
   approve(
     @Param('id') id: string,
     @Body() dto: ApproveScheduleRequestDto,
-    @Req() request: { user: AuthUser },
+    @Req() request: AuditRequest,
   ) {
-    return this.scheduleRequests.approve(id, dto, request.user);
+    return this.scheduleRequests.approve(
+      id,
+      dto,
+      request.user,
+      requestContext(request),
+    );
   }
 
   @Patch(':id/reject')
   @Roles('RECEPTIONIST')
-  reject(@Param('id') id: string, @Req() request: { user: AuthUser }) {
-    return this.scheduleRequests.reject(id, request.user);
+  reject(@Param('id') id: string, @Req() request: AuditRequest) {
+    return this.scheduleRequests.reject(
+      id,
+      request.user,
+      requestContext(request),
+    );
   }
 }

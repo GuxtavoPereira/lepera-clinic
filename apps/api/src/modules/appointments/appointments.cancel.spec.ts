@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import {
   AppointmentsService,
   PATIENT_MIN_CANCEL_HOURS,
@@ -20,6 +21,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
   let patientFindUnique: jest.Mock;
   let waitlistFindMany: jest.Mock;
   let notificationCreateMany: jest.Mock;
+  let auditLog: jest.Mock;
 
   function appointmentIn(
     hours: number,
@@ -44,6 +46,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
     patientFindUnique = jest.fn().mockResolvedValue({ id: 'patient-1' });
     waitlistFindMany = jest.fn().mockResolvedValue([]);
     notificationCreateMany = jest.fn().mockResolvedValue({ count: 1 });
+    auditLog = jest.fn();
 
     const db = {
       appointment: {
@@ -60,7 +63,10 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
       ),
     };
 
-    service = new AppointmentsService({ db } as unknown as PrismaService);
+    service = new AppointmentsService(
+      { db } as unknown as PrismaService,
+      { log: auditLog } as unknown as AuditService,
+    );
   });
 
   it('recepção cancela e grava status CANCELLED com o motivo', async () => {
@@ -70,6 +76,7 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
       'appointment-1',
       { reason: 'Paciente pediu' },
       { sub: 'user-1', role: 'RECEPTIONIST' },
+      { userAgent: 'Leperapia QA' },
     );
 
     expect(appointmentUpdateMany).toHaveBeenCalledWith({
@@ -99,6 +106,16 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
         },
       ],
     });
+    expect(auditLog).toHaveBeenCalledWith(
+      {
+        actor: { sub: 'user-1', role: 'RECEPTIONIST' },
+        action: 'appointment.cancel',
+        resource: 'appointment',
+        resourceId: 'appointment-1',
+        userAgent: 'Leperapia QA',
+      },
+      expect.anything(),
+    );
   });
 
   it('encerra os pedidos de cancelamento pendentes da consulta', async () => {
@@ -250,5 +267,6 @@ describe('AppointmentsService.cancel (RN03 / CT04)', () => {
 
     expect(requestUpdateMany).not.toHaveBeenCalled();
     expect(notificationCreateMany).not.toHaveBeenCalled();
+    expect(auditLog).not.toHaveBeenCalled();
   });
 });

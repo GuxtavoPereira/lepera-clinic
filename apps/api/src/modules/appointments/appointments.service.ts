@@ -9,6 +9,8 @@ import {
 import { Prisma, type AppointmentStatus } from '@lepera/db';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import type { RequestContext } from '../audit/request-context';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
@@ -37,7 +39,10 @@ export const APPOINTMENT_CANCELLED_NOTICE = {
 
 @Injectable()
 export class AppointmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   /** Agenda geral (recepção/admin): paginada, com filtro por período e status. */
   async findAll(query: ListAppointmentsQueryDto) {
@@ -127,7 +132,12 @@ export class AppointmentsService {
    *   cancelamento). Consulta de outro paciente responde 404.
    * Pedidos de cancelamento pendentes da consulta são encerrados junto.
    */
-  async cancel(id: string, dto: CancelAppointmentDto, user: AuthUser) {
+  async cancel(
+    id: string,
+    dto: CancelAppointmentDto,
+    user: AuthUser,
+    ctx: RequestContext = {},
+  ) {
     if (user.role === 'DOCTOR') {
       throw new ForbiddenException(
         'Profissionais devem solicitar o cancelamento à recepção',
@@ -214,6 +224,16 @@ export class AppointmentsService {
         startDatetime: appointment.startDatetime,
       });
 
+      await this.audit.log(
+        {
+          actor: user,
+          action: 'appointment.cancel',
+          resource: 'appointment',
+          resourceId: id,
+          ...ctx,
+        },
+        tx,
+      );
       return tx.appointment.findUnique({ where: { id } });
     });
   }
@@ -321,7 +341,11 @@ export class AppointmentsService {
     });
   }
 
-  async create(dto: CreateAppointmentDto, user: AuthUser) {
+  async create(
+    dto: CreateAppointmentDto,
+    user: AuthUser,
+    ctx: RequestContext = {},
+  ) {
     const startDatetime = new Date(dto.startDatetime);
     const endDatetime = new Date(
       startDatetime.getTime() + dto.durationMinutes * 60_000,
@@ -383,7 +407,7 @@ export class AppointmentsService {
             );
           }
 
-          return tx.appointment.create({
+          const appointment = await tx.appointment.create({
             data: {
               patientId: dto.patientId,
               doctorId: dto.doctorId,
@@ -397,6 +421,17 @@ export class AppointmentsService {
               receptionNotes: dto.receptionNotes,
             },
           });
+          await this.audit.log(
+            {
+              actor: user,
+              action: 'appointment.create',
+              resource: 'appointment',
+              resourceId: appointment.id,
+              ...ctx,
+            },
+            tx,
+          );
+          return appointment;
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );

@@ -14,6 +14,8 @@ import {
 } from '../appointments/appointment-calendar.service';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { CreateAppointmentDto } from '../appointments/dto/create-appointment.dto';
+import { AuditService } from '../audit/audit.service';
+import type { RequestContext } from '../audit/request-context';
 import { toClinicTime } from '../availability/availability.check';
 import { ApproveScheduleRequestDto } from './dto/approve-schedule-request.dto';
 import { CreateScheduleRequestDto } from './dto/create-schedule-request.dto';
@@ -56,6 +58,7 @@ export class ScheduleRequestsService {
     private readonly prisma: PrismaService,
     private readonly appointments: AppointmentsService,
     private readonly calendar: AppointmentCalendarService,
+    private readonly audit: AuditService,
   ) {}
 
   async create(dto: CreateScheduleRequestDto, user: AuthUser) {
@@ -191,7 +194,12 @@ export class ScheduleRequestsService {
     });
   }
 
-  async approve(id: string, dto: ApproveScheduleRequestDto, user: AuthUser) {
+  async approve(
+    id: string,
+    dto: ApproveScheduleRequestDto,
+    user: AuthUser,
+    ctx: RequestContext = {},
+  ) {
     const reviewerId = await this.resolveReviewerId(user);
     try {
       return await this.prisma.db.$transaction(
@@ -303,6 +311,17 @@ export class ScheduleRequestsService {
               message: `Sua consulta foi confirmada para ${new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(assignment.startDatetime))}. Consulte os detalhes na sua agenda.`,
             },
           });
+          await this.audit.log(
+            {
+              actor: user,
+              action: 'schedule_request.approve',
+              resource: 'schedule_request',
+              resourceId: id,
+              metadata: { appointmentId: appointment.id },
+              ...ctx,
+            },
+            tx,
+          );
           return { ...appointment, scheduleRequestId: id };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -312,7 +331,7 @@ export class ScheduleRequestsService {
     }
   }
 
-  async reject(id: string, user: AuthUser) {
+  async reject(id: string, user: AuthUser, ctx: RequestContext = {}) {
     const reviewerId = await this.resolveReviewerId(user);
     try {
       return await this.prisma.db.$transaction(
@@ -342,6 +361,16 @@ export class ScheduleRequestsService {
                 'A recepção não pôde confirmar seu pedido. Escolha outro horário disponível ou solicite um encaixe.',
             },
           });
+          await this.audit.log(
+            {
+              actor: user,
+              action: 'schedule_request.reject',
+              resource: 'schedule_request',
+              resourceId: id,
+              ...ctx,
+            },
+            tx,
+          );
           return tx.scheduleRequest.findUnique({ where: { id } });
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

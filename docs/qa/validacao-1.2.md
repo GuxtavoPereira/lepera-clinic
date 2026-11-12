@@ -82,4 +82,10 @@ A migração `20261110150000_notification_appointment_link` acrescenta uma refer
 
 Os testes com PostgreSQL e navegador em 390 px confirmaram a consulta correta para confirmações e cancelamentos. **Ver consulta** abre o registro permitido mesmo com filtro ativo. Se o registro estiver indisponível para a conta, a interface mostra um aviso genérico e mantém a navegação da tela. Em 12/11/2026, a compilação web e os 416 testes da API passaram.
 
+## Auditoria da agenda
+
+O painel administrativo identifica a criação e o cancelamento direto de consultas, além da aprovação e da recusa de solicitações de agendamento. A trilha registra quem realizou a operação, qual registro foi afetado e o contexto da requisição. A aprovação também referencia a consulta criada. As justificativas e notas permanecem nos registros de origem.
+
+Em PostgreSQL isolado, validei as quatro operações, o acesso administrativo à trilha e a recusa para a recepção. Dois cancelamentos simultâneos retornaram 200 e 409 e produziram um único evento, com o autor e o motivo da operação aceita preservados nos respectivos registros. Os quatro rótulos apareceram no painel a 390 px. Os 416 testes da API e as compilações da API e da web passaram.
+
 Os logs e as capturas com dados sintéticos ficam nas pastas locais ignoradas `work/v1.2-qa/` e `work/v1.2/public/`. Os ZIPs `Clinical Project.zip` e `Clinical Project (1).zip` contêm exportações de design. As quatro fotos WebP da home são referências licenciadas, com créditos no README.
