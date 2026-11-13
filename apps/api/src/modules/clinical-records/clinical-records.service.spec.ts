@@ -19,6 +19,7 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
   let doctorFindUnique: jest.Mock;
   let appointmentFindUnique: jest.Mock;
   let appointmentUpdate: jest.Mock;
+  let appointmentClaim: jest.Mock;
   let recordFindUnique: jest.Mock;
   let recordCreate: jest.Mock;
   let recordUpdate: jest.Mock;
@@ -43,6 +44,7 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
     doctorFindUnique = jest.fn().mockResolvedValue({ id: 'doctor-1' });
     appointmentFindUnique = jest.fn().mockResolvedValue(appointment());
     appointmentUpdate = jest.fn().mockResolvedValue({});
+    appointmentClaim = jest.fn().mockResolvedValue({ count: 1 });
     recordFindUnique = jest.fn().mockResolvedValue(null);
     recordCount = jest.fn().mockResolvedValue(2);
     recordCreate = jest.fn(({ data }: { data: Record<string, unknown> }) =>
@@ -90,6 +92,7 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
       appointment: {
         findUnique: appointmentFindUnique,
         update: appointmentUpdate,
+        updateMany: appointmentClaim,
       },
       clinicalRecord: {
         findUnique: recordFindUnique,
@@ -222,6 +225,31 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
     await expect(
       service.save('appointment-1', { clinicalNotes: 'x' }, doctorUser),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('recusa salvar se a consulta for remarcada após a leitura inicial', async () => {
+    appointmentClaim.mockResolvedValue({ count: 0 });
+    await expect(
+      service.save('appointment-1', { clinicalNotes: 'texto' }, doctorUser),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(recordFindUnique).not.toHaveBeenCalled();
+    expect(recordCreate).not.toHaveBeenCalled();
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  it('obtém a consulta antes de criar o registro para coordenar com remarcação', async () => {
+    await service.save('appointment-1', { clinicalNotes: 'texto' }, doctorUser);
+    expect(appointmentClaim).toHaveBeenCalledWith({
+      where: {
+        id: 'appointment-1',
+        doctorId: 'doctor-1',
+        status: { notIn: ['CANCELLED', 'RESCHEDULED'] },
+      },
+      data: { updatedAt: expect.any(Date) as Date },
+    });
+    expect(appointmentClaim.mock.invocationCallOrder[0]).toBeLessThan(
+      recordCreate.mock.invocationCallOrder[0],
+    );
   });
 
   it('assinar exige prontuário salvo com evolução clínica', async () => {

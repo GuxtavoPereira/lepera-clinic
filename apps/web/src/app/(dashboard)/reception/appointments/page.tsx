@@ -3,8 +3,9 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Calendar, CalendarPlus, Check, Clock3, Loader2, X } from "lucide-react";
-import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
+import { Calendar, CalendarPlus, Check, Loader2, X } from "lucide-react";
+import { ReceptionAppointmentCard, type ReceptionAppointment as ListedAppointment } from "@/components/appointments/reception-appointment-card";
+import type { RescheduledAppointment } from "@/components/appointments/reschedule-appointment-button";
 import { FormField, inputClassName } from "@/components/forms/form-field";
 import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
@@ -17,18 +18,6 @@ type AppointmentStatus =
   | "CANCELLED"
   | "RESCHEDULED"
   | "WAITING";
-
-type ListedAppointment = {
-  id: string;
-  startDatetime: string;
-  durationMinutes: number;
-  modality: "IN_PERSON" | "ONLINE";
-  status: AppointmentStatus;
-  cancelReason: string | null;
-  patient: { user: { name: string } };
-  doctor: { user: { name: string } };
-  cancellationRequests: { id: string; reason: string }[];
-};
 
 type AppointmentsPage = {
   items: ListedAppointment[];
@@ -67,15 +56,6 @@ const statusLabels: Record<AppointmentStatus, string> = {
   CANCELLED: "Cancelada",
   RESCHEDULED: "Remarcada",
   WAITING: "Aguardando atendimento",
-};
-
-const statusClasses: Record<AppointmentStatus, string> = {
-  SCHEDULED: "bg-blue-50 text-blue-800",
-  CONFIRMED: "bg-emerald-50 text-emerald-800",
-  COMPLETED: "bg-slate-100 text-slate-700",
-  CANCELLED: "bg-red-50 text-red-800",
-  RESCHEDULED: "bg-amber-50 text-amber-800",
-  WAITING: "bg-violet-50 text-violet-800",
 };
 
 function CancellationReviewCard({
@@ -213,7 +193,11 @@ export default function ReceptionAppointmentsPage() {
 }
 
 function ReceptionAppointments() {
-  const onlyCancellations = useSearchParams().get("view") === "pending-cancellations";
+  const searchParams = useSearchParams();
+  const onlyCancellations = searchParams.get("view") === "pending-cancellations";
+  const selectedId = searchParams.get("appointment");
+  const [selected, setSelected] = useState<{ id: string; appointment: ListedAppointment | null; error?: string } | null>(null);
+  const [notice, setNotice] = useState<RescheduledAppointment | null>(null);
   const [scope, setScope] = useState<Scope>("upcoming");
   const [status, setStatus] = useState<AppointmentStatus | "">("");
   const [doctorId, setDoctorId] = useState("");
@@ -284,7 +268,23 @@ function ReceptionAppointments() {
     };
   }, [scope, status, doctorId, day, page, reloadKey, onlyCancellations]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    const controller = new AbortController();
+    void apiFetch<ListedAppointment>(`/appointments/${encodeURIComponent(selectedId)}`, { signal: controller.signal })
+      .then((appointment) => { if (!controller.signal.aborted) setSelected({ id: selectedId, appointment }); })
+      .catch((err: unknown) => { if (!controller.signal.aborted) setSelected({ id: selectedId, appointment: null, error: err instanceof ApiError && err.status === 404 ? "Esta consulta está indisponível." : "Não foi possível carregar a consulta. Tente novamente." }); });
+    return () => controller.abort();
+  }, [selectedId, reloadKey]);
+
+  function onRescheduled(result: RescheduledAppointment) {
+    setNotice(result);
+    reload();
+  }
+
   function reload() {
+    setLoading(true);
+    setSelected(null);
     setReloadKey((key) => key + 1);
   }
 
@@ -328,6 +328,21 @@ function ReceptionAppointments() {
     setPage(next);
   }
 
+  const successNotice = notice && <div role="status" className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+    <p>Consulta remarcada para {formatDateTimePtBr(notice.startDatetime)}. O horário anterior permanece no histórico.</p>
+    <Link href={`/reception/appointments?appointment=${encodeURIComponent(notice.id)}`} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">Ver nova consulta</Link>
+  </div>;
+
+  if (selectedId) {
+    const current = selected?.id === selectedId ? selected : null;
+    return <div className="mx-auto max-w-4xl space-y-5">
+      <Link href="/reception/appointments" className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-sm font-medium hover:bg-accent">Voltar para agenda geral</Link>
+      <h1 className="text-2xl font-semibold">Detalhes da consulta</h1>
+      {successNotice}
+      {!current ? <p role="status">Carregando consulta…</p> : current.error ? <div className="space-y-3"><p role="alert">{current.error}</p><Button variant="outline" onClick={reload}>Tentar novamente</Button></div> : current.appointment && <ul><ReceptionAppointmentCard appointment={current.appointment} onChanged={reload} onRescheduled={onRescheduled} /></ul>}
+    </div>;
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -342,7 +357,7 @@ function ReceptionAppointments() {
             <p className="mt-1 text-sm text-slate-500">
               {onlyCancellations
                 ? "Pedidos de cancelamento de consulta aguardando análise da recepção."
-                : "Todas as consultas da clínica, com cancelamento e análise dos pedidos dos profissionais."}
+                : "Consulte os horários, remarque consultas e analise os pedidos dos profissionais."}
             </p>
           </div>
         </div>
@@ -365,6 +380,7 @@ function ReceptionAppointments() {
         </Link>
       )}
 
+      {successNotice}
       {error && (
         <p
           role="alert"
@@ -488,66 +504,12 @@ function ReceptionAppointments() {
         ) : (
           <>
             <ul className="space-y-3">
-              {data.items.map((appointment) => {
-                const cancellable =
-                  appointment.status === "SCHEDULED" ||
-                  appointment.status === "CONFIRMED";
-                return (
-                  <li
-                    key={appointment.id}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                  >
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                      <div className="space-y-3">
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {appointment.patient.user.name}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-500">
-                            com {appointment.doctor.user.name}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
-                          <p className="flex items-center gap-2">
-                            <Calendar className="size-4 text-slate-400" />
-                            {formatDateTimePtBr(appointment.startDatetime)}
-                          </p>
-                          <p className="flex items-center gap-2">
-                            <Clock3 className="size-4 text-slate-400" />
-                            {appointment.durationMinutes} minutos ·{" "}
-                            {appointment.modality === "ONLINE"
-                              ? "Online"
-                              : "Presencial"}
-                          </p>
-                        </div>
-                        {appointment.status === "CANCELLED" &&
-                          appointment.cancelReason && (
-                            <p className="text-sm text-red-700">
-                              Motivo do cancelamento: {appointment.cancelReason}
-                            </p>
-                          )}
-                        {appointment.cancellationRequests.length > 0 && (
-                          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                            O profissional pediu o cancelamento — veja
-                            &quot;Pedidos de cancelamento&quot; no topo da página.
-                          </p>
-                        )}
-                        {cancellable && (
-                          <CancelAppointmentButton
-                            appointmentId={appointment.id}
-                            onCancelled={reload}
-                          />
-                        )}
-                      </div>
-                      <span
-                        className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusClasses[appointment.status]}`}
-                      >
-                        {statusLabels[appointment.status]}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
+              {data.items.map((appointment) => <ReceptionAppointmentCard
+                key={appointment.id}
+                appointment={appointment}
+                onChanged={reload}
+                onRescheduled={onRescheduled}
+              />)}
             </ul>
 
             <div className="flex items-center justify-between text-sm text-slate-500">

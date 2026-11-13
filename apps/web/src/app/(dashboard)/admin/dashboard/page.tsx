@@ -56,6 +56,7 @@ const ACTION_LABEL: Record<string, string> = {
   "patient.summary.read": "Ficha resumida consultada",
   "appointment.create": "Consulta agendada",
   "appointment.cancel": "Consulta cancelada",
+  "appointment.reschedule": "Consulta remarcada",
   "schedule_request.approve": "Agendamento aprovado",
   "schedule_request.reject": "Agendamento recusado",
   "cancellation_request.create": "Cancelamento solicitado",

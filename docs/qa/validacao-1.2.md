@@ -74,7 +74,8 @@ Os seis testes do módulo passaram. Em `http://localhost:3000`, o navegador em 3
 | Pedido de cancelamento aprovado | Paciente e profissional solicitante | Notificação interna | Ver consulta |
 | Pedido de cancelamento recusado | Profissional solicitante | Notificação interna | Ver consulta |
 | Horário liberado por cancelamento | Até três pacientes da fila com preferências compatíveis | Notificação interna | Ver horários livres |
-| Remarcação, lembrete e indisponibilidade sem cancelamento | Pendente | Pendente | Pendente |
+| Remarcação pela equipe | Paciente e profissional envolvidos | Notificação interna | Ver nova consulta |
+| Lembrete e indisponibilidade sem cancelamento | Pendente | Pendente | Pendente |
 
 Em PostgreSQL nativo, dois cancelamentos simultâneos geraram um só aviso para a mesma entrada da fila. Aprovação e recusa concorrentes sobre o mesmo pedido retornaram 200 e 409 e deixaram a consulta coerente com a decisão aceita. Os avisos de cancelamento mantiveram o motivo e a nota de revisão fora da mensagem. No navegador a 390 px, paciente e profissional abriram suas telas a partir de avisos gerados no banco de teste. Os 415 testes da API e a compilação web passaram.
 
@@ -103,3 +104,15 @@ O conjunto de 12 commits entre `2955605` e `3f728c1` passou novamente pelo lint 
 Antes da publicação, a conta de demonstração da API pública confirmou a correspondência com o banco configurado. A única migração pendente era `20261110150000_notification_appointment_link`. Ela foi aplicada à base publicada após uma cópia local dos registros de notificações e do histórico de migrações. A notificação anterior manteve todos os campos e recebeu a referência opcional nula. A restrição de exclusão `SET NULL` foi conferida. Não houve reset nem execução do seed.
 
 As cópias e evidências privadas permanecem em `work/v1.2-qa/`, fora do Git. A ampliação das contas no seed é código para futuras cargas de demonstração e não acrescenta contas automaticamente ao banco publicado. O aceite da publicação exige verificar os dois projetos da Vercel no commit enviado e executar verificações nas URLs públicas. Em caso de regressão, republicar frontend e backend no commit anterior e preservar a coluna aditiva e a chave de criptografia.
+
+## Remarcação de consultas — 13/11/2026
+
+A recepção pode selecionar uma vaga ou informar um encaixe em Brasília. O novo agendamento mantém participantes, duração, modalidade, tipo e local. A consulta original fica como `RESCHEDULED`, vinculada à nova, com suas notas e eventuais cobranças canceladas preservadas. Prontuário, avaliação, cobrança ativa e pedido de cancelamento pendente impedem a operação. Administração e superadministração têm autorização na API; paciente e profissional continuam solicitando alterações à equipe. A política de antecedência de 24 horas permanece como estava.
+
+O registro de auditoria identifica a autoria e a consulta criada. Os avisos apontam para o novo agendamento e não incluem o motivo informado. A lista de espera só é avisada quando o novo horário deixa o anterior totalmente livre. O controle de versão exige atualizar a consulta após uma decisão concorrente. A gravação de prontuário e a abertura de pedido de cancelamento obtêm a mesma consulta antes de gravar, impedindo que sejam concluídas sobre uma origem remarcada durante a operação.
+
+Os 462 testes da API (39 suítes), seis testes financeiros e três testes de fuso do frontend passaram, assim como lint, tipos e builds. Em PostgreSQL 17.11 isolado, 13 grupos de verificações cobriram permissões, datas, conflitos, reversão integral, histórico, cobranças e notificações. Foram realizadas três disputas por cenário entre remarcação e gravação clínica, pedido de cancelamento, cancelamento direto, criação e reabertura de cobrança. Duplo clique e duas origens tentando ocupar o mesmo destino também retornaram uma decisão aceita e uma resposta 409.
+
+No navegador em 390 px, seis grupos de verificações cobriram erro junto ao motivo, foco, atualização após versão desatualizada, seleção de vaga, encaixe, links do histórico e das notificações e atividade administrativa. Os temas claro e escuro foram inspecionados; a tela de detalhes também foi conferida em 1440 px. Um aparelho configurado para Tóquio salvou e mostrou 06:15 em Brasília como `09:15Z`. A formatação compartilhada foi corrigida para manter o fuso da clínica; os novos testes incluem a passagem da meia-noite em três fusos de aparelho e fazem parte da CI.
+
+Os testes de escrita usaram somente `lepera_notifications_qa` em `127.0.0.1:51235`. Capturas e resultados permanecem ignorados em `work/v1.2-qa/`. Não foi executado reset, seed ou alteração de consulta no banco publicado. A remarcação usa os campos já existentes e não exige migração. Troca de profissional e transferência de pagamentos ficam fora desta etapa.

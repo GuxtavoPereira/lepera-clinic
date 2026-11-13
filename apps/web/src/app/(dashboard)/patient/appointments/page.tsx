@@ -33,6 +33,7 @@ type Appointment = {
   type: "SESSION" | "EVALUATION" | "RETURN" | "CLOSURE";
   status: AppointmentStatus;
   cancelReason: string | null;
+  rescheduledToId?: string | null;
   doctor: { user: { name: string } };
 };
 
@@ -148,6 +149,11 @@ function AppointmentCard({
           )}
           {isApprovedRequest && (
             <p className="text-xs text-muted-foreground">Originada de um pedido aprovado.</p>
+          )}
+          {appointment.status === "RESCHEDULED" && appointment.rescheduledToId && (
+            <Link href={`/patient/appointments?appointment=${encodeURIComponent(appointment.rescheduledToId)}`} className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-sm font-medium hover:bg-accent">
+              Ver nova consulta
+            </Link>
           )}
           {canCancel && (
             <CancelAppointmentButton

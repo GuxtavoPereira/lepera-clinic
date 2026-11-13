@@ -129,6 +129,23 @@ export class ClinicalRecordsService {
           );
         }
 
+        // Claim the appointment before creating a record. Rescheduling writes
+        // this same row, so a competing save rechecks the current status after
+        // waiting, while a competing reschedule sees a changed version/record.
+        const claimed = await tx.appointment.updateMany({
+          where: {
+            id: appointment.id,
+            doctorId: doctor.id,
+            status: { notIn: ['CANCELLED', 'RESCHEDULED'] },
+          },
+          data: { updatedAt: new Date() },
+        });
+        if (claimed.count !== 1) {
+          throw new ConflictException(
+            'A consulta foi cancelada ou remarcada. Atualize a agenda',
+          );
+        }
+
         const existing = await tx.clinicalRecord.findUnique({
           where: { appointmentId },
         });

@@ -156,6 +156,32 @@ describe('CancellationRequestsService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
       expect(requestCreate).not.toHaveBeenCalled();
     });
+
+    it('recusa o pedido se remarcação vencer após a leitura inicial', async () => {
+      appointmentUpdateMany.mockResolvedValue({ count: 0 });
+      await expect(
+        service.create(
+          { appointmentId: 'appointment-1', reason: 'Motivo válido' },
+          doctorUser,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(requestFindFirst).not.toHaveBeenCalled();
+      expect(requestCreate).not.toHaveBeenCalled();
+      expect(auditLog).not.toHaveBeenCalled();
+    });
+
+    it('confere duplicação depois de obter a consulta na transação', async () => {
+      await service.create(
+        { appointmentId: 'appointment-1', reason: 'Motivo válido' },
+        doctorUser,
+      );
+      expect(appointmentUpdateMany.mock.invocationCallOrder[0]).toBeLessThan(
+        requestFindFirst.mock.invocationCallOrder[0],
+      );
+      expect(requestFindFirst.mock.invocationCallOrder[0]).toBeLessThan(
+        requestCreate.mock.invocationCallOrder[0],
+      );
+    });
   });
 
   describe('approve (recepção)', () => {

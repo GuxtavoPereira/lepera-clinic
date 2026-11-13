@@ -362,6 +362,16 @@ Ao selecionar uma opção, o sistema preenche profissional, data, turno e horár
 
 Os endpoints `GET /api/appointments/calendar` e `GET /api/appointments/available-slots` exigem autenticação e aceitam `from`, `to` e `doctorId` opcional. As datas usam `AAAA-MM-DD`, o início é inclusivo, o fim é exclusivo e o intervalo máximo é de 42 dias.
 
+### Remarcar uma consulta
+
+Na agenda geral da recepção, clique em **Remarcar**, escolha o novo dia e um horário livre e informe o motivo. A opção **Informar outro horário** permite digitar um horário de Brasília e autorizar um encaixe quando necessário. A API confere novamente a disponibilidade e os conflitos ao confirmar. Se a consulta tiver sido alterada por outra pessoa, use **Atualizar consulta** antes de tentar novamente.
+
+A remarcação mantém paciente, profissional, duração, modalidade, tipo e local. A consulta anterior fica no histórico como **Remarcada**, com o link **Ver nova consulta**. O novo agendamento começa como **Agendado**, e paciente e profissional recebem uma notificação com acesso ao novo horário. A administração registra a autoria na trilha de atividades.
+
+Somente consultas futuras agendadas ou confirmadas podem ser remarcadas. Prontuário, avaliação do atendimento, cobrança ativa ou pedido de cancelamento pendente bloqueiam a operação. Uma cobrança já cancelada permanece vinculada ao registro anterior. Pacientes e profissionais solicitam a alteração à recepção; não possuem remarcação direta. Esta etapa não inclui troca de profissional nem transferência de pagamentos.
+
+O endpoint `PATCH /api/appointments/:id/reschedule` recebe `startDatetime` com fuso, `expectedUpdatedAt`, `reason` e `allowOutsideAvailability` opcional. A transação preserva o registro anterior quando há erro e impede duas decisões concorrentes sobre a mesma consulta. As datas e horas de atendimento são exibidas em Brasília mesmo em aparelhos configurados para outro fuso. Não há nova migração de banco para este fluxo.
+
 ## Painel, busca e aparência
 
 - O menu da conta no cabeçalho abre **Meu perfil**, inclusive para administração e superadministração.

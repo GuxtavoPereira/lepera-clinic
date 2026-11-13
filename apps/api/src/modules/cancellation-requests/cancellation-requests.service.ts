@@ -61,17 +61,32 @@ export class CancellationRequestsService {
       throw new BadRequestException('A consulta já começou ou já passou');
     }
 
-    const pending = await this.prisma.db.cancellationRequest.findFirst({
-      where: { appointmentId: appointment.id, status: 'PENDING' },
-      select: { id: true },
-    });
-    if (pending) {
-      throw new ConflictException(
-        'Já existe um pedido de cancelamento pendente para esta consulta',
-      );
-    }
-
     return this.prisma.db.$transaction(async (tx) => {
+      // Share the appointment lock with rescheduling and record creation. A
+      // duplicate request waits here, then sees the first request inside this tx.
+      const claimed = await tx.appointment.updateMany({
+        where: {
+          id: appointment.id,
+          doctorId: doctor.id,
+          status: { in: CANCELLABLE_STATUSES },
+          startDatetime: { gt: new Date() },
+        },
+        data: { updatedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        throw new ConflictException(
+          'A consulta foi alterada. Atualize a agenda antes de solicitar o cancelamento',
+        );
+      }
+      const pending = await tx.cancellationRequest.findFirst({
+        where: { appointmentId: appointment.id, status: 'PENDING' },
+        select: { id: true },
+      });
+      if (pending) {
+        throw new ConflictException(
+          'Já existe um pedido de cancelamento pendente para esta consulta',
+        );
+      }
       const request = await tx.cancellationRequest.create({
         data: {
           appointmentId: appointment.id,

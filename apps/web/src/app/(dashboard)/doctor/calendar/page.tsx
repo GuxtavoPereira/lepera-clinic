@@ -43,6 +43,7 @@ type Appointment = {
   type: "SESSION" | "EVALUATION" | "RETURN" | "CLOSURE";
   status: AppointmentStatus;
   cancelReason: string | null;
+  rescheduledToId?: string | null;
   patientId: string;
   patient: { user: { name: string } };
 };
@@ -157,6 +158,11 @@ function AppointmentCard({
           )}
 
           <div className="flex flex-wrap items-start gap-2">
+            {appointment.status === "RESCHEDULED" && appointment.rescheduledToId && (
+              <Link href={`/doctor/calendar?appointment=${encodeURIComponent(appointment.rescheduledToId)}`} className={buttonVariants({ variant: "outline", size: "sm", className: "min-h-11" })}>
+                Ver nova consulta
+              </Link>
+            )}
             <Link
               href={`/doctor/clinical-history/${appointment.patientId}`}
               className={buttonVariants({ variant: "outline", size: "sm" })}

@@ -36,7 +36,7 @@ function appointmentAction(
 
 function notificationAction(item: Notification, role: Role | null) {
   if (role === "PATIENT") {
-    if (item.type === "confirmacao" || item.type === "consulta_cancelada") {
+    if (item.type === "confirmacao" || item.type === "consulta_cancelada" || item.type === "consulta_remarcada") {
       return appointmentAction(
         "/patient/appointments",
         "Ver minhas consultas",
@@ -53,6 +53,7 @@ function notificationAction(item: Notification, role: Role | null) {
   if (
     role === "DOCTOR" &&
     (item.type === "consulta_cancelada" ||
+      item.type === "consulta_remarcada" ||
       item.type === "cancelamento_aprovado" ||
       item.type === "cancelamento_recusado")
   ) {

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -19,6 +20,7 @@ import { requestContext } from '../audit/request-context';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
+import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { AppointmentsService } from './appointments.service';
 import { AppointmentCalendarService } from './appointment-calendar.service';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
@@ -64,6 +66,12 @@ export class AppointmentsController {
     return this.appointmentsService.findMine(request.user);
   }
 
+  @Get(':id')
+  @Header('Cache-Control', 'private, no-store')
+  findOne(@Param('id') id: string) {
+    return this.appointmentsService.findOne(id);
+  }
+
   @Post()
   create(@Body() dto: CreateAppointmentDto, @Req() request: AuditRequest) {
     return this.appointmentsService.create(
@@ -81,6 +89,21 @@ export class AppointmentsController {
     @Req() request: AuditRequest,
   ) {
     return this.appointmentsService.cancel(
+      id,
+      dto,
+      request.user,
+      requestContext(request),
+    );
+  }
+
+  @Patch(':id/reschedule')
+  @Roles('ADMIN', 'RECEPTIONIST')
+  reschedule(
+    @Param('id') id: string,
+    @Body() dto: RescheduleAppointmentDto,
+    @Req() request: AuditRequest,
+  ) {
+    return this.appointmentsService.reschedule(
       id,
       dto,
       request.user,
