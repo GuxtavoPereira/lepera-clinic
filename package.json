@@ -9,6 +9,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
+    "qa:load": "node scripts/qa/load-read.cjs",
+    "test:qa": "node --test scripts/qa/load-utils.test.cjs",
     "db:generate": "turbo run db:generate",
     "db:migrate": "pnpm --filter @lepera/db migrate",
     "db:seed": "pnpm --filter @lepera/db db:seed",

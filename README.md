@@ -443,7 +443,11 @@ Execute os comandos a partir da raiz:
 | `pnpm lint` | Verificar padrões do código |
 | `pnpm check-types` | Verificar os tipos TypeScript |
 | `pnpm --filter api test --runInBand` | Executar testes da API |
+| `pnpm test:qa` | Verificar as proteções e cálculos do teste de carga |
+| `pnpm qa:load` | Medir leituras com 10, 50 e 200 usuários virtuais em PostgreSQL local de QA |
 | `pnpm build` | Compilar o monorepo |
+
+O teste de carga exige uma base sintética separada e inicia uma API local somente de leitura. A rodada de 13/11 registrou 99.831 respostas HTTP 200 e preservou o conteúdo do banco; com 200 usuários virtuais, o p95 foi de 493,2 ms. Veja [método, configuração, resultados e limites](docs/qa/relatorio-carga.md). Esses números não representam a capacidade da hospedagem em produção.
 
 Para executar a versão compilada, rode `pnpm build` e, em dois terminais na raiz:
 
