@@ -59,6 +59,8 @@ Os próximos aceites incluem a instalação no Android físico, carga sustentada
 
 ## Consulta de horários com Google
 
+A [matriz de permissões de 14/11](permissoes-privacidade.md) acrescenta 91 verificações HTTP com PostgreSQL local: isolamento de consultas e notificações, acesso clínico por vínculo, papéis administrativos e restrições de tokens. A revisão também corrigiu os cabeçalhos de cache da lista e do detalhe de prontuários. Os tokens Google dessa matriz são sintéticos; o aceite com conta real permanece separado.
+
 O aviso no login local vinha da configuração da API de demonstração, que sobrescrevia `GOOGLE_CLIENT_ID` com um valor vazio. A API publicada retornou `enabled: true`. A demonstração passou a ler o ID público já salvo na configuração local.
 
 Os seis testes do módulo passaram. Em `http://localhost:3000`, o navegador em 390 px carregou o botão oficial do Google e a API gerou o desafio de cinco minutos para essa origem. O cenário desabilitado mostrou a mensagem de indisponibilidade. A autenticação completa com uma conta real segue pendente.

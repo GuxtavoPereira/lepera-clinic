@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Post,
   Put,
@@ -34,12 +35,14 @@ export class ClinicalRecordsController {
 
   // GET /api/clinical-records/mine → lista (só metadados)
   @Get('mine')
+  @Header('Cache-Control', 'private, no-store')
   findMine(@Req() req: Req) {
     return this.records.findMine(req.user);
   }
 
   // GET /api/clinical-records/by-appointment/:appointmentId
   @Get('by-appointment/:appointmentId')
+  @Header('Cache-Control', 'private, no-store')
   getByAppointment(
     @Param('appointmentId') appointmentId: string,
     @Req() req: Req,

@@ -57,7 +57,7 @@ try {
 }
 ```
 
-O tempo padrão é um minuto por nível, mais aquecimento e recuperação. `LEPERA_LOAD_SECONDS` permite de 15 a 120 segundos por nível. O JSON agregado fica em `work/load-read-results.json`, ignorado pelo Git, e deve ser copiado antes de repetir o comando se quiser preservar rodadas anteriores. Os quatro testes de proteção e cálculo também rodam na CI; a carga real não é executada automaticamente na CI.
+O tempo padrão é um minuto por nível, mais aquecimento e recuperação. `LEPERA_LOAD_SECONDS` permite de 15 a 120 segundos por nível. O JSON agregado fica em `work/load-read-results.json`, ignorado pelo Git, e deve ser copiado antes de repetir o comando se quiser preservar rodadas anteriores. Os testes de proteção e cálculo também rodam na CI; a carga real não é executada automaticamente na CI.
 
 ## Histórico: rajadas de 10/11/2026
 

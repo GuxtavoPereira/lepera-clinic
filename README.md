@@ -445,9 +445,12 @@ Execute os comandos a partir da raiz:
 | `pnpm --filter api test --runInBand` | Executar testes da API |
 | `pnpm test:qa` | Verificar as proteções e cálculos do teste de carga |
 | `pnpm qa:load` | Medir leituras com 10, 50 e 200 usuários virtuais em PostgreSQL local de QA |
+| `pnpm qa:permissions` | Conferir isolamento entre contas, prontuários, relatórios e prévia Google em QA local |
 | `pnpm build` | Compilar o monorepo |
 
 O teste de carga exige uma base sintética separada e inicia uma API local somente de leitura. A rodada de 13/11 registrou 99.831 respostas HTTP 200 e preservou o conteúdo do banco; com 200 usuários virtuais, o p95 foi de 493,2 ms. Veja [método, configuração, resultados e limites](docs/qa/relatorio-carga.md). Esses números não representam a capacidade da hospedagem em produção.
+
+A [matriz de permissões e privacidade](docs/qa/permissoes-privacidade.md) registra 91 verificações HTTP em 14/11. Admin e superadmin não recebem acesso automático a prontuários. O executor usa contas sintéticas, registra as leituras autorizadas na auditoria e remove suas notificações temporárias ao terminar.
 
 Para executar a versão compilada, rode `pnpm build` e, em dois terminais na raiz:
 

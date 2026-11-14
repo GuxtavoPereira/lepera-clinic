@@ -27,3 +27,7 @@ test('body validation ignores report generation time but detects changes to cont
   assert.notEqual(fingerprint({ rows: [1, 2] }), fingerprint({ rows: [2, 1] }));
   assert.notEqual(fingerprint({ rows: [1] }, true), fingerprint({ rows: [2] }, true));
 });
+test('database fingerprints retain timestamps when checking for unexpected writes', () => {
+  assert.notEqual(fingerprint({ updatedAt: new Date('2026-11-13T10:00:00Z') }), fingerprint({ updatedAt: new Date('2026-11-13T10:01:00Z') }));
+  assert.equal(fingerprint({ updatedAt: new Date('2026-11-13T10:00:00Z') }), fingerprint({ updatedAt: '2026-11-13T10:00:00.000Z' }));
+});

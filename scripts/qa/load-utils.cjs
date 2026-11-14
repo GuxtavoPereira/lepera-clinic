@@ -31,6 +31,7 @@ function summary(records, elapsedMs) {
 
 function fingerprint(value, omitGeneratedAt = false) {
   const stable = item => {
+    if (item instanceof Date) return item.toISOString();
     if (Array.isArray(item)) return item.map(stable);
     if (item && typeof item === 'object') return Object.fromEntries(Object.keys(item).sort().map(key => [key, stable(item[key])]));
     return item;
