@@ -2,254 +2,254 @@
 
 # 🧠 Leperapia Clinic
 
-### Gestão clínica com foco em saúde mental
+**Gestão de uma clínica de psicologia, do primeiro contato ao acompanhamento das sessões.**
 
-Projeto acadêmico para organizar pacientes, consultas e a rotina de uma clínica de psicologia.
+Next.js 16 · NestJS 11 · PostgreSQL · Aplicativo de pacientes com Expo SDK 58
 
-**Next.js 16 · React 19 · NestJS 11 · Prisma 7 · PostgreSQL**
-
-[🌐 Acessar o sistema](https://lepera-clinic.vercel.app) · [💻 GitHub](https://github.com/GuxtavoPereira/lepera-clinic) · [📋 Trello](https://trello.com/b/gbfJq3qw/lepera-clinic)
+[🌐 Site e portal](https://lepera-clinic.vercel.app) · [📋 Checklist de conclusão](CHECKLIST.md) · [📱 Aplicativo](https://github.com/GuxtavoPereira/lepera-clinic-mobile) · [🗂️ Trello](https://trello.com/b/gbfJq3qw/lepera-clinic)
 
 </div>
 
----
+## Estado do projeto
 
-## 📌 Sobre o projeto
+**Documentação revisada em 14/11/2026.** O sistema web já possui os fluxos principais de pacientes, recepção, profissionais e administração. Os relatórios estão ativos. O aplicativo de pacientes tem uma prévia Android publicada, mas ainda precisa de aceite em aparelho físico e integração da sua branch à `main`.
 
-O **Leperapia Clinic** centraliza informações que, em uma rotina manual, ficam distribuídas entre papéis, planilhas e agendas. O sistema conecta pacientes, profissionais, recepção e administração, com funcionalidades disponíveis conforme o perfil de acesso.
+A versão `1.0.0` do pacote não significa que todo o escopo esteja concluído. Há três telas em construção, integrações aguardando validação real e tarefas de preparação para operação. A [checklist canônica](CHECKLIST.md) reúne o que está entregue, o que falta implementar, o que falta testar e as decisões pendentes. Não há uma release formal web/API publicada no GitHub até esta revisão.
 
-O objetivo é facilitar o cadastro e a localização de pacientes, organizar solicitações e consultas, reduzir conflitos de agenda e apoiar o registro das sessões clínicas.
+| Referência verificada | Estado em 14/11/2026 |
+| --- | --- |
+| Web/API — `main` | Código em [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095), CI aprovada e frontend/backend publicados nesse commit |
+| Mobile — `codex/v1.2-expo-sdk-58` | SDK 58 em [`a7fe849`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/a7fe849ef807636dcbe7a0f1149c3db92b97886f); [PR #1](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) aberto |
+| Android | [Prévia `v0.1.0-preview.1`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1), ARM64, assinatura de teste, API de demonstração na rede local |
+| Gmail | Variáveis SMTP presentes no backend de produção; entrega real e recuperação completa ainda precisam de aceite |
+| Google | ID do cliente configurado e fluxo de consulta temporária implementado; autenticação interativa com conta real ainda precisa de aceite |
 
-### Funcionalidades implementadas
+## Navegação do README
 
-- **Área pública:** Home, Sobre nós, Contato / Agende, login e cadastro de paciente.
-- **Pacientes:** perfil, solicitação de atendimento, acompanhamento de consultas e lista de espera.
-- **Recepção:** cadastro, busca e ficha de pacientes; análise de solicitações; agenda e cancelamentos.
-- **Profissionais:** agenda, disponibilidade de atendimento e prontuários das sessões vinculadas ao profissional.
-- **Calendário visual:** grade semanal ou diária, navegação por data e filtro por profissional; o paciente acompanha apenas as próprias consultas e os horários livres para solicitar atendimento.
-- **Agendamento por horário:** o paciente escolhe dia, profissional e vaga livre; a recepção aprova o mesmo horário ou recusa. A opção **Encaixe** permite solicitar flexibilidade, com atribuição e justificativa pela recepção.
-- **Consulta com Google:** acesso temporário aos profissionais e horários livres em `/explore/calendar`, sem criar conta ou liberar dados de pacientes. O cadastro completo continua exigindo CPF.
-- **Administração:** painel e gestão de usuários, com permissões específicas para o superadministrador.
-- **Financeiro:** receitas, despesas, cobranças vinculadas a consultas, quitações, pendências, estornos de registros e exportação CSV.
-- **Estoque:** materiais, saldo mínimo, reposição, entradas/saídas e histórico auditado.
-- **Relatórios:** a tela `/reports` permite consultar indicadores e exportar PDF ou CSV. Administração e superadmin têm acesso aos nove tipos de relatório. Recepção, profissionais e pacientes consultam relatórios de consultas conforme suas permissões.
-- **Recuperação de senha:** formulário, link de uso único com validade de 30 minutos e encerramento das sessões anteriores, mediante configuração do Gmail SMTP.
-- **Regras e segurança:** CPF obrigatório, único e validado por dígitos verificadores; controle de acesso na API; criptografia dos campos clínicos e auditoria das operações previstas.
+- [Acessos e usuários de teste](#acessos-e-usuários-de-teste)
+- [Funcionalidades e permissões](#funcionalidades-e-permissões)
+- [Arquitetura](#arquitetura)
+- [Rodar web e API localmente](#rodar-web-e-api-localmente)
+- [Google e recuperação de senha](#google-e-recuperação-de-senha)
+- [Aplicativo e Expo Go](#aplicativo-e-expo-go)
+- [Testes e evidências](#testes-e-evidências)
+- [Publicação e manutenção](#publicação-e-manutenção)
+- [Limites e próximos passos](#limites-e-próximos-passos)
 
-As fotos de referência da área pública são de [Beyza Kılıçdere](https://www.pexels.com/photo/modern-minimalist-living-room-interior-design-28905874/), [Dilan Turhan](https://www.pexels.com/photo/potted-indoor-plant-by-a-minimalist-couch-34909829/), [Renee B](https://www.pexels.com/photo/modern-office-waiting-area-with-chairs-and-plant-29637410/) e [Tori Gordon](https://www.pexels.com/photo/beige-sofa-with-cushions-in-the-middle-of-a-living-room-24304750/), sob a [licença do Pexels](https://www.pexels.com/license/).
-
-## 🌐 Acessos na Vercel
+## Acessos e usuários de teste
 
 | Serviço | Endereço |
 | --- | --- |
-| **Sistema web** | **[lepera-clinic.vercel.app](https://lepera-clinic.vercel.app)** |
-| Login | [Acessar área restrita](https://lepera-clinic.vercel.app/auth/login) |
+| Site público e portal | [lepera-clinic.vercel.app](https://lepera-clinic.vercel.app) |
+| Login | [Entrar no sistema](https://lepera-clinic.vercel.app/auth/login) |
 | API | [lepera-clinic-backend.vercel.app/api](https://lepera-clinic-backend.vercel.app/api) |
-| Verificação da API e do banco | [Consultar health check](https://lepera-clinic-backend.vercel.app/api/health) |
+| Saúde da API e conexão com o banco | [Health check](https://lepera-clinic-backend.vercel.app/api/health) |
+| Código mobile | [lepera-clinic-mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile) |
+| Referência visual | [Clinical Project no Figma](https://www.figma.com/design/ULPrWNUl7Fo9ITcJCmuNIC/Clinical-Project?node-id=305-373) |
 
-A interface e a API são hospedadas em projetos separados: `lepera-clinic-front` e `lepera-clinic-backend`. A API é um serviço HTTP; sua URL base não é uma página com a interface do sistema.
+A API é um serviço HTTP; sua URL base não abre a interface. A hospedagem utiliza os projetos Vercel `lepera-clinic-front` e `lepera-clinic-backend`.
 
-## 🧪 Usuários de teste
+### Contas do seed local
 
-As contas abaixo são criadas por `pnpm db:seed` em um banco de desenvolvimento vazio. São dados fictícios para testes locais e apresentação acadêmica. Os endereços `.invalid` não recebem e-mails.
+As contas abaixo são criadas por `pnpm db:seed` em uma base de desenvolvimento vazia: **16 usuários, sendo 1 superadmin, 3 administradores, 3 recepcionistas, 3 profissionais e 6 pacientes**. A existência dessas contas no seed não garante que todas estejam provisionadas no ambiente publicado.
 
-**Senha padrão de todas as contas: `Senha@123`**
+**Senha padrão de demonstração: `Senha@123`**, salvo quando substituída por `SEED_PASSWORD` antes da carga. Os dados são sintéticos; os e-mails não devem ser usados para testar entrega real de mensagens. Endereços `.invalid` não recebem e-mails.
 
-| Perfil | E-mail | O que demonstrar |
+| Perfil | E-mail | Demonstração |
 | --- | --- | --- |
-| Superadministrador | `super@leperapia.com` | Gestão de administradores e recursos autorizados |
-| Administrador | `admin@leperapia.com` | Painel e gestão de usuários permitidos |
-| Administrador | `admin2@demo.invalid` | Segundo acesso administrativo |
-| Administrador | `admin3@demo.invalid` | Terceiro acesso administrativo |
-| Recepção | `recepcao@leperapia.com` | Pacientes, fichas, solicitações e agenda |
+| Superadministrador | `super@leperapia.com` | Gestão de administradores e operações administrativas autorizadas |
+| Administração | `admin@leperapia.com` | Painel, usuários, financeiro, estoque e relatórios |
+| Administração | `admin2@demo.invalid` | Segundo acesso administrativo |
+| Administração | `admin3@demo.invalid` | Terceiro acesso administrativo |
+| Recepção | `recepcao@leperapia.com` | Pacientes, solicitações, agenda e recebimentos |
 | Recepção | `mariana.recepcao@leperapia.com` | Segundo acesso de recepção |
 | Recepção | `recepcao3@demo.invalid` | Terceiro acesso de recepção |
-| Profissional | `roberto.silva@leperapia.com` | Agenda, disponibilidade e prontuários próprios |
+| Profissional | `roberto.silva@leperapia.com` | Agenda, disponibilidade e prontuários vinculados |
 | Profissional | `camila.almeida@leperapia.com` | Segundo profissional e isolamento dos atendimentos |
-| Profissional | `profissional3@demo.invalid` | Agenda inicial livre e configuração de disponibilidade |
-| Paciente | `lucas.paciente@email.com` | Perfil, consultas e solicitação de atendimento |
-| Paciente | `beatriz.oliveira@email.com` | Consultas e fila de espera |
-| Paciente | `rafael.santos@email.com` | Consultas e histórico de outro paciente |
+| Profissional | `profissional3@demo.invalid` | Terceiro profissional e configuração de disponibilidade |
+| Paciente | `lucas.paciente@email.com` | Calendário, solicitação, consultas e perfil |
+| Paciente | `beatriz.oliveira@email.com` | Consultas e lista de espera |
+| Paciente | `rafael.santos@email.com` | Isolamento entre pacientes |
+| Paciente | `isabela.ferreira@email.com` | Cadastro e histórico de demonstração |
+| Paciente | `pedro.carvalho@email.com` | Cadastro e histórico de demonstração |
+| Paciente | `sofia.rodrigues@email.com` | Cadastro e histórico de demonstração |
 
-<details>
-<summary><strong>Ver os demais pacientes de demonstração</strong></summary>
+### Roteiro de demonstração
 
-| Paciente | E-mail |
-| --- | --- |
-| Isabela Ferreira | `isabela.ferreira@email.com` |
-| Pedro Carvalho | `pedro.carvalho@email.com` |
-| Sofia Rodrigues | `sofia.rodrigues@email.com` |
+1. Apresente a Home, a equipe, os ambientes ilustrativos, Sobre e Contato; alterne o tema claro/escuro.
+2. Entre como paciente, escolha um profissional e uma vaga futura, confirme a modalidade e envie a solicitação.
+3. Entre como recepção, analise o pedido e aprove o mesmo horário. Confira a consulta na agenda e a notificação do paciente.
+4. Entre como profissional, consulte a própria agenda, abra **Ver ficha**, registre uma sessão elegível e assine o prontuário fictício.
+5. Entre como administração e apresente os indicadores, filtros, financeiro, estoque e relatórios PDF/CSV.
+6. Demonstre a remarcação em outra consulta futura sem prontuário ou cobrança ativa, preservando o registro anterior.
 
-Todos utilizam a mesma senha padrão indicada acima, salvo se `SEED_PASSWORD` tiver sido personalizado na criação da base.
+Use somente a base de demonstração. O fluxo Google e o recebimento de e-mail precisam de uma conta controlada pelo responsável pelo teste.
 
-</details>
+## Funcionalidades e permissões
 
-### Roteiro rápido para apresentar
-
-1. Abra a **Home**, navegue por **Sobre nós** e **Contato / Agende**.
-2. Entre com `recepcao@leperapia.com` e a senha de demonstração.
-3. Abra **Pacientes**, pesquise por `Lucas` e selecione o registro.
-4. Confira a ficha cadastral e as últimas consultas; use **Voltar para pacientes**.
-5. Saia e entre como paciente para acompanhar consultas ou solicitar atendimento.
-
-> O cadastro e a lista de pacientes da recepção ficam disponíveis para **recepção e superadministrador**. O administrador possui sua própria área de gestão.
-
-## 🛠️ Tecnologias e arquitetura
-
-O projeto utiliza um **monorepo TypeScript** com pnpm Workspaces e Turborepo.
-
-| Camada | Tecnologias | Diretório |
+| Área | O que já existe | Limite importante |
 | --- | --- | --- |
-| Interface | Next.js 16, React 19, Tailwind CSS 4 e shadcn/ui com Base UI | `apps/web` |
-| API e regras de negócio | NestJS 11, JWT, validação de dados e autorização por perfil | `apps/api` |
-| Persistência | PostgreSQL, Prisma ORM 7 e adaptador PostgreSQL | `packages/database` |
-| Contratos compartilhados | TypeScript e Zod | `packages/contracts` |
-| Ferramentas | Node.js 24, pnpm 11.24.0 e Turborepo | Raiz |
+| Site público | Landing page inspirada no Figma, equipe da clínica com detalhes, fotos ilustrativas, Sobre, Contato, tema claro/escuro | O contato prepara uma mensagem no aplicativo de e-mail do visitante; não é uma caixa de atendimento no backend |
+| Cadastro e acesso | CPF obrigatório, único e com dígitos verificadores válidos; login, cadastro público e interno; perfil e recuperação de senha | Validar CPF não comprova identidade; e-mail de boas-vindas/verificação de endereço ainda não está implementado |
+| Paciente | Consultas próprias, calendário, horários livres, solicitação exata ou flexível, cancelamento conforme regras e lista de espera | Solicitação enviada ainda não reserva nem confirma uma vaga |
+| Recepção | Busca e cadastro de pacientes, ficha cadastral, aprovação/recusa, encaixe, agenda, remarcação, cancelamentos e recebimentos | Não acessa conteúdo do prontuário clínico |
+| Profissional | Disponibilidade, agenda própria, lista e resumo dos pacientes vinculados, registro e assinatura de sessão | Só acessa prontuários de atendimentos autorizados; escalas ainda não estão completas |
+| Administração | Usuários, indicadores com filtros, busca de pacientes, financeiro, estoque, relatórios e auditoria | Não recebe acesso automático ao conteúdo clínico |
+| Superadministração | Gestão de administradores e operações administrativas ampliadas | Também não recebe acesso irrestrito a prontuários |
+| Notificações | Avisos internos de decisões e alterações, leitura individual e atalhos para consultas | Push e lembretes automáticos ainda pendentes |
+| Relatórios | Consulta, indicadores e exportação PDF/CSV com escopo por perfil | Relatório de satisfação existe, mas a coleta de avaliações ainda está incompleta |
+
+### Rotas principais
+
+| Acesso | Rotas |
+| --- | --- |
+| Público | `/`, `/about`, `/contact`, `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` |
+| Prévia Google | `/explore/calendar` |
+| Compartilhado autenticado | `/profile`, `/notifications`, `/reports`, `/settings/security` |
+| Paciente | `/patient/dashboard`, `/patient/calendar`, `/patient/appointments`, `/patient/request-appointment`, `/patient/waitlist`, `/patient/profile` |
+| Recepção | `/reception/dashboard`, `/reception/patients`, `/reception/patients/[id]`, `/reception/requests`, `/reception/calendar`, `/reception/appointments`, `/reception/appointments/new`, `/reception/waitlist`, `/reception/payments`, `/reception/profile` |
+| Profissional | `/doctor/dashboard`, `/doctor/calendar`, `/doctor/availability`, `/doctor/patients`, `/doctor/clinical-history/[patientId]`, `/doctor/records`, `/doctor/session/[id]`, `/doctor/profile` |
+| Administração | `/admin/dashboard`, `/admin/users`, `/admin/patients/[id]`, `/admin/appointments/today`, `/admin/financial`, `/admin/inventory`, `/admin/inventory/movements` |
+
+Os identificadores entre colchetes são preenchidos pela navegação. Os grupos `(public)` e `(dashboard)` organizam o código e não aparecem na URL. O menu limita os caminhos visíveis; **a API aplica a autorização de cada operação**.
+
+### Agenda e atendimento
+
+- Grade **semanal ou diária**, cores por profissional, legenda, filtro, navegação por data e horários exibidos em `America/Sao_Paulo`.
+- O paciente vê as próprias consultas e vagas futuras disponíveis; a prévia Google vê somente equipe e disponibilidade, sem dados dos pacientes.
+- A solicitação **EXACT** preserva profissional e horário escolhido. A recepção decide sobre essa vaga; a aprovação verifica novamente os conflitos.
+- **Encaixe** permite flexibilidade de horário, com atribuição e justificativa pela equipe. Não permite sobrepor atendimentos do mesmo paciente ou profissional.
+- O cancelamento pelo paciente tem antecedência mínima de 24 horas. A possível regra adicional de 24 horas para solicitar/aprovar ainda depende de decisão; não é a mesma regra.
+- A **remarcação** é autorizada na API para recepção/admin/superadmin e está disponível na agenda da recepção. Mantém participantes, duração, modalidade, tipo e local; preserva a origem como **Remarcada**, cria o novo agendamento e notifica os envolvidos.
+- Só é possível remarcar consulta futura agendada/confirmada, sem prontuário, avaliação, cobrança ativa ou pedido de cancelamento pendente. Troca de profissional e transferência de pagamentos não fazem parte desse fluxo.
+- A assinatura do prontuário bloqueia sua edição e marca o atendimento como realizado. Trata-se de assinatura interna do sistema; não representa certificação de assinatura digital qualificada.
+
+Os endpoints autenticados `/api/appointments/calendar` e `/api/appointments/available-slots` recebem `from`, `to` e `doctorId` opcional. As datas usam `AAAA-MM-DD`, início inclusivo, fim exclusivo e intervalo máximo de 42 dias.
+
+### Financeiro, estoque e relatórios
+
+**Financeiro:** administração/superadmin usam `/admin/financial`; recepção usa `/reception/payments`, limitada a receitas e cobranças. Há lançamento pendente, quitação integral, cancelamento, estorno do registro, reabertura autorizada e exportação CSV. Uma consulta pode ter um lançamento vinculado. O saldo é a diferença entre receitas e despesas quitadas **com vencimento no período filtrado**, não o saldo bancário.
+
+Pagamentos são registrados manualmente. O sistema não movimenta dinheiro, não devolve valores no banco, não emite nota fiscal e não oferece parcelamento ou pagamento parcial. Alterações são auditadas; versões desatualizadas e quitações duplicadas são recusadas.
+
+**Estoque:** materiais, saldo mínimo, entradas/saídas justificadas e histórico com responsável. Materiais novos começam com saldo zero; entradas registram o saldo inicial. O alerta considera saldo igual ou inferior ao mínimo. Movimentações não podem deixar saldo negativo.
+
+**Relatórios ativos em `/reports`:** consultas, financeiro, estoque, profissionais, demanda, pacientes, movimentações de estoque, satisfação e auditoria. Administração/superadmin acessam os nove tipos; os demais papéis acessam consultas dentro do próprio escopo. Período inclusivo de até 366 dias, exportação até 5.000 registros e prévia até 100 linhas. São relatórios operacionais, não documentos psicológicos formais ou documentos fiscais.
+
+### Busca, perfil e segurança
+
+O menu da conta abre o perfil correto. **Buscar** ou `/` oferece páginas permitidas; recepção/admin/superadmin também pesquisam pacientes por nome, e-mail ou CPF. Indicadores relevantes levam a listagens filtradas. Formulários agrupam acesso, dados pessoais e contato/plano, com validação de campos.
+
+O backend valida papel atual, usuário ativo e versão da sessão. Campos clínicos são cifrados, e leituras autorizadas são auditadas. Prontuários e relatórios enviam `Cache-Control: private, no-store`. O JWT web dura até oito horas e fica no armazenamento local do navegador; o logout remove a sessão local. O reset de senha invalida sessões anteriores. Limitação distribuída de tentativas, revisão completa de armazenamento/sessões, backup e demais controles de operação estão na checklist.
+
+## Arquitetura
+
+| Camada | Tecnologia | Local |
+| --- | --- | --- |
+| Web | Next.js **16.3.2**, React **19.2.8**, Tailwind CSS 4, shadcn/ui com Base UI, Lucide | `apps/web` |
+| API | NestJS 11, TypeScript, JWT, validação e autorização por recurso | `apps/api` |
+| Banco | PostgreSQL 17 no Compose, Prisma **7.10.0**, adaptador PostgreSQL | `packages/database` |
+| Contratos | TypeScript e Zod | `packages/contracts` |
+| Desenvolvimento | Node.js **24** (`.nvmrc`), pnpm **11.24.0**, Turborepo | Raiz |
+| Aplicativo | Expo **58.0.23**, React Native **0.88.1**, React **19.3.0**, Expo Router e React Native Paper **5.15.3** | Repositório separado |
 
 ```text
-Navegador → Next.js → API NestJS → Prisma → PostgreSQL
+Navegador → Next.js ───────┐
+                          ├─ HTTP → API NestJS → Prisma → PostgreSQL
+Aplicativo Expo / RN ─────┘
 ```
 
-O navegador acessa a API por HTTP. Somente o backend se comunica com o banco; as credenciais de persistência não são enviadas à interface.
+Somente a API acessa o banco. Os contratos web/API são compartilhados no monorepo; o aplicativo tem seus próprios contratos, que precisam ser mantidos compatíveis.
 
 ```text
 lepera-clinic/
-├── apps/
-│   ├── api/                  # API NestJS e regras de negócio
-│   └── web/                  # Interface Next.js com App Router
-├── packages/
-│   ├── contracts/            # Tipos e validações compartilhados
-│   └── database/             # Pacote @lepera/db
-│       ├── prisma/           # Schema, migrações e seed
-│       └── prisma.config.ts
-├── .github/workflows/        # Integração contínua
-├── docker-compose.yml        # PostgreSQL local
-├── pnpm-workspace.yaml
-└── turbo.json
+├── apps/api/                 # Regras, autorização, endpoints e testes
+├── apps/web/                 # Site público e portal por perfil
+├── packages/contracts/      # Tipos e validações compartilhados
+├── packages/database/       # Schema, migrations e seeds
+├── scripts/qa/               # Carga local e matriz de permissões
+├── docs/qa/                  # Evidências e limites dos testes
+├── .github/workflows/        # CI
+├── docker-compose.yml       # PostgreSQL local
+├── CHECKLIST.md              # Pendências canônicas de conclusão
+└── README.md
 ```
 
-## 🚀 Como rodar localmente
+## Rodar web e API localmente
 
-### 1. Preparar o ambiente
+### 1. Preparar e instalar
 
-Instale:
-
-- **Node.js 24**, conforme `.nvmrc`.
-- **pnpm 11.24.0**, conforme `packageManager` do projeto.
-- **Git** para clonar o repositório.
-- **Docker com Compose** para iniciar o PostgreSQL, ou uma instalação própria do PostgreSQL.
-
-Com Node.js instalado, o pnpm pode ser instalado com:
+Requisitos: Node.js 24, Git, pnpm 11.24.0 e Docker com Compose ou PostgreSQL próprio.
 
 ```bash
 npm install --global pnpm@11.24.0
-```
-
-Clone o projeto e instale as dependências:
-
-```bash
 git clone https://github.com/GuxtavoPereira/lepera-clinic.git
 cd lepera-clinic
 pnpm install --frozen-lockfile
-```
-
-> **Windows / PowerShell:** se a política do sistema bloquear `pnpm.ps1`, utilize `pnpm.cmd` no lugar de `pnpm`. Não é necessário alterar a política de execução.
-
-### 2. Iniciar o PostgreSQL
-
-Na raiz do projeto:
-
-```bash
 docker compose up -d postgres
 docker compose ps
 ```
 
-Aguarde o serviço ficar saudável (`healthy`). A configuração de desenvolvimento é:
+Aguarde `postgres` ficar `healthy`. O Compose usa banco `lepera_db`, usuário `lepera`, senha local `lepera_dev` e porta `5432`. Se utilizar outro PostgreSQL, ajuste as URLs abaixo.
 
-| Configuração | Valor |
-| --- | --- |
-| Banco | `lepera_db` |
-| Usuário | `lepera` |
-| Senha local | `lepera_dev` |
-| Porta | `5432` |
+**PowerShell:** se a política de execução bloquear scripts, use `npm.cmd`, `pnpm.cmd` e `npx.cmd` no lugar de `npm`, `pnpm` e `npx`. Não é necessário mudar a política do computador.
 
-Se utilizar PostgreSQL próprio, crie o banco e ajuste a URL de conexão nos arquivos de ambiente da próxima etapa.
+### 2. Criar os arquivos de ambiente
 
-### 3. Configurar os arquivos de ambiente
+Crie os três arquivos abaixo com valores locais. Não reutilize a chave ilustrativa dos arquivos de exemplo como segredo de um ambiente real.
 
-Crie os três arquivos abaixo. As chaves são marcadores: substitua-as pelos valores gerados localmente.
+**`apps/api/.env`**
 
-**Backend — `apps/api/.env`**
-
-```env
+```dotenv
 NODE_ENV=development
 PORT=3333
 DATABASE_URL="postgresql://lepera:lepera_dev@localhost:5432/lepera_db?schema=public"
-JWT_SECRET="COLE_AQUI_UMA_CHAVE_ALEATORIA"
-ENCRYPTION_KEY="COLE_AQUI_64_CARACTERES_HEXADECIMAIS"
+JWT_SECRET="SUBSTITUA_POR_UMA_CHAVE_ALEATORIA"
+ENCRYPTION_KEY="SUBSTITUA_POR_64_CARACTERES_HEXADECIMAIS"
 WEB_URL="http://localhost:3000"
 TRUST_PROXY=0
 ```
 
-**Frontend — `apps/web/.env.local`**
+**`apps/web/.env.local`**
 
-```env
+```dotenv
 NEXT_PUBLIC_API_URL="http://localhost:3333"
 ```
 
-**Banco e seed — `packages/database/.env`**
+**`packages/database/.env`**
 
-```env
+```dotenv
 NODE_ENV=development
 DATABASE_URL="postgresql://lepera:lepera_dev@localhost:5432/lepera_db?schema=public"
-ENCRYPTION_KEY="COLE_A_MESMA_CHAVE_DE_ENCRYPTION_KEY_DA_API"
+ENCRYPTION_KEY="MESMA_CHAVE_DE_ENCRYPTION_KEY_DA_API"
 ```
 
-Gere duas chaves diferentes executando este comando **duas vezes**:
+Gere duas chaves diferentes executando duas vezes:
 
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-Use um resultado em `JWT_SECRET` e o outro em `ENCRYPTION_KEY`. Cada resultado contém 64 caracteres hexadecimais.
+Use uma em `JWT_SECRET` e outra em `ENCRYPTION_KEY`. API e seed precisam da **mesma chave de criptografia e da mesma base/schema**. Preserve essa chave enquanto existirem registros cifrados com ela.
 
-**Confira antes de continuar:**
+A URL pública da API no **web não inclui `/api`** nem barra final: o cliente adiciona o prefixo. Arquivos `.env.local` têm precedência sobre `.env`; confira ambos se uma configuração parecer ignorada. Arquivos com segredos são ignorados pelo Git.
 
-- `DATABASE_URL` da API e do pacote de banco deve apontar para **a mesma base e schema**.
-- `ENCRYPTION_KEY` do seed deve ser **idêntica à da API**, para permitir a leitura dos prontuários fictícios criptografados.
-- `NEXT_PUBLIC_API_URL` deve conter somente a origem, **sem `/api` e sem barra final**. O cliente acrescenta `/api` automaticamente.
-- Se existir `apps/web/.env`, confira se ele é consistente com `.env.local`, que tem precedência.
-- Mantenha os arquivos `.env` fora do Git. Preserve a chave de criptografia enquanto houver dados dependentes dela.
-
-### 4. Gerar o Prisma e aplicar as migrações
-
-Execute na raiz:
+### 3. Preparar o banco
 
 ```bash
 pnpm db:generate
 pnpm --filter @lepera/db migrate:deploy
-```
-
-Esse procedimento aplica as migrações já versionadas. Em uma base nova, o schema completo será criado, incluindo a obrigatoriedade do CPF.
-
-### 5. Carregar os dados de demonstração
-
-Em um **banco de desenvolvimento vazio**:
-
-```bash
 pnpm db:seed
 ```
 
-O seed cria **16 usuários** (1 superadministrador, 3 administradores, 3 recepcionistas, 3 profissionais e 6 pacientes), **18 consultas** e **12 prontuários fictícios criptografados**, além de disponibilidade dos profissionais e dados de apoio. Os CPFs são valores de teste com dígitos verificadores válidos.
+O último comando é apenas para **banco vazio de desenvolvimento**. Cria 16 usuários, 18 consultas, 12 prontuários fictícios cifrados e dados de apoio. O seed recusa `NODE_ENV=production` e bases com usuários; executa a carga em transação.
 
-A carga acontece em uma transação. A chave de criptografia e a senha são verificadas antes da alteração dos dados. O seed recusa execução com `NODE_ENV=production` e, por padrão, também recusa um banco que já contenha usuários.
+Para escolher outra senha, configure `SEED_PASSWORD` no ambiente do processo antes da carga. Não rode seed ao atualizar um banco que deva ser preservado.
 
 <details>
-<summary><strong>Recriar uma base de demonstração que já contém dados</strong></summary>
+<summary>Recriar intencionalmente uma base descartável de demonstração</summary>
 
-**Esta opção apaga os registros existentes do banco configurado e recria os mocks. Use apenas em uma base de desenvolvimento que possa ser substituída.**
-
-No PowerShell:
+`RESET_DATABASE=true` **apaga os dados da base configurada**. Confira a conexão e use somente uma base de testes que possa ser substituída. Em PowerShell:
 
 ```powershell
 $env:RESET_DATABASE = "true"
@@ -257,60 +257,39 @@ pnpm.cmd db:seed
 Remove-Item Env:RESET_DATABASE
 ```
 
-No Linux/macOS:
-
-```bash
-RESET_DATABASE=true pnpm db:seed
-```
-
-É possível personalizar a senha dos mocks com `SEED_PASSWORD` (8 a 72 caracteres) no ambiente do processo. Nesse caso, as contas passam a utilizar essa senha em vez de `Senha@123`.
+No Linux/macOS: `RESET_DATABASE=true pnpm db:seed`.
 
 </details>
 
-### 6. Iniciar frontend e backend
+### 4. Iniciar
 
 ```bash
 pnpm dev
 ```
 
-O Turborepo prepara os pacotes compartilhados e inicia os dois aplicativos.
+O Turborepo prepara os pacotes compartilhados e inicia web/API. Acesse [localhost:3000](http://localhost:3000) e confira [localhost:3333/api/health](http://localhost:3333/api/health), que retorna `{"status":"ok"}` quando a API alcança o banco.
 
-| Serviço local | Endereço |
-| --- | --- |
-| Interface | [http://localhost:3000](http://localhost:3000) |
-| Login | [http://localhost:3000/auth/login](http://localhost:3000/auth/login) |
-| API | [http://localhost:3333/api](http://localhost:3333/api) |
-| Health check | [http://localhost:3333/api/health](http://localhost:3333/api/health) |
+Para executar a versão compilada, rode `pnpm build` e abra dois terminais na raiz: `pnpm --filter api start:prod` e `pnpm --filter web start`.
 
-Com o banco acessível, o health check retorna:
+### Carga de novembro e dezembro de 2026
 
-```json
-{ "status": "ok" }
-```
-
-Agora entre com uma das contas de demonstração e siga o roteiro de apresentação.
-
-### Demonstração de novembro e dezembro de 2026
-
-Depois do seed inicial e das migrações, a carga adicional é **aditiva e repetível**: mantém os cadastros e credenciais existentes e não apaga consultas. Ela respeita as disponibilidades registradas e deixa horários livres para a apresentação.
+Após migrations e seed inicial, existe uma carga adicional **aditiva e repetível**, sem apagar consultas ou cadastros existentes:
 
 ```powershell
 $env:ALLOW_DEMO_SEED = "true"
-pnpm --filter @lepera/db db:presentation
+pnpm.cmd --filter @lepera/db db:presentation
 Remove-Item Env:ALLOW_DEMO_SEED
 ```
 
-```bash
-ALLOW_DEMO_SEED=true pnpm --filter @lepera/db db:presentation
-```
+No Linux/macOS: `ALLOW_DEMO_SEED=true pnpm --filter @lepera/db db:presentation`.
 
-Na base de demonstração validada em 02/11/2026, foram acrescentadas **228 consultas** (109 em novembro e 119 em dezembro), 16 solicitações com horário, 4 encaixes e lançamentos financeiros. Essa carga usa os dois profissionais originais e adiciona `psicologo1@demo.invalid`, `psicologo2@demo.invalid` e `paciente01@demo.invalid` a `paciente16@demo.invalid`, com a senha de demonstração. Rodar novamente preserva as consultas existentes.
+A carga usa disponibilidades cadastradas e deixa vagas livres. Na execução de referência de 02/11 foram acrescentadas 228 consultas (109 em novembro e 119 em dezembro), 16 solicitações exatas, quatro encaixes e lançamentos financeiros. Esses números descrevem aquela execução, não um total garantido para qualquer base. O período é fixo em **2026**, não se atualiza automaticamente a cada ano.
 
-### Configurar Google e recuperação pelo Gmail
+## Google e recuperação de senha
 
-São configurações opcionais para rodar o restante do sistema. Coloque-as em `apps/api/.env.local` (ignorado pelo Git) ou nas variáveis do **backend** na Vercel. A API lê `.env.local` antes de `.env`; a interface consulta a configuração pública do Google em tempo de execução.
+O restante do sistema pode ser desenvolvido sem essas integrações. Configure-as no **backend**, em `apps/api/.env.local` ou nas variáveis do projeto da API na Vercel:
 
-```env
+```dotenv
 GOOGLE_CLIENT_ID=SEU_ID_PUBLICO.apps.googleusercontent.com
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
@@ -319,200 +298,123 @@ SMTP_FROM=leperapiaoficial@gmail.com
 SMTP_PASSWORD=SENHA_DE_APP_PRIVADA
 ```
 
-No cliente Web do Google Cloud, cadastre as origens JavaScript `https://lepera-clinic.vercel.app`, `http://localhost` e `http://localhost:3000`. Para testar em outra porta, cadastre a origem completa, como `http://localhost:3012`, e use o mesmo endereço em `WEB_URL` na API. Abra a interface pelo endereço cadastrado, incluindo o mesmo host e a mesma porta. O fluxo usa um callback do Google Identity Services no navegador. O botão oferece consulta de horários livres. Para solicitar atendimento, conclua o cadastro com CPF e senha ou entre na conta existente. Consulte a [documentação do Google Identity Services](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+**Google:** a interface consulta `/api/auth/google/config` em tempo de execução. O fluxo oferece acesso por 30 minutos à equipe e aos horários livres; não cria paciente, não vincula contas e não permite solicitar sem concluir o cadastro obrigatório com CPF.
 
-Se a interface mostrar que o Google está indisponível no ambiente, consulte `GET /api/auth/google/config` na API usada pelo site. Com `enabled: false`, confira `GOOGLE_CLIENT_ID` e reinicie a API local após salvar a configuração. Se o botão aparecer e o Google retornar `origin_mismatch`, compare o endereço aberto no navegador com as origens autorizadas do cliente Web no Google Cloud.
+Cadastre a origem exata do frontend no cliente Web do Google Cloud, incluindo protocolo e porta: produção `https://lepera-clinic.vercel.app`, desenvolvimento `http://localhost:3000` e demais origens efetivamente usadas. O erro `origin_mismatch` exige conferir essa correspondência. Veja o [guia do Google Identity Services](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid). `enabled: false` na configuração indica que o ambiente da API não disponibilizou o ID. Reinicie a API local após mudar suas variáveis.
 
-No Gmail, habilite a verificação em duas etapas e gere uma senha de app em [Senhas de app](https://myaccount.google.com/apppasswords). Use essa senha em `SMTP_PASSWORD`, sem os espaços exibidos pelo Google. Na Vercel, mantenha-a como variável **Sensitive** de Production e publique uma nova implantação após salvar. Nunca envie a senha pelo chat nem faça commit de arquivos `.env`. Sem a configuração completa, o formulário informa que o envio ainda não foi ativado. A entrega real deve ser conferida com uma conta de teste cujo e-mail você controla.
+**Gmail:** use a senha de app, com verificação em duas etapas, no campo privado `SMTP_PASSWORD`. Na Vercel, ela deve ser **Sensitive**, aplicada ao ambiente correto, seguida de nova implantação. Nunca coloque essa senha no código ou em `NEXT_PUBLIC_*`/`EXPO_PUBLIC_*`.
 
-## 🧭 Páginas e navegação
+Em 14/11, foi confirmada a presença das variáveis SMTP de produção, incluindo a senha protegida, sem ler ou divulgar o valor. Isso não comprova credenciais válidas nem entrega na caixa postal. O aceite pendente é solicitar a recuperação para um e-mail controlado, receber o link, redefinir a senha e verificar expiração, uso único e rejeição da sessão antiga. Tokens de recuperação duram 30 minutos. Cadastro com mensagem de boas-vindas/verificação de e-mail ainda é uma etapa separada.
 
-| Página da entrega S10 | Rota | Acesso |
-| --- | --- | --- |
-| Home / landing page | `/` | Público |
-| Sobre nós | `/about` | Público |
-| Contato / Agende | `/contact` | Público |
-| Login | `/auth/login` | Público |
-| Lista de pacientes | `/reception/patients` | Recepção ou superadministrador |
-| Detalhe do paciente | `/reception/patients/[id]` | Recepção ou superadministrador |
+## Aplicativo e Expo Go
 
-`[id]` é o identificador do paciente selecionado na lista, não um texto para digitar literalmente na URL.
+O **Leperapia Paciente** é um aplicativo nativo separado, exclusivo para pacientes nesta fase. Usa **Expo SDK 58**, Expo Router e **React Native Paper 5 / Material Design 3** para os componentes. Tem login de conta existente, início, consultas, solicitações por horário exato, calendário, perfil de leitura, temas, atualização e logout. No dispositivo nativo, a sessão utiliza SecureStore; na prévia web, o token fica em memória.
 
-**Fluxo público:** Home → Sobre nós → Contato / Agende → Cadastro ou Login.
+### Abrir a versão atual no celular
 
-**Fluxo da recepção:** Login → Painel → Pacientes → Busca → Ficha → Voltar para pacientes.
+A `main` mobile ainda contém a base anterior. Até a integração do PR #1, clone explicitamente a branch com SDK 58:
 
-**Fluxo de atendimento:** paciente solicita → recepção analisa e aprova → consulta aparece na agenda. Uma solicitação pendente ainda não representa uma consulta confirmada.
-
-As rotas estão em `apps/web/src/app`. Os grupos `(public)` e `(dashboard)` organizam os layouts e não aparecem na URL. A interface orienta a navegação por perfil, enquanto a API verifica as permissões em cada operação protegida.
-
-## 📅 Calendário da clínica e do paciente
-
-| Perfil | Caminho | Visualização |
-| --- | --- | --- |
-| Recepção e superadministrador | `/reception/calendar` | Consultas da clínica, com filtro por profissional e acesso às ações da agenda |
-| Profissional | `/doctor/calendar` | Próprias consultas, com acesso ao prontuário e pedido de cancelamento |
-| Paciente | `/patient/calendar` | Próprias consultas e horários livres dos profissionais |
-
-Use **Semana**, **Dia**, as setas, **Hoje** ou o calendário mensal para escolher o período. A grade utiliza o horário de Brasília (`America/Sao_Paulo`) e acomoda atendimentos simultâneos de profissionais diferentes. Consultas canceladas e remarcadas podem ser exibidas pelo filtro da grade.
-
-No calendário do paciente, os blocos verdes representam opções futuras de 50 minutos dentro da disponibilidade cadastrada. Horários ocupados pelo profissional ou pelo próprio paciente não são oferecidos. Um profissional sem grade ativa não recebe horários livres calculados automaticamente.
-
-Ao selecionar uma opção, o sistema preenche profissional, data, turno e horário de preferência no formulário de solicitação. **O clique não reserva a vaga nem confirma a consulta:** o paciente ainda envia o pedido e a recepção revisa e aprova. Dados de outros pacientes não fazem parte da resposta do calendário do paciente.
-
-Os endpoints `GET /api/appointments/calendar` e `GET /api/appointments/available-slots` exigem autenticação e aceitam `from`, `to` e `doctorId` opcional. As datas usam `AAAA-MM-DD`, o início é inclusivo, o fim é exclusivo e o intervalo máximo é de 42 dias.
-
-### Remarcar uma consulta
-
-Na agenda geral da recepção, clique em **Remarcar**, escolha o novo dia e um horário livre e informe o motivo. A opção **Informar outro horário** permite digitar um horário de Brasília e autorizar um encaixe quando necessário. A API confere novamente a disponibilidade e os conflitos ao confirmar. Se a consulta tiver sido alterada por outra pessoa, use **Atualizar consulta** antes de tentar novamente.
-
-A remarcação mantém paciente, profissional, duração, modalidade, tipo e local. A consulta anterior fica no histórico como **Remarcada**, com o link **Ver nova consulta**. O novo agendamento começa como **Agendado**, e paciente e profissional recebem uma notificação com acesso ao novo horário. A administração registra a autoria na trilha de atividades.
-
-Somente consultas futuras agendadas ou confirmadas podem ser remarcadas. Prontuário, avaliação do atendimento, cobrança ativa ou pedido de cancelamento pendente bloqueiam a operação. Uma cobrança já cancelada permanece vinculada ao registro anterior. Pacientes e profissionais solicitam a alteração à recepção; não possuem remarcação direta. Esta etapa não inclui troca de profissional nem transferência de pagamentos.
-
-O endpoint `PATCH /api/appointments/:id/reschedule` recebe `startDatetime` com fuso, `expectedUpdatedAt`, `reason` e `allowOutsideAvailability` opcional. A transação preserva o registro anterior quando há erro e impede duas decisões concorrentes sobre a mesma consulta. As datas e horas de atendimento são exibidas em Brasília mesmo em aparelhos configurados para outro fuso. Não há nova migração de banco para este fluxo.
-
-## Painel, busca e aparência
-
-- O menu da conta no cabeçalho abre **Meu perfil**, inclusive para administração e superadministração.
-- **Buscar** ou a tecla `/` abre a busca por páginas e funcionalidades permitidas ao perfil. Recepção, administração e superadministração também podem escolher **Pacientes** e buscar por nome, e-mail ou CPF; os resultados abrem o cadastro correspondente.
-- O botão de tema alterna entre claro e escuro e preserva a escolha neste navegador. Na primeira visita, segue a preferência do sistema.
-- O cadastro interno de pacientes, pela recepção ou administração, pede os mesmos dados do cadastro público: acesso, confirmação de senha, CPF obrigatório, nascimento, telefone, contato de emergência/responsável, plano opcional e autorização. Funcionários utilizam os campos comuns de acesso e dados pessoais; profissionais também precisam de registro e especialidade.
-- O fluxo de recuperação está implementado; o envio real depende da senha de app do Gmail configurada no backend.
-
-## 💰 Financeiro e recebimentos
-
-| Perfil | Acesso |
-| --- | --- |
-| Administração e superadmin | `/admin/financial`: receitas, despesas, pendências, quitações, cancelamentos e estorno de registros |
-| Recepção | `/reception/payments`: receitas e cobranças, sem acesso às despesas da clínica |
-
-O lançamento começa como **pendente**. Informe descrição, categoria, valor e vencimento; receitas podem ser vinculadas a uma consulta ainda sem cobrança. Há um lançamento por consulta. A edição é permitida enquanto estiver pendente. Na quitação integral, informe a data e a forma de pagamento: Pix, dinheiro, cartão, transferência, convênio ou outro.
-
-Os filtros incluem período de vencimento (até 366 dias, com as duas datas inclusivas), descrição/categoria/paciente/profissional, tipo e situação. **Pendente** também inclui cobranças atrasadas. Os indicadores usam os mesmos filtros e somam valores decimais no servidor; o saldo exibido é a diferença entre receitas e despesas quitadas **com vencimento no período selecionado**, não o saldo da conta bancária. O CSV exporta todos os resultados dos filtros, até 5.000 registros, com proteção contra fórmulas de planilhas.
-
-Cancelamentos preservam o histórico. A recepção cancela apenas receitas pendentes; somente a administração pode estornar registros quitados ou reabrir cancelados. O cancelamento de um lançamento não cancela a consulta. As alterações são auditadas e a API impede quitação duplicada e alterações sobre uma versão desatualizada do lançamento.
-
-Este módulo registra pagamentos manualmente. Não movimenta dinheiro, não emite nota fiscal, não faz devoluções bancárias e ainda não oferece parcelamento ou pagamento parcial. Cobranças não são geradas automaticamente porque o valor de cada atendimento deve ser informado pela equipe.
-
-### Atualizar uma base existente
-
-```bash
-pnpm db:generate
-pnpm --filter @lepera/db migrate:deploy
-pnpm build
+```powershell
+git clone --branch codex/v1.2-expo-sdk-58 https://github.com/GuxtavoPereira/lepera-clinic-mobile.git
+cd lepera-clinic-mobile
+npm.cmd ci
+Copy-Item .env.example .env
+npm.cmd start -- --go --lan
 ```
 
-A migração `20261101120000_financial_management` adiciona os controles financeiros e mantém os registros antigos como quitados, com as datas da clínica. Antes de aplicar em outra base, confira se não há valores menores ou iguais a zero ou despesas vinculadas a consultas, pois a nova estrutura recusa esses dados. A atualização não exige reset nem execução do seed.
+Execute a cópia de `.env.example` apenas na configuração inicial. Ajuste `.env` com a API desejada antes de iniciar. Celular e computador devem estar na mesma rede; use uma versão do Expo Go compatível com SDK 58 e leia o QR code. Os detalhes e alternativas estão no [README da branch mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/codex/v1.2-expo-sdk-58/README.md).
 
-A migração `20261110150000_notification_appointment_link` também deve ser aplicada antes de publicar o backend atualizado. Ela vincula as novas notificações às consultas e preserva os avisos antigos. Consulte as [evidências de validação da versão 1.2](docs/qa/validacao-1.2.md).
-
-## 📦 Materiais e estoque
-
-Em `/admin/inventory`, administração e superadmin podem cadastrar e editar materiais, definir o estoque mínimo e registrar entradas e saídas com justificativa. Novos materiais começam com saldo zero; registre uma entrada para incluir as unidades existentes.
-
-A tela reúne busca, filtro de reposição, indicadores e histórico paginado com data e responsável. O alerta considera saldo **igual ou abaixo do mínimo**. O saldo só muda por movimentações; a API protege contra saídas acima do disponível e grava a movimentação e a auditoria na mesma transação. O estoque utiliza as tabelas existentes e não exige migração adicional.
-
-### Verificar os módulos
-
-```bash
-pnpm --filter api exec jest --runInBand financial inventory
-pnpm --filter web test:financial
-pnpm check-types
-pnpm lint
+```dotenv
+EXPO_PUBLIC_API_URL=https://lepera-clinic-backend.vercel.app/api
 ```
 
-Na consolidação de 02/11/2026, passaram **404 testes da API**, **6 testes dos valores/exportação no frontend** e a verificação integrada dos fluxos de cadastro, perfil, pedido/aprovação, prontuário, relatórios e redefinição de senha. Compilação, lint e tipagem também foram verificados. As contas e consultas temporárias dos testes foram removidas. A conferência do banco confirmou a preservação dos 48 registros anteriores e a ausência de conflitos em novembro/dezembro. Os detalhes e as dependências externas estão em [Preparação da versão 1.0](docs/release-1.0.md).
+**No aplicativo, a URL inclui `/api`.** Para uma API sintética local, use o IP do computador, por exemplo `http://192.168.1.100:3333/api`, substituindo o endereço. `localhost` no celular é o próprio celular. A porta da API precisa estar acessível na rede. A prévia no navegador (`npm.cmd run web`) também exige que `WEB_URL` da API autorize sua origem.
 
-## ⚙️ Comandos úteis
+### APK existente e próximas builds
 
-### Scripts disponíveis
+Baixe a [prévia Android `v0.1.0-preview.1`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1): `leperapia-paciente-0.1.0-android-preview-arm64.apk`, 31.019.965 bytes, pacote `com.leperapia.paciente.preview`.
 
-Execute os comandos a partir da raiz:
+- JavaScript incluído; não precisa do Metro ou Expo Go para abrir.
+- Login e consultas dependem da **API sintética na LAN indicada na release**. Não é uma edição autônoma conectada à produção.
+- Assinatura de teste, sem distribuição na Play Store. Aceite físico e iOS ainda pendentes.
+- SHA-256: `87fda6ceacfd77792f08b7a762dea66a334543629f91f5ec77d470ed14a55fac`.
+
+`eas.json` já define development, preview APK e production AAB. Ainda é necessário concluir o vínculo/configuração de distribuição, assinatura de produção e homologação nativa. Edição de perfil, cancelamento, recuperação dentro do app e notificações fazem parte da [checklist](CHECKLIST.md#aplicativo-de-pacientes).
+
+## Testes e evidências
+
+Os resultados abaixo são **evidências das rodadas registradas**, não uma promessa de ausência de bugs nem uma nova execução de toda a suíte nesta revisão documental.
+
+| Verificação | Resultado mais recente registrado | Evidência e limites |
+| --- | --- | --- |
+| CI web/API — 14/11 | Lint, tipos, builds; **462 testes API + 6 financeiro web + 3 datas web + 5 utilitários QA = 476** | [Execução no GitHub](https://github.com/GuxtavoPereira/lepera-clinic/actions/runs/43641624683) |
+| Autorização HTTP — 14/11 | **91 verificações**, sete contas sintéticas/cinco papéis; isolamento clínico, relatórios, notificações e sessão | [Permissões e privacidade](docs/qa/permissoes-privacidade.md); Google com token sintético, sem login interativo real |
+| Carga local — 13/11, conferida 14/11 | **99.831 respostas HTTP 200**; 10/50/200 usuários virtuais por 60 s cada; p95 **493,2 ms** com 200 usuários | [Relatório de carga](docs/qa/relatorio-carga.md); base pequena, loopback, somente leitura; não mede capacidade da Vercel |
+| Agenda e interface | Concorrência, remarcação, autoria, notificações, temas e verificações em 390/1440 px registradas | [Validação 1.2](docs/qa/validacao-1.2.md); cobertura por fluxo, não aceite de todas as telas/dispositivos |
+| Mobile — 09–10/11 | Lint, tipos, exportações web/Android e **Expo Doctor 20/20**, CI aprovada | [CI mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/42831316430); falta aceite em Android físico |
+
+### Comandos de desenvolvimento e verificação
+
+Execute na raiz do monorepo:
 
 | Comando | Finalidade |
 | --- | --- |
-| `pnpm dev` | Iniciar frontend e backend |
-| `pnpm dev:web` | Iniciar somente o frontend |
-| `pnpm dev:api` | Iniciar somente o backend |
-| `pnpm db:generate` | Gerar o cliente Prisma |
-| `pnpm --filter @lepera/db migrate:deploy` | Aplicar migrações existentes |
-| `pnpm db:migrate` | Criar/aplicar migrações durante desenvolvimento |
-| `pnpm db:seed` | Carregar mocks em uma base de desenvolvimento vazia |
-| `pnpm db:studio` | Inspecionar os dados no Prisma Studio |
-| `pnpm lint` | Verificar padrões do código |
-| `pnpm check-types` | Verificar os tipos TypeScript |
-| `pnpm --filter api test --runInBand` | Executar testes da API |
-| `pnpm test:qa` | Verificar as proteções e cálculos do teste de carga |
-| `pnpm qa:load` | Medir leituras com 10, 50 e 200 usuários virtuais em PostgreSQL local de QA |
-| `pnpm qa:permissions` | Conferir isolamento entre contas, prontuários, relatórios e prévia Google em QA local |
-| `pnpm build` | Compilar o monorepo |
+| `pnpm dev` / `pnpm dev:web` / `pnpm dev:api` | Iniciar os serviços locais |
+| `pnpm db:generate` | Gerar cliente Prisma |
+| `pnpm --filter @lepera/db migrate:deploy` | Aplicar migrations versionadas |
+| `pnpm db:migrate` | Criar/aplicar migration em desenvolvimento |
+| `pnpm db:seed` / `pnpm db:studio` | Carregar demo / inspecionar banco |
+| `pnpm lint` / `pnpm check-types` / `pnpm build` | Padrões, tipos e compilação |
+| `pnpm --filter api test --runInBand` | Suíte da API |
+| `pnpm --filter web test:financial` | Valores e exportação financeira |
+| `pnpm --filter web test:dates` | Formatação e fuso das datas |
+| `pnpm test:qa` | Utilitários e proteções da carga |
+| `pnpm qa:permissions` | Matriz HTTP em base sintética local |
+| `pnpm qa:load` | Carga de leitura em base sintética local |
 
-O teste de carga exige uma base sintética separada e inicia uma API local somente de leitura. A rodada de 13/11 registrou 99.831 respostas HTTP 200 e preservou o conteúdo do banco; com 200 usuários virtuais, o p95 foi de 493,2 ms. Veja [método, configuração, resultados e limites](docs/qa/relatorio-carga.md). Esses números não representam a capacidade da hospedagem em produção.
+Os executores de permissões e carga têm configuração própria: siga os documentos de QA antes de rodar. A matriz registra leituras autorizadas na auditoria e cria/remove notificações temporárias; não é uma operação sem qualquer escrita. Não use esses executores contra produção.
 
-A [matriz de permissões e privacidade](docs/qa/permissoes-privacidade.md) registra 91 verificações HTTP em 14/11. Admin e superadmin não recebem acesso automático a prontuários. O executor usa contas sintéticas, registra as leituras autorizadas na auditoria e remove suas notificações temporárias ao terminar.
+## Publicação e manutenção
 
-Para executar a versão compilada, rode `pnpm build` e, em dois terminais na raiz:
+Frontend e backend são projetos Vercel separados, ligados ao GitHub. Configure cada ambiente de forma independente; o frontend usa `NEXT_PUBLIC_API_URL`, e a API depende de `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`, `WEB_URL` e das integrações habilitadas.
 
-```bash
-# Terminal 1 — backend
-pnpm --filter api start:prod
-```
+Para atualizar uma base existente: obtenha backup adequado, confira a versão e a conexão, execute `pnpm db:generate` e `pnpm --filter @lepera/db migrate:deploy`, e publique a versão compatível. **Atualização não exige reset nem seed.** Não substitua a chave de criptografia sem um procedimento de migração dos dados. Confira API, banco, login e fluxos afetados após a publicação.
 
-```bash
-# Terminal 2 — frontend
-pnpm --filter web start
-```
+A migration `20261110150000_notification_appointment_link` é necessária para os atalhos novos das notificações e preserva avisos anteriores. As migrations financeiras também devem estar aplicadas; use a sequência versionada completa. O retorno à versão anterior precisa considerar a compatibilidade do banco.
 
-A revisão da entrega S10 aprovou **182 testes da API**, além de lint, tipagem, compilação e navegação local por login → lista → detalhe. A evolução do calendário acrescentou verificações de intervalos, fuso, privacidade e horários livres, totalizando **210 testes da API aprovados**. Esses resultados registram as respectivas revisões; novas alterações devem ser verificadas novamente.
+Para criar um superadmin fora do seed, `pnpm db:super-admin` exige `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` (mínimo 12 caracteres) e `SUPER_ADMIN_CPF`; `SUPER_ADMIN_NAME` é opcional. O comando pode redefinir uma conta de superadmin existente. Forneça valores por ambiente privado, não pelo histórico de comandos compartilhado.
 
-<details>
-<summary><strong>Criar um superadministrador fora do seed</strong></summary>
+### Problemas comuns
 
-O comando `pnpm db:super-admin` exige `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` e `SUPER_ADMIN_CPF` no ambiente. A senha precisa ter pelo menos 12 caracteres e o CPF deve ser válido. `SUPER_ADMIN_NAME` é opcional.
-
-Esse comando pode redefinir a senha de uma conta de superadministrador já existente. Utilize-o de forma controlada e não registre credenciais no repositório.
-
-</details>
-
-## 🔎 Problemas comuns ao iniciar
-
-| Problema | O que conferir |
+| Sintoma | Conferir |
 | --- | --- |
-| Erro de conexão com PostgreSQL | Serviço iniciado, porta disponível, URL correta e mesma base nos dois arquivos de ambiente |
-| CPF obrigatório impede migração de uma base antiga | Registros legados sem CPF precisam ser regularizados antes da migração; não atribua documentos inventados a pessoas reais |
-| Seed informa que o banco já contém usuários | A carga não é incremental; use uma base vazia ou a opção explícita de recriação de mocks |
-| Seed informa chave de criptografia inválida | Defina os mesmos 64 caracteres hexadecimais em `ENCRYPTION_KEY` da API e do banco |
-| Frontend não alcança a API | API na porta `3333` e `NEXT_PUBLIC_API_URL` sem `/api` no final |
-| Navegador bloqueia uma chamada entre front e API | `WEB_URL` deve ser a origem exata do frontend, inclusive a porta |
-| Login dos mocks falha | Seed executado na mesma base da API e senha padrão ou `SEED_PASSWORD` correspondente |
-| Porta `3000`, `3333` ou `5432` ocupada | Encerre a instância anterior ou ajuste as portas e as URLs relacionadas |
+| PowerShell bloqueia um comando | Usar o executável `.cmd`, sem executar o `.ps1` bloqueado |
+| API não conecta ao banco | PostgreSQL iniciado, porta, URL e schema iguais nos arquivos da API/banco |
+| Seed recusa execução | Base vazia de desenvolvimento, chave válida e senha de demo compatível |
+| Erro ao ler campos clínicos | Mesma `ENCRYPTION_KEY` usada na gravação; não gerar outra para tentar corrigir |
+| Web não alcança a API | API na porta configurada; `NEXT_PUBLIC_API_URL` sem `/api`; reiniciar após alteração |
+| CORS no navegador | `WEB_URL` igual à origem aberta, incluindo porta |
+| Google indisponível / `origin_mismatch` | Configuração pública da API e origens do cliente Google |
+| Recuperação não chega | Variáveis SMTP no backend/ambiente implantado, senha de app válida, destinatário controlado e caixa de spam |
+| Expo não conecta | Branch SDK 58, `.env` com `/api`, IP acessível, mesma rede e porta liberada |
+| Login do seed falha | Contas provisionadas na base usada pela API e senha padrão ou `SEED_PASSWORD` correta |
 
-## 📦 Publicação
+## Limites e próximos passos
 
-A Vercel utiliza dois projetos conectados ao repositório GitHub. O frontend depende de `NEXT_PUBLIC_API_URL`; o backend depende de `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY` e `WEB_URL`, além das demais configurações de ambiente.
+A lista detalhada, priorizada e com critérios de aceite está em [CHECKLIST.md](CHECKLIST.md). Os pontos mais imediatos são:
 
-Uma mudança em `NEXT_PUBLIC_API_URL` exige uma nova compilação do frontend. Mantenha a chave de criptografia estável e aplique as migrações de forma controlada antes de liberar uma versão que dependa delas. As variáveis de **produção** e **preview** precisam ser configuradas separadamente.
+1. Concluir escalas em `/doctor/session/[id]/scales` e avaliações em `/patient/reviews/[appointmentId]`.
+2. Resolver a tela `/reception/new-session`, hoje em construção, alinhando o fluxo de quatro etapas ao agendamento funcional em `/reception/appointments/new`.
+3. Validar Google e recuperação real por Gmail; concluir a comunicação de cadastro planejada.
+4. Integrar o PR mobile, homologar em aparelho físico e preparar distribuição com API estável e assinatura apropriada.
+5. Fechar decisões da agenda, completar validação de usabilidade/acessibilidade e preparar segurança, backups, monitoramento e operação.
 
-A disponibilidade dos links acima não substitui a validação dos fluxos da versão publicada. As credenciais conhecidas do seed são destinadas à demonstração acadêmica, não ao uso com pacientes reais.
+SaaS multiclínica, Electron, pagamento online/fiscal e login Google completo são expansões/decisões de escopo, não funcionalidades prontas. A versão atual é para uma clínica, com app de pacientes. Os controles existentes não equivalem a certificação de conformidade ou autorização de uso com dados reais.
 
-## 🚧 Limites atuais e próximos passos
+## Créditos e contexto acadêmico
 
-- Concluir a configuração privada do Gmail e conferir a entrega real de recuperação; lembretes automáticos e WhatsApp são evoluções futuras.
-- Parcelamento, pagamentos parciais, emissão fiscal e integração com provedores de pagamento; outras telas secundárias em construção.
-- Conferir as origens e o primeiro acesso real no Google Cloud. O acesso Google desta versão é apenas para consultar disponibilidade. Login completo e vinculação de contas pelo Google são evoluções futuras; Face ID não está implementado.
-- Substituir as ilustrações dos ambientes por fotos autorizadas e aplicar a nova referência visual quando ela for fornecida.
-- Ampliação da homologação em dispositivos móveis e dos testes dos demais fluxos.
-- Medições de desempenho, rotinas de backup/restauração e revisão de segurança antes do uso com dados reais.
+Projeto de **Análise e Projeto de Sistemas**, curso de **Análise e Desenvolvimento de Sistemas — Centro Universitário Módulo**. Docente: **Cristiano S. Negrão**. Planejamento no [Trello](https://trello.com/b/gbfJq3qw/lepera-clinic); contribuição e histórico no [GitHub](https://github.com/GuxtavoPereira/lepera-clinic).
 
-A página **Contato / Agende** encaminha ao calendário e ao portal de solicitações; o formulário prepara uma mensagem para ser enviada pelo aplicativo de e-mail do visitante. Os ambientes ilustrados e os perfis demonstrativos não representam uma operação clínica real. Os controles implementados não equivalem a certificação de conformidade integral com a LGPD.
+A referência visual é o Clinical Project no Figma, adaptada à identidade Leperapia Clinic. As fotos de ambientes são ilustrativas, de [Beyza Kılıçdere](https://www.pexels.com/photo/modern-minimalist-living-room-interior-design-28905874/), [Dilan Turhan](https://www.pexels.com/photo/potted-indoor-plant-by-a-minimalist-couch-34909829/), [Renee B](https://www.pexels.com/photo/modern-office-waiting-area-with-chairs-and-plant-29637410/) e [Tori Gordon](https://www.pexels.com/photo/beige-sofa-with-cushions-in-the-middle-of-a-living-room-24304750/), sob a [licença do Pexels](https://www.pexels.com/license/). Não representam instalações ou profissionais reais da clínica.
 
-## 🎓 Contexto acadêmico e materiais
-
-Projeto desenvolvido na disciplina **Análise e Projeto de Sistemas**, do curso de **Análise e Desenvolvimento de Sistemas — Centro Universitário Módulo**.
-
-**Docente:** Cristiano S. Negrão.
-
-O planejamento está no [Trello](https://trello.com/b/gbfJq3qw/lepera-clinic), e o código e seu histórico estão no [GitHub](https://github.com/GuxtavoPereira/lepera-clinic).
-
-Os diretórios `work/` e `outputs/` guardam materiais locais e estão ignorados pelo Git. Documentos acadêmicos, capturas e imagens de referência são entregues separadamente. As telas do sistema são implementadas em código.
+`work/` e `outputs/` são materiais locais ignorados pelo Git. Documentos acadêmicos e capturas de referência são entregues separadamente; as telas são implementadas em código. O [registro de preparação da 1.0 de 02/11](docs/release-1.0.md) é histórico; o estado atual é o deste README e da checklist.

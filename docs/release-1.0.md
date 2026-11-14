@@ -1,3 +1,5 @@
+> **Registro histórico de 02/11/2026.** Para o estado atual, consulte o [README](../README.md) e a [checklist de conclusão](../CHECKLIST.md). Os testes e pendências abaixo descrevem a preparação daquela data.
+
 # Preparação da versão 1.0 — Leperapia Clinic
 
 Data da consolidação: 02/11/2026. Destino: demonstração acadêmica em 25/11/2026.
