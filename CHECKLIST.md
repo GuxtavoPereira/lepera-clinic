@@ -29,7 +29,7 @@ Cada item precisa de responsável nominal e evidência na execução. As áreas 
 | CI web/API | [Execução de 14/11](https://github.com/GuxtavoPereira/lepera-clinic/actions/runs/43641624683) | Lint, tipos, builds e 476 testes automatizados |
 | Mobile atual | [`a7fe849`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/a7fe849ef807636dcbe7a0f1149c3db92b97886f), [PR #1 aberto](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) | SDK 58 e visual/contrato novos fora da `main` mobile |
 | Mobile `main` | `0764557` em 14/11 | Base antiga; clonar sem escolher a branch não traz SDK 58 |
-| APK | [v0.1.0-preview.1](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1) | APK ARM64 de teste com API sintética na LAN; não homologação física |
+| APK | [Android preview no repositório principal](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1) | Mesmo APK ARM64 da prévia mobile, com SHA-256 verificado; API sintética na LAN, sem homologação física |
 | Testes integrados/UI | [Validação 1.2](docs/qa/validacao-1.2.md) | Agenda, concorrência, notificações, relatórios e telas verificadas |
 | Segurança por recurso | [Permissões e privacidade](docs/qa/permissoes-privacidade.md) | 91 chamadas HTTP com sete contas/cinco papéis; não auditoria completa |
 | Desempenho | [Carga local](docs/qa/relatorio-carga.md) | 99.831 leituras HTTP 200; 60 s por nível 10/50/200 usuários; não capacidade de produção |
@@ -67,7 +67,7 @@ As etapas podem avançar em paralelo quando contratos e arquivos forem independe
 - [x] **BASE-13 — Google/recuperação:** prévia Google de 30 min; reset com token de uso único de 30 min e invalidação de sessões antigas. Integrações reais seguem em ACC.
 - [x] **BASE-14 — Demo:** seed de 16 usuários/18 consultas/12 prontuários cifrados e carga adicional de novembro/dezembro de 2026; banco isolado validado.
 - [x] **BASE-15 — Mobile:** SDK 58, Paper MD3, login, início, consultas, calendário, pedido exato/modalidade, perfil de leitura, temas e SecureStore nativo. Lint/tipos/exports/Doctor 20/20 e CI registrados.
-- [x] **BASE-16 — Android:** APK prévio publicado no commit `a7fe849`, com hash, assinatura de teste e limites da LAN. Aceite físico pendente.
+- [x] **BASE-16 — Android:** APK da build mobile `a7fe849` publicado no repositório mobile e disponibilizado também nos Releases do principal, com hash, assinatura de teste e limites da LAN. Aceite físico pendente.
 - [x] **BASE-17 — Carga e recuperação local:** carga curta, CPU/RAM e restauração sintética registradas. Homologação longa, gravações e recuperação operacional abertas.
 - [x] **BASE-18 — Documentação:** README e checklist reconciliados com código, mobile, Vercel e Trello; checklist anterior preservada como histórico.
 
@@ -280,3 +280,4 @@ Não marcar apenas porque compilou. Registrar:
 ### Histórico desta consolidação
 
 - **14/11/2026 — v1.3:** comparados código local/remoto e checklist anterior; consultados Trello, PR/release mobile e metadados Vercel. Corrigidas pendências já entregues (SDK 58, horários exatos, KPIs, relatórios, remarcação, carga/permissões). Registradas três telas incompletas, limites do APK, SMTP sem aceite de entrega e ausência de release web formal. README reescrito e checklist 1.2 preservada.
+- **14/11/2026 — distribuição no repositório principal:** mesmo APK mobile disponibilizado em `android-v0.1.0-preview.1`, com checksum e link destacado no README. Não é uma nova build nem a release final web/API; limites de LAN e aceite físico permanecem.

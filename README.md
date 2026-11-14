@@ -6,7 +6,7 @@
 
 Next.js 16 · NestJS 11 · PostgreSQL · Aplicativo de pacientes com Expo SDK 58
 
-[🌐 Site e portal](https://lepera-clinic.vercel.app) · [📋 Checklist de conclusão](CHECKLIST.md) · [📱 Aplicativo](https://github.com/GuxtavoPereira/lepera-clinic-mobile) · [🗂️ Trello](https://trello.com/b/gbfJq3qw/lepera-clinic)
+[🌐 Site e portal](https://lepera-clinic.vercel.app) · [⬇️ APK Android](https://github.com/GuxtavoPereira/lepera-clinic/releases/download/android-v0.1.0-preview.1/leperapia-paciente-0.1.0-android-preview-arm64.apk) · [📋 Checklist de conclusão](CHECKLIST.md) · [📱 Código mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile) · [🗂️ Trello](https://trello.com/b/gbfJq3qw/lepera-clinic)
 
 </div>
 
@@ -20,7 +20,7 @@ A versão `1.0.0` do pacote não significa que todo o escopo esteja concluído. 
 | --- | --- |
 | Web/API — `main` | Código em [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095), CI aprovada e frontend/backend publicados nesse commit |
 | Mobile — `codex/v1.2-expo-sdk-58` | SDK 58 em [`a7fe849`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/a7fe849ef807636dcbe7a0f1149c3db92b97886f); [PR #1](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) aberto |
-| Android | [Prévia `v0.1.0-preview.1`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1), ARM64, assinatura de teste, API de demonstração na rede local |
+| Android | [Prévia disponível neste repositório](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1), ARM64, assinatura de teste, API de demonstração na rede local |
 | Gmail | Variáveis SMTP presentes no backend de produção; entrega real e recuperação completa ainda precisam de aceite |
 | Google | ID do cliente configurado e fluxo de consulta temporária implementado; autenticação interativa com conta real ainda precisa de aceite |
 
@@ -332,7 +332,11 @@ EXPO_PUBLIC_API_URL=https://lepera-clinic-backend.vercel.app/api
 
 ### APK existente e próximas builds
 
-Baixe a [prévia Android `v0.1.0-preview.1`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1): `leperapia-paciente-0.1.0-android-preview-arm64.apk`, 31.019.965 bytes, pacote `com.leperapia.paciente.preview`.
+**[⬇️ Baixar APK Android — Leperapia Paciente](https://github.com/GuxtavoPereira/lepera-clinic/releases/download/android-v0.1.0-preview.1/leperapia-paciente-0.1.0-android-preview-arm64.apk)**
+
+O APK está nos [Releases deste repositório](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1), com instruções e arquivo de verificação SHA-256. É o mesmo artefato da [prévia mobile original](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1), sem recompilação: `leperapia-paciente-0.1.0-android-preview-arm64.apk`, 31.019.965 bytes, pacote `com.leperapia.paciente.preview`.
+
+No Android ARM64, baixe e abra o arquivo; permita a instalação dessa origem quando solicitado e abra **Leperapia Paciente (Prévia)**. Para login e agenda, mantenha o celular na rede da API de demonstração `http://192.168.1.111:8083/api`, com a API ligada. Alterar o `.env` no PC não muda o endereço incluído neste APK; outra API exige nova build.
 
 - JavaScript incluído; não precisa do Metro ou Expo Go para abrir.
 - Login e consultas dependem da **API sintética na LAN indicada na release**. Não é uma edição autônoma conectada à produção.
