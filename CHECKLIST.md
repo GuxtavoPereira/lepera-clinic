@@ -1,6 +1,6 @@
 # Leperapia Clinic — checklist de conclusão 1.3
 
-> **Revisão: 14/11/2026. Fonte canônica: este arquivo no repositório web/API.**
+> **Revisão: 15/11/2026. Fonte canônica: este arquivo no repositório web/API.**
 > Substitui o diagnóstico da `checklist1.2.md`; o histórico anterior é preservado. Abrange site público, portal, API, banco, operação e aplicativo de pacientes. Não autoriza novas expansões automaticamente.
 
 ## Como usar e o que significa concluir
@@ -27,8 +27,8 @@ Cada item precisa de responsável nominal e evidência na execução. As áreas 
 | --- | --- | --- |
 | Código web/API | `main`, [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095) | Base de execução anterior a esta revisão documental |
 | CI web/API | [Execução de 14/11](https://github.com/GuxtavoPereira/lepera-clinic/actions/runs/43641624683) | Lint, tipos, builds e 476 testes automatizados |
-| Mobile atual | [`a7fe849`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/a7fe849ef807636dcbe7a0f1149c3db92b97886f), [PR #1 aberto](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) | SDK 58 e visual/contrato novos fora da `main` mobile |
-| Mobile `main` | `0764557` em 14/11 | Base antiga; clonar sem escolher a branch não traz SDK 58 |
+| Mobile `main` | [`3f1ad5f`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/3f1ad5f3ad90410a6cfc0b2308f112e8fb99734a), [PR #1 integrado](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) | SDK 58.0.25, visual/contrato atuais e cancelamento próprio disponíveis ao clonar a `main` |
+| CI mobile | [Execução de 15/11](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43720353538), código `607de78` integrado sem alterações | Lint/tipos, seis testes, compatibilidade/Doctor e exportações web/Android aprovados; não substitui aceite físico |
 | APK | [Android preview no repositório principal](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1) | Mesmo APK ARM64 da prévia mobile, com SHA-256 verificado; API sintética na LAN, sem homologação física |
 | Testes integrados/UI | [Validação 1.2](docs/qa/validacao-1.2.md) | Agenda, concorrência, notificações, relatórios e telas verificadas |
 | Segurança por recurso | [Permissões e privacidade](docs/qa/permissoes-privacidade.md) | 91 chamadas HTTP com sete contas/cinco papéis; não auditoria completa |
@@ -43,7 +43,7 @@ O [registro da 1.0](docs/release-1.0.md) descreve 02/11 e permanece histórico. 
 1. **Fechar decisões do escopo:** DEC-01 a DEC-08, sobretudo 24h, nova sessão, escalas e assinatura.
 2. **Validar integrações reais:** ACC-01 e ACC-02, com contas de teste controladas.
 3. **Concluir lacunas visíveis:** CLI-01, CLI-02 e AGE-01; ligar avaliações ao relatório de satisfação.
-4. **Finalizar o app:** MOB-01 a MOB-08, incluindo integração, instalação física e funções do paciente.
+4. **Finalizar o app:** concluir os itens abertos MOB-02 a MOB-08, instalação física e funções restantes do paciente; MOB-01/MOB-05 já entregues.
 5. **Completar testes da operação:** AGE, FIN, EST e REP; corrigir falhas encontradas.
 6. **Fechar segurança e recuperação:** SEC e OPS antes de pacientes reais.
 7. **Homologar apresentação e release:** QA, DOC e REL; repetir testes dos fluxos alterados.
@@ -66,7 +66,7 @@ As etapas podem avançar em paralelo quando contratos e arquivos forem independe
 - [x] **BASE-12 — Relatórios:** reativados; nove tipos, PDF/CSV e escopo por papel. Coleta de satisfação ainda incompleta.
 - [x] **BASE-13 — Google/recuperação:** prévia Google de 30 min; reset com token de uso único de 30 min e invalidação de sessões antigas. Integrações reais seguem em ACC.
 - [x] **BASE-14 — Demo:** seed de 16 usuários/18 consultas/12 prontuários cifrados e carga adicional de novembro/dezembro de 2026; banco isolado validado.
-- [x] **BASE-15 — Mobile:** SDK 58, Paper MD3, login, início, consultas, calendário, pedido exato/modalidade, perfil de leitura, temas e SecureStore nativo. Lint/tipos/exports/Doctor 20/20 e CI registrados.
+- [x] **BASE-15 — Mobile:** SDK 58, Paper MD3, login, início, consultas, calendário, pedido exato/modalidade, cancelamento próprio, perfil de leitura, temas e SecureStore nativo. Lint/tipos/exports/Doctor 20/20 e CI registrados; aceite nativo permanece separado.
 - [x] **BASE-16 — Android:** APK da build mobile `a7fe849` publicado no repositório mobile e disponibilizado também nos Releases do principal, com hash, assinatura de teste e limites da LAN. Aceite físico pendente.
 - [x] **BASE-17 — Carga e recuperação local:** carga curta, CPU/RAM e restauração sintética registradas. Homologação longa, gravações e recuperação operacional abertas.
 - [x] **BASE-18 — Documentação:** README e checklist reconciliados com código, mobile, Vercel e Trello; checklist anterior preservada como histórico.
@@ -169,11 +169,11 @@ Responsáveis: **Web + QA + Produto/Clínica**.
 
 Responsáveis: **Mobile + QA + API para contratos**. Repositório: [lepera-clinic-mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile). Manter SDK 58; não criar módulos da equipe sem ampliar escopo.
 
-- [ ] **MOB-01 · P1 · Integração — Branch atual:** revisar/atualizar PR #1, diferenças com `main`, CI e merge autorizado. Aceite: clone da `main` entrega SDK 58, contrato exato e telas atuais; atualizar instruções da branch.
+- [x] **MOB-01 · P1 · Integração — Branch atual:** [PR #1 integrado](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) em 15/11, merge `3f1ad5f`, após [CI aprovada](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43720353538) no código `607de78`. `main` local/remota sincronizadas; clone padrão entrega SDK 58.0.25, horários exatos, telas atuais e cancelamento. README atualizado.
 - [ ] **MOB-02 · P1 · Validação — Android físico:** instalar APK/cliente de desenvolvimento e registrar aparelho, Android, commit/API; abertura fria, login paciente/recusa de outros papéis, calendário e pedido aprovado pela recepção.
 - [ ] **MOB-03 · P1 · Validação — Expo Go:** QR SDK 58, rede/API com `/api`, firewall e instruções PowerShell `.cmd`; alternativa development build quando Expo Go instalado não for compatível.
 - [ ] **MOB-04 · P1 · Implementação — Editar perfil:** campos permitidos/validações consistentes, salvar/atualizar estado e erro de rede. Hoje o perfil é de leitura.
-- [ ] **MOB-05 · P1 · Implementação — Cancelamento:** confirmação, motivo quando previsto, antecedência, atualização de agenda/consulta/avisos e conflito com decisão recente; sem sucesso falso.
+- [x] **MOB-05 · P1 · Implementação — Cancelamento:** entregue em **Minhas consultas**, confirmação/motivo opcional, antecedência de 24h, bloqueio de duplo envio e atualização antes de repetir após erro. Seis testes de regras, cinco cenários de interface e oito grupos de integração API/PostgreSQL sintético conferiram persistência, autorização, vaga, auditoria e avisos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md). Aceite físico permanece em MOB-02/MOB-11; o APK `v0.1.0-preview.1` ainda não inclui a função.
 - [ ] **MOB-06 · P1 · Implementação — Recuperação nativa:** formulário, link/deep link seguro, uso único/expiração e retorno ao login; token fora da telemetria. Hoje encaminha ao site.
 - [ ] **MOB-07 · P1 · Decisão/validação — Cadastro:** aceitar formalmente cadastro web externo com retorno claro ou incluir cadastro nativo; preservar CPF/dados obrigatórios e não anunciar o fluxo nativo antes de existir.
 - [ ] **MOB-08 · P1 · Integração — Avisos:** concluir NOT-02; push nesta release, se aprovado, também depende de NOT-03 e entrega real.
@@ -199,7 +199,7 @@ Responsáveis: **API/Banco + Operação + QA**, com decisões de tratamento de d
 - [ ] **SEC-04 · P0 · Validação — Autorização ampliada:** estender 91 chamadas a recursos novos/ciclo completo, IDs enumerados, papel adulterado, vínculo removido, usuário inativo e acesso horizontal/vertical. Preview Google sem acesso a perfil/pacientes/prontuários.
 - [ ] **SEC-05 · P0 · Operação — Segredos/cifra:** inventário de acessos, segregação e backup seguro da chave clínica; ensaiar rotação/recriptografia e recuperação sintética. Não trocar chave existente sem migrar os dados.
 - [ ] **SEC-06 · P0 · Validação — Logs/auditoria:** API, Vercel, navegador, app, exports e ferramentas de erro sem senha/token/CPF/conteúdo clínico desnecessários; autoria/contexto, acesso, retenção e proteção contra alteração indevida.
-- [ ] **SEC-07 · P0 · Validação/operação — Segurança completa:** dependências/histórico por segredos, validação de entradas/saídas, rotas e testes dinâmicos só em homologação própria com limites. Classificar, corrigir e retestar; sem achados críticos/altos não mitigados. Matriz de permissões não equivale a pentest completo.
+- [ ] **SEC-07 · P0 · Validação/operação — Segurança completa:** dependências/histórico por segredos, validação de entradas/saídas, rotas e testes dinâmicos só em homologação própria com limites. Classificar, corrigir e retestar; sem achados críticos/altos não mitigados. Matriz de permissões não equivale a pentest completo. Em 15/11, a árvore mobile Expo 58.0.25 apresentou dez alertas moderados transitivos (`minimatch` via Expo/ESLint), sem alto/crítico; avaliar/corrigir preservando compatibilidade, sem aplicar downgrade forçado.
 - [ ] **SEC-08 · P0 · Decisão/implementação — Privilégios:** aprovar admin/superadmin, criação, recuperação e emergência; avaliar/exigir MFA segundo política adotada e comprovar procedimento. Superadmin não passa a acessar prontuários automaticamente.
 - [ ] **SEC-09 · P0 · Decisão/operação — Privacidade:** responsável habilitado valida finalidades/base de tratamento, transparência, consentimentos quando aplicáveis, retenção, solicitações e descarte; implementar páginas/fluxos aprovados. Sem declaração de conformidade integral por suposição.
 - [ ] **SEC-10 · P0 · Operação — Demo separada:** base sintética/contas públicas do README não convivem com pacientes reais; provisionar contas privadas, revisar dados/credenciais e impedir mensagens a destinatários fictícios/não controlados.
@@ -281,3 +281,4 @@ Não marcar apenas porque compilou. Registrar:
 
 - **14/11/2026 — v1.3:** comparados código local/remoto e checklist anterior; consultados Trello, PR/release mobile e metadados Vercel. Corrigidas pendências já entregues (SDK 58, horários exatos, KPIs, relatórios, remarcação, carga/permissões). Registradas três telas incompletas, limites do APK, SMTP sem aceite de entrega e ausência de release web formal. README reescrito e checklist 1.2 preservada.
 - **14/11/2026 — distribuição no repositório principal:** mesmo APK mobile disponibilizado em `android-v0.1.0-preview.1`, com checksum e link destacado no README. Não é uma nova build nem a release final web/API; limites de LAN e aceite físico permanecem.
+- **15/11/2026 — MOB-01/MOB-05:** implementado cancelamento no aplicativo, conferidos seis testes de regras, cinco cenários de interface e oito grupos de integração API/PostgreSQL sintético, com preservação dos dados anteriores. Expo alinhado a 58.0.25; CI aprovada e PR #1 integrado à `main` mobile em `3f1ad5f`. APK anterior não foi recompilado; teste físico/distribuição e alertas moderados de dependências permanecem abertos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md).

@@ -118,3 +118,15 @@ Os 462 testes da API (39 suítes), seis testes financeiros e três testes de fus
 No navegador em 390 px, seis grupos de verificações cobriram erro junto ao motivo, foco, atualização após versão desatualizada, seleção de vaga, encaixe, links do histórico e das notificações e atividade administrativa. Os temas claro e escuro foram inspecionados; a tela de detalhes também foi conferida em 1440 px. Um aparelho configurado para Tóquio salvou e mostrou 06:15 em Brasília como `09:15Z`. A formatação compartilhada foi corrigida para manter o fuso da clínica; os novos testes incluem a passagem da meia-noite em três fusos de aparelho e fazem parte da CI.
 
 Os testes de escrita usaram somente `lepera_notifications_qa` em `127.0.0.1:51235`. Capturas e resultados permanecem ignorados em `work/v1.2-qa/`. Não foi executado reset, seed ou alteração de consulta no banco publicado. A remarcação usa os campos já existentes e não exige migração. Troca de profissional e transferência de pagamentos ficam fora desta etapa.
+
+## Cancelamento no aplicativo de pacientes — 15/11/2026
+
+O aplicativo passou a oferecer cancelamento em **Minhas consultas**, com confirmação e motivo opcional. A regra existente da API exige consulta própria agendada/confirmada e pelo menos 24 horas de antecedência. Após conflito ou perda de conexão, o app consulta o estado atual antes de permitir novo envio. Uma resposta perdida não é tratada como prova de que a gravação falhou.
+
+Seis testes de regras e cinco cenários de interface em 320/390 px, nos temas claro/escuro, passaram. O roteiro de interface cobre sucesso com/sem motivo, conflito, resposta perdida após gravação e sessão expirada. Oito grupos de integração com NestJS e PostgreSQL local sintético verificaram autorização, limite de antecedência, persistência/motivo, autor na auditoria, aviso ao profissional, recusa de repetição, liberação da vaga e atualização ao navegar entre abas.
+
+Somente três consultas temporárias foram criadas na base `lepera_native_qa`, em loopback. Consultas/avisos/auditorias de teste foram removidos, e o estado anterior de consultas, prontuários e lista de espera foi conferido após a limpeza. Não houve escrita no banco publicado. O contrato da API não mudou e não há migração nova nesta etapa.
+
+As dependências foram alinhadas ao Expo 58.0.25, mantendo o SDK 58. Lint, tipos, seis testes, verificação de compatibilidade, Expo Doctor 20/20 e exportações web/Android passaram; os cinco cenários de interface foram repetidos após a atualização. Há dez alertas moderados transitivos na auditoria de dependências, sem alto/crítico, registrados em SEC-07. [Roteiro e limites completos no mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md).
+
+O APK `v0.1.0-preview.1` continua sendo o artefato anterior, do commit mobile `a7fe849`, e **não inclui esse cancelamento**. Exportar o bundle não gera uma nova build instalada. Aparelho físico, TalkBack, teclado/rede reais e nova distribuição permanecem pendentes na checklist.
