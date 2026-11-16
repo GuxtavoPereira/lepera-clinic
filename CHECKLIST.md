@@ -1,6 +1,6 @@
 # Leperapia Clinic — checklist de conclusão 1.3
 
-> **Revisão: 15/11/2026. Fonte canônica: este arquivo no repositório web/API.**
+> **Revisão: 16/11/2026. Fonte canônica: este arquivo no repositório web/API.**
 > Substitui o diagnóstico da `checklist1.2.md`; o histórico anterior é preservado. Abrange site público, portal, API, banco, operação e aplicativo de pacientes. Não autoriza novas expansões automaticamente.
 
 ## Como usar e o que significa concluir
@@ -27,8 +27,8 @@ Cada item precisa de responsável nominal e evidência na execução. As áreas 
 | --- | --- | --- |
 | Código web/API | `main`, [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095) | Base de execução anterior a esta revisão documental |
 | CI web/API | [Execução de 14/11](https://github.com/GuxtavoPereira/lepera-clinic/actions/runs/43641624683) | Lint, tipos, builds e 476 testes automatizados |
-| Mobile `main` | [`dc5b411`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/dc5b411addcd8774fcaa2333883d30e38446134d), após [PR #1 integrado](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) | SDK 58.0.25, visual/contrato atuais, cancelamento e perfil editável disponíveis ao clonar a `main` |
-| CI mobile | [Execução de 15/11](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43764062486), código `dc5b411` | Lint/tipos, 15 testes, compatibilidade/Doctor e exportações web/Android aprovados; não substitui aceite físico |
+| Mobile `main` | [`6008be7`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/6008be721b81ea814f65fa208648683e51599ea8), após [PR #1 integrado](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) | SDK 58.0.25, visual/contrato atuais, cancelamento, perfil editável e avisos disponíveis ao clonar a `main` |
+| CI mobile | [Execução de 16/11](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43900676399), código `6008be7` | Aprovada: lint/tipos, 21 testes, compatibilidade/Doctor, auditoria e exportações web/Android; não substitui aceite físico |
 | APK | [Android preview no repositório principal](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1) | Mesmo APK ARM64 da prévia mobile, com SHA-256 verificado; API sintética na LAN, sem homologação física |
 | Testes integrados/UI | [Validação 1.2](docs/qa/validacao-1.2.md) | Agenda, concorrência, notificações, relatórios e telas verificadas |
 | Segurança por recurso | [Permissões e privacidade](docs/qa/permissoes-privacidade.md) | 91 chamadas HTTP com sete contas/cinco papéis; não auditoria completa |
@@ -43,7 +43,7 @@ O [registro da 1.0](docs/release-1.0.md) descreve 02/11 e permanece histórico. 
 1. **Fechar decisões do escopo:** DEC-01 a DEC-08, sobretudo 24h, nova sessão, escalas e assinatura.
 2. **Validar integrações reais:** ACC-01 e ACC-02, com contas de teste controladas.
 3. **Concluir lacunas visíveis:** CLI-01, CLI-02 e AGE-01; ligar avaliações ao relatório de satisfação.
-4. **Finalizar o app:** concluir os itens abertos MOB-02 a MOB-08, instalação física e funções restantes do paciente; MOB-01/MOB-04/MOB-05 já entregues.
+4. **Finalizar o app:** concluir os itens abertos MOB-02 a MOB-11, instalação física e funções restantes do paciente; MOB-01/MOB-04/MOB-05/MOB-08 já entregues.
 5. **Completar testes da operação:** AGE, FIN, EST e REP; corrigir falhas encontradas.
 6. **Fechar segurança e recuperação:** SEC e OPS antes de pacientes reais.
 7. **Homologar apresentação e release:** QA, DOC e REL; repetir testes dos fluxos alterados.
@@ -66,7 +66,7 @@ As etapas podem avançar em paralelo quando contratos e arquivos forem independe
 - [x] **BASE-12 — Relatórios:** reativados; nove tipos, PDF/CSV e escopo por papel. Coleta de satisfação ainda incompleta.
 - [x] **BASE-13 — Google/recuperação:** prévia Google de 30 min; reset com token de uso único de 30 min e invalidação de sessões antigas. Integrações reais seguem em ACC.
 - [x] **BASE-14 — Demo:** seed de 16 usuários/18 consultas/12 prontuários cifrados e carga adicional de novembro/dezembro de 2026; banco isolado validado.
-- [x] **BASE-15 — Mobile:** SDK 58, Paper MD3, login, início, consultas, calendário, pedido exato/modalidade, cancelamento próprio, perfil editável, temas e SecureStore nativo. Lint/tipos/exports/Doctor 20/20 e CI registrados; aceite nativo permanece separado.
+- [x] **BASE-15 — Mobile:** SDK 58, Paper MD3, login, início, consultas, calendário, pedido exato/modalidade, cancelamento próprio, perfil editável, avisos internos, temas e SecureStore nativo. Lint/tipos/exports/Doctor 20/20 e CI registrados; aceite nativo permanece separado.
 - [x] **BASE-16 — Android:** APK da build mobile `a7fe849` publicado no repositório mobile e disponibilizado também nos Releases do principal, com hash, assinatura de teste e limites da LAN. Aceite físico pendente.
 - [x] **BASE-17 — Carga e recuperação local:** carga curta, CPU/RAM e restauração sintética registradas. Homologação longa, gravações e recuperação operacional abertas.
 - [x] **BASE-18 — Documentação:** README e checklist reconciliados com código, mobile, Vercel e Trello; checklist anterior preservada como histórico.
@@ -145,7 +145,7 @@ Responsáveis: **Web + API/Banco + QA + responsável administrativo**. Os módul
 Responsáveis: **API + Web + Mobile + Operação**.
 
 - [ ] **NOT-01 · P1 · Validação — Matriz de eventos:** revisar matriz na [validação 1.2](docs/qa/validacao-1.2.md): evento, destinatário, canal, mensagem e destino. Acrescentar ciclo, indisponibilidade e avaliações conforme decisões aprovadas.
-- [ ] **NOT-02 · P1 · Implementação — Avisos no app:** listagem do paciente, contagem, marcar lido e abrir atendimento autorizado; aviso antigo, consulta indisponível, sessão expirada e sincronização com portal.
+- [x] **NOT-02 · P1 · Implementação — Avisos no app:** aba/atalho no início, contador total, filtro Todos/Não lidos, leitura individual e abertura da consulta somente sobre a lista própria. Avisos antigos/indisponíveis, sessão expirada/troca de conta, falhas de lista/contador/rede e limite de 50 itens conferidos. Seis testes de regras, oito cenários de interface e seis grupos de integração/preservação passaram. Leitura de um segundo cliente da API compartilhada refletida no app; não houve teste visual simultâneo do portal. [Código `6008be7`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/6008be721b81ea814f65fa208648683e51599ea8) e [evidências/limites](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md). Aceite físico permanece aberto; não inclui push.
 - [ ] **NOT-03 · P2 · Implementação — Push seguro:** permissão explícita, token por dispositivo/revogação no logout, canal, retentativas, deduplicação e token inválido. Testar fisicamente; tela bloqueada sem diagnóstico ou conteúdo da sessão.
 - [ ] **NOT-04 · P2 · Implementação condicionada — Lembretes:** após DEC-02, janela, execução idempotente, fuso, cancelamento/remarcação e falha/retentativa. Não enviar lembrete de consulta cancelada.
 - [ ] **NOT-05 · P1 · Operação — Falhas de envio:** registro sem dados sensíveis, distinguir operação salva de mensagem enviada, monitorar/reprocessar. Falha do provedor não duplica consulta/cobrança.
@@ -176,7 +176,7 @@ Responsáveis: **Mobile + QA + API para contratos**. Repositório: [lepera-clini
 - [x] **MOB-05 · P1 · Implementação — Cancelamento:** entregue em **Minhas consultas**, confirmação/motivo opcional, antecedência de 24h, bloqueio de duplo envio e atualização antes de repetir após erro. Seis testes de regras, cinco cenários de interface e oito grupos de integração API/PostgreSQL sintético conferiram persistência, autorização, vaga, auditoria e avisos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md). Aceite físico permanece em MOB-02/MOB-11; o APK `v0.1.0-preview.1` ainda não inclui a função.
 - [ ] **MOB-06 · P1 · Implementação — Recuperação nativa:** formulário, link/deep link seguro, uso único/expiração e retorno ao login; token fora da telemetria. Hoje encaminha ao site.
 - [ ] **MOB-07 · P1 · Decisão/validação — Cadastro:** aceitar formalmente cadastro web externo com retorno claro ou incluir cadastro nativo; preservar CPF/dados obrigatórios e não anunciar o fluxo nativo antes de existir.
-- [ ] **MOB-08 · P1 · Integração — Avisos:** concluir NOT-02; push nesta release, se aprovado, também depende de NOT-03 e entrega real.
+- [x] **MOB-08 · P1 · Integração — Avisos:** NOT-02 integrado à `main` mobile em `6008be7`, com atualização ao focar/retomar e atualização manual. Estado compartilhado pela API, sem canal em tempo real. Sete cenários de perfil e cinco de cancelamento passaram novamente. APK anterior não inclui a função; aceite físico em MOB-02/MOB-11. Push, se aprovado, depende de NOT-03 e entrega real.
 - [ ] **MOB-09 · P0 · Validação — Sessão/privacidade:** reiniciar/retomar, token inválido/expirado, conta inativa, troca de senha, logout, falha de SecureStore e troca de usuário. Apagar dados da conta anterior; preservar token para reconexão não libera dados indevidos.
 - [ ] **MOB-10 · P1 · Validação — Rede/calendário:** offline/retorno, lentidão, timeout, troca de aba, duplo envio, vaga ocupada, refresh, fuso/vazio. Prévia web não substitui comportamento nativo.
 - [ ] **MOB-11 · P1 · Validação — UX nativa:** TalkBack, fonte ampliada, contraste, áreas seguras, teclado, voltar Android, rotação suportada e telas pequenas; corrigir cortes/gestos sem alternativa.
@@ -283,3 +283,4 @@ Não marcar apenas porque compilou. Registrar:
 - **14/11/2026 — distribuição no repositório principal:** mesmo APK mobile disponibilizado em `android-v0.1.0-preview.1`, com checksum e link destacado no README. Não é uma nova build nem a release final web/API; limites de LAN e aceite físico permanecem.
 - **15/11/2026 — MOB-01/MOB-05:** implementado cancelamento no aplicativo, conferidos seis testes de regras, cinco cenários de interface e oito grupos de integração API/PostgreSQL sintético, com preservação dos dados anteriores. Expo alinhado a 58.0.25; CI aprovada e PR #1 integrado à `main` mobile em `3f1ad5f`. APK anterior não foi recompilado; teste físico/distribuição e alertas moderados de dependências permanecem abertos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md).
 - **15/11/2026 — MOB-04:** perfil editável entregue em `dc5b411`, com nove testes de regras, sete cenários de interface e cinco grupos de integração/preservação em banco sintético. Tipos/lint e bundles web/Android passaram; cancelamento conferido novamente após a atualização da sessão. Conta temporária removida e dados anteriores preservados. Concorrência atômica de perfil registrada em ACC-06; APK novo e aceite físico permanecem abertos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md).
+- **16/11/2026 — NOT-02/MOB-08:** avisos entregues em `6008be7`, com seis testes adicionais (21 totais), oito cenários de interface e seis grupos de integração/preservação em banco sintético. Leitura/contagem, acesso à consulta própria, referências antigas/alheias, atualização entre acessos e falhas conferidos; sete cenários de perfil e cinco de cancelamento repetidos. Lint/tipos e bundles web/Android aprovados localmente. Dados anteriores preservados, sem alteração de backend/migration/produção. Push, nova build e aceite físico continuam pendentes. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md).

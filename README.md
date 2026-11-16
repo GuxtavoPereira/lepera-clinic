@@ -12,14 +12,14 @@ Next.js 16 · NestJS 11 · PostgreSQL · Aplicativo de pacientes com Expo SDK 58
 
 ## Estado do projeto
 
-**Documentação revisada em 15/11/2026.** O sistema web já possui os fluxos principais de pacientes, recepção, profissionais e administração. Os relatórios estão ativos. O aplicativo com Expo SDK 58, calendário atual, cancelamento e perfil editável está na `main` mobile. O APK disponível é uma prévia anterior; a nova build e o aceite em aparelho físico continuam pendentes.
+**Documentação revisada em 16/11/2026.** O sistema web já possui os fluxos principais de pacientes, recepção, profissionais e administração. Os relatórios estão ativos. O aplicativo com Expo SDK 58, calendário atual, cancelamento, perfil editável e avisos está na `main` mobile. O APK disponível é uma prévia anterior; a nova build e o aceite em aparelho físico continuam pendentes.
 
 A versão `1.0.0` do pacote não significa que todo o escopo esteja concluído. Há três telas em construção, integrações aguardando validação real e tarefas de preparação para operação. A [checklist canônica](CHECKLIST.md) reúne o que está entregue, o que falta implementar, o que falta testar e as decisões pendentes. Não há uma release formal web/API publicada no GitHub até esta revisão.
 
-| Referência verificada | Estado em 15/11/2026 |
+| Referência verificada | Estado em 16/11/2026 |
 | --- | --- |
 | Web/API — `main` | Código em [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095), CI aprovada e frontend/backend publicados nesse commit |
-| Mobile — `main` | SDK 58.0.25, horários exatos, cancelamento e perfil editável em [`dc5b411`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/dc5b411addcd8774fcaa2333883d30e38446134d); [evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md) |
+| Mobile — `main` | SDK 58.0.25, horários exatos, cancelamento, perfil editável e avisos em [`6008be7`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/6008be721b81ea814f65fa208648683e51599ea8); [evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md) |
 | Android | [Prévia disponível neste repositório](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1), ARM64, assinatura de teste, API de demonstração na rede local |
 | Gmail | Variáveis SMTP presentes no backend de produção; entrega real e recuperação completa ainda precisam de aceite |
 | Google | ID do cliente configurado e fluxo de consulta temporária implementado; autenticação interativa com conta real ainda precisa de aceite |
@@ -308,11 +308,13 @@ Em 14/11, foi confirmada a presença das variáveis SMTP de produção, incluind
 
 ## Aplicativo e Expo Go
 
-O **Leperapia Paciente** é um aplicativo nativo separado, exclusivo para pacientes nesta fase. Usa **Expo SDK 58**, Expo Router e **React Native Paper 5 / Material Design 3** para os componentes. Tem login de conta existente, início, consultas, solicitações por horário exato, calendário, cancelamento, perfil editável, temas, atualização e logout. No dispositivo nativo, a sessão utiliza SecureStore; na prévia web, o token fica em memória.
+O **Leperapia Paciente** é um aplicativo nativo separado, exclusivo para pacientes nesta fase. Usa **Expo SDK 58**, Expo Router e **React Native Paper 5 / Material Design 3** para os componentes. Tem login de conta existente, início, consultas, solicitações por horário exato, calendário, cancelamento, perfil editável, avisos, temas, atualização e logout. No dispositivo nativo, a sessão utiliza SecureStore; na prévia web, o token fica em memória.
 
 Em **Minhas consultas**, o paciente pode cancelar atendimentos agendados/confirmados com pelo menos 24 horas de antecedência. A confirmação aceita motivo opcional, impede envio duplicado e exige atualizar a situação após uma falha de conexão antes de tentar novamente. A API verifica a autorização, libera a vaga e avisa a equipe. [Evidências do cancelamento](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md).
 
 Em **Perfil → Editar meus dados**, o paciente atualiza nome, nascimento, telefone, endereço, convênio e contato de emergência. O CPF já cadastrado fica bloqueado; quando ausente em um cadastro legado, é obrigatório antes de salvar. O formulário envia somente campos alterados, destaca erros, preserva o preenchimento em falhas e confere a gravação no servidor. E-mail e papel não são editados por esse fluxo. A verificação antes de salvar detecta alterações já visíveis na clínica; controle atômico de versão na API ainda é pendente. [Evidências do perfil](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md).
+
+Em **Avisos**, o paciente consulta até 50 atualizações recentes, filtra não lidos, marca leitura e abre a própria consulta ou o calendário. O contador inclui todos os avisos não lidos. O estado é compartilhado pela API com o portal e atualiza ao abrir a aba, retomar o app ou atualizar manualmente. Falha de gravação exige conferir o estado antes de repetir. Não há push ou atualização em tempo real nesta etapa. [Evidências dos avisos](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md).
 
 ### Abrir a versão atual no celular
 
@@ -340,7 +342,7 @@ EXPO_PUBLIC_API_URL=https://lepera-clinic-backend.vercel.app/api
 
 O APK está nos [Releases deste repositório](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1), com instruções e arquivo de verificação SHA-256. É o mesmo artefato da [prévia mobile original](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1), sem recompilação: `leperapia-paciente-0.1.0-android-preview-arm64.apk`, 31.019.965 bytes, pacote `com.leperapia.paciente.preview`.
 
-**Esse APK foi gerado do commit mobile `a7fe849` e ainda não contém cancelamento nem perfil editável.** As funções estão no código atualizado; uma nova build e o teste em aparelho físico continuam pendentes. Exportar o bundle Android não gera um novo APK.
+**Esse APK foi gerado do commit mobile `a7fe849` e ainda não contém cancelamento, perfil editável nem avisos.** As funções estão no código atualizado; uma nova build e o teste em aparelho físico continuam pendentes. Exportar o bundle Android não gera um novo APK.
 
 No Android ARM64, baixe e abra o arquivo; permita a instalação dessa origem quando solicitado e abra **Leperapia Paciente (Prévia)**. Para login e agenda, mantenha o celular na rede da API de demonstração `http://192.168.1.111:8083/api`, com a API ligada. Alterar o `.env` no PC não muda o endereço incluído neste APK; outra API exige nova build.
 
@@ -361,9 +363,10 @@ Os resultados abaixo são **evidências das rodadas registradas**, não uma prom
 | Autorização HTTP — 14/11 | **91 verificações**, sete contas sintéticas/cinco papéis; isolamento clínico, relatórios, notificações e sessão | [Permissões e privacidade](docs/qa/permissoes-privacidade.md); Google com token sintético, sem login interativo real |
 | Carga local — 13/11, conferida 14/11 | **99.831 respostas HTTP 200**; 10/50/200 usuários virtuais por 60 s cada; p95 **493,2 ms** com 200 usuários | [Relatório de carga](docs/qa/relatorio-carga.md); base pequena, loopback, somente leitura; não mede capacidade da Vercel |
 | Agenda e interface | Concorrência, remarcação, autoria, notificações, temas e verificações em 390/1440 px registradas | [Validação 1.2](docs/qa/validacao-1.2.md); cobertura por fluxo, não aceite de todas as telas/dispositivos |
-| Mobile — 15/11 | Lint, tipos, **15 testes de regras**, compatibilidade, exportações web/Android e **Expo Doctor 20/20**, CI aprovada | [CI de `dc5b411`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43764062486); auditoria sem alto/crítico, dez alertas moderados transitivos registrados em SEC-07 |
+| Mobile — 16/11 | Lint, tipos, **21 testes de regras**, compatibilidade, Expo Doctor, auditoria e exportações web/Android; CI aprovada | [CI de `6008be7`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43900676399); auditoria no limiar alto aprovada; alertas moderados da rodada de 15/11 registrados em SEC-07 |
 | Cancelamento mobile — 14–15/11 | Cinco cenários de interface em 320/390 px; oito grupos de integração API/PostgreSQL, com limpeza/preservação conferidas | [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md); testes sintéticos, sem aceite em Android físico |
 | Perfil mobile — 15/11 | Nove testes de regras adicionais (15 totais); sete cenários de interface, cinco grupos de integração/preservação e regressão dos cinco cenários de cancelamento | [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md); perfil salvo e reaberto em banco sintético; aceite físico e versão atômica da API pendentes |
+| Avisos mobile — 16/11 | Seis testes adicionais (21 totais), oito cenários de interface e seis grupos de integração/preservação; regressão dos sete cenários de perfil e cinco de cancelamento | [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md); leitura persistida e atualização entre clientes da API; sem push ou aceite físico |
 
 ### Comandos de desenvolvimento e verificação
 
@@ -418,7 +421,7 @@ A lista detalhada, priorizada e com critérios de aceite está em [CHECKLIST.md]
 1. Concluir escalas em `/doctor/session/[id]/scales` e avaliações em `/patient/reviews/[appointmentId]`.
 2. Resolver a tela `/reception/new-session`, hoje em construção, alinhando o fluxo de quatro etapas ao agendamento funcional em `/reception/appointments/new`.
 3. Validar Google e recuperação real por Gmail; concluir a comunicação de cadastro planejada.
-4. Concluir avisos e recuperação nativa mobile, gerar nova build, homologar em aparelho físico e preparar distribuição com API estável e assinatura apropriada.
+4. Concluir recuperação nativa mobile, gerar nova build com cancelamento/perfil/avisos, homologar em aparelho físico e preparar distribuição com API estável e assinatura apropriada; push depende de decisão de escopo.
 5. Fechar decisões da agenda, completar validação de usabilidade/acessibilidade e preparar segurança, backups, monitoramento e operação.
 
 SaaS multiclínica, Electron, pagamento online/fiscal e login Google completo são expansões/decisões de escopo, não funcionalidades prontas. A versão atual é para uma clínica, com app de pacientes. Os controles existentes não equivalem a certificação de conformidade ou autorização de uso com dados reais.
