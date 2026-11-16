@@ -19,7 +19,7 @@ A versão `1.0.0` do pacote não significa que todo o escopo esteja concluído. 
 | Referência verificada | Estado em 16/11/2026 |
 | --- | --- |
 | Web/API — `main` | Código em [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095), CI aprovada e frontend/backend publicados nesse commit |
-| Mobile — `main` | SDK 58.0.25, horários exatos, cancelamento, perfil editável e avisos em [`6008be7`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/6008be721b81ea814f65fa208648683e51599ea8); [evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md) |
+| Mobile — `main` | SDK 58.0.25, horários exatos, cancelamento, perfil editável, avisos e isolamento de sessão em [`f0716a2`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/f0716a2183daa634a8eb251ca9d1d5088c67c367); [evidências da última rodada](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/session.md) |
 | Android | [Prévia disponível neste repositório](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1), ARM64, assinatura de teste, API de demonstração na rede local |
 | Gmail | Variáveis SMTP presentes no backend de produção; entrega real e recuperação completa ainda precisam de aceite |
 | Google | ID do cliente configurado e fluxo de consulta temporária implementado; autenticação interativa com conta real ainda precisa de aceite |
@@ -316,6 +316,8 @@ Em **Perfil → Editar meus dados**, o paciente atualiza nome, nascimento, telef
 
 Em **Avisos**, o paciente consulta até 50 atualizações recentes, filtra não lidos, marca leitura e abre a própria consulta ou o calendário. O contador inclui todos os avisos não lidos. O estado é compartilhado pela API com o portal e atualiza ao abrir a aba, retomar o app ou atualizar manualmente. Falha de gravação exige conferir o estado antes de repetir. Não há push ou atualização em tempo real nesta etapa. [Evidências dos avisos](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md).
 
+A sessão descarta respostas de acessos anteriores e ordena gravações/exclusões do token. Sair oculta os dados imediatamente; se o armazenamento falhar, a interface fica bloqueada até concluir a limpeza. Desativação, troca de papel e reset de senha foram conferidos contra a API local. A retomada e o SecureStore em aparelho físico continuam pendentes em MOB-09. [Evidências da sessão](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/session.md).
+
 ### Abrir a versão atual no celular
 
 A `main` mobile já contém o SDK 58 e as funções atuais, integradas pelo [PR #1](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1):
@@ -363,10 +365,11 @@ Os resultados abaixo são **evidências das rodadas registradas**, não uma prom
 | Autorização HTTP — 14/11 | **91 verificações**, sete contas sintéticas/cinco papéis; isolamento clínico, relatórios, notificações e sessão | [Permissões e privacidade](docs/qa/permissoes-privacidade.md); Google com token sintético, sem login interativo real |
 | Carga local — 13/11, conferida 14/11 | **99.831 respostas HTTP 200**; 10/50/200 usuários virtuais por 60 s cada; p95 **493,2 ms** com 200 usuários | [Relatório de carga](docs/qa/relatorio-carga.md); base pequena, loopback, somente leitura; não mede capacidade da Vercel |
 | Agenda e interface | Concorrência, remarcação, autoria, notificações, temas e verificações em 390/1440 px registradas | [Validação 1.2](docs/qa/validacao-1.2.md); cobertura por fluxo, não aceite de todas as telas/dispositivos |
-| Mobile — 16/11 | Lint, tipos, **21 testes de regras**, compatibilidade, Expo Doctor, auditoria e exportações web/Android; CI aprovada | [CI de `6008be7`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43900676399); auditoria no limiar alto aprovada; alertas moderados da rodada de 15/11 registrados em SEC-07 |
+| Mobile — 16/11 | Lint, tipos, **39 testes de regras**, compatibilidade, Expo Doctor, auditoria e exportações web/Android; CI aprovada | [CI de `f0716a2`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43965245858); auditoria no limiar alto aprovada; alertas moderados da rodada de 15/11 registrados em SEC-07 |
 | Cancelamento mobile — 14–15/11 | Cinco cenários de interface em 320/390 px; oito grupos de integração API/PostgreSQL, com limpeza/preservação conferidas | [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md); testes sintéticos, sem aceite em Android físico |
 | Perfil mobile — 15/11 | Nove testes de regras adicionais (15 totais); sete cenários de interface, cinco grupos de integração/preservação e regressão dos cinco cenários de cancelamento | [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md); perfil salvo e reaberto em banco sintético; aceite físico e versão atômica da API pendentes |
 | Avisos mobile — 16/11 | Seis testes adicionais (21 totais), oito cenários de interface e seis grupos de integração/preservação; regressão dos sete cenários de perfil e cinco de cancelamento | [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md); leitura persistida e atualização entre clientes da API; sem push ou aceite físico |
+| Sessão mobile — 16/11 | Dezoito testes adicionais (39 totais), seis cenários de interface e cinco grupos de integração/preservação; 20 cenários de perfil/cancelamento/avisos repetidos | [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/session.md); falhas de armazenamento simuladas, revogação por desativação/reset e mudança de papel testadas em API real local; MOB-09 ainda aberto |
 
 ### Comandos de desenvolvimento e verificação
 

@@ -148,3 +148,13 @@ Seis testes de regras adicionais (21 totais), oito cenários de interface em 320
 O teste criou duas contas adultas, três consultas e avisos temporários em `lepera_native_qa`, `127.0.0.1:51235`. Removeu somente seus registros e confirmou a preservação dos usuários, perfis, telefones, endereços, consultas, prontuários, lista de espera e avisos/estados de leitura anteriores. Nenhuma escrita em produção, mudança na API ou migration. Sete cenários de perfil e cinco de cancelamento foram repetidos; tipos, lint e exportações web/Android passaram. A CI passou a gerar os tipos das rotas em clone limpo antes da verificação.
 
 O APK publicado permanece em `a7fe849`, anterior aos avisos/perfil/cancelamento. Nova build, Android físico, TalkBack e retomada/rede nativas continuam pendentes. [Roteiros reproduzíveis e limites dos avisos](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md).
+
+## Sessão mobile e respostas atrasadas — 16/11/2026
+
+Foi reproduzido um erro em que uma resposta 401 da conta anterior encerrava um novo login. O controlador agora identifica o ciclo de sessão, descarta respostas antigas inclusive de sucesso, ordena operações de armazenamento e valida a correspondência entre identidade autenticada e perfil. Logout/401 atuais ocultam as telas antes de aguardar a exclusão do token; se ela falhar, a interface fica bloqueada e a tentativa de recuperação conclui a limpeza, sem restaurar o acesso anterior. Login interrompido também não pode deixar sua credencial salva após a falha de um login posterior.
+
+Dezoito testes de sessão foram adicionados (39 totais), cobrindo falhas de leitura/escrita/exclusão simuladas, restauração offline, corrida entre operações, identidade/perfil inválido e troca de conta. Seis cenários de interface passaram, além da repetição dos 20 cenários anteriores de perfil/cancelamento/avisos. Tipos, lint e bundles web/Android foram aprovados.
+
+Cinco grupos de integração/preservação com NestJS/PostgreSQL local conferiram token adulterado, conta desativada, redefinição real da senha, recusa da senha antiga/reuso do link e mudança de papel. A conta temporária e sua credencial de recuperação foram removidas, e o estado anterior de contas, recuperação, avisos e dados clínicos foi preservado. Nenhum e-mail, escrita em produção ou mudança de backend/migration nesta rodada.
+
+MOB-09 permanece aberto para Android físico, retomada, armazenamento real e privacidade ao alternar aplicativos. A exclusão persistente não é garantida se o armazenamento continuar falhando até o encerramento do processo; o logout continua local. O APK publicado não foi recompilado. [Reprodução e limites completos](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/session.md).
