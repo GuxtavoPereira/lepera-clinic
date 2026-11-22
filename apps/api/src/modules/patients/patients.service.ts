@@ -49,19 +49,20 @@ export class PatientsService {
       }
     }
 
+    const userData = await this.users.prepareCreate(
+      {
+        name: dto.name,
+        cpf: dto.cpf,
+        email: dto.email,
+        password: dto.password,
+        role: 'PATIENT',
+      },
+      { cpf: dto.cpf, birthDate },
+    );
+
     try {
       return await this.prisma.db.$transaction(async (tx) => {
-        const user = await this.users.create(
-          {
-            name: dto.name,
-            cpf: dto.cpf,
-            email: dto.email,
-            password: dto.password,
-            role: 'PATIENT',
-          },
-          tx,
-          { cpf: dto.cpf, birthDate },
-        );
+        const user = await this.users.createPrepared(userData, tx);
 
         const patient = await tx.patient.create({
           data: {

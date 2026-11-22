@@ -37,7 +37,7 @@ export default function RegisterPage() {
     } catch (err) {
       wizard.handleApiError(
         err,
-        "Não foi possível concluir o cadastro. Seus dados foram mantidos; tente novamente.",
+        "Não foi possível confirmar o cadastro. Tente entrar com seu e-mail e senha antes de enviar novamente. Seus dados foram mantidos nesta tela.",
       );
     } finally {
       setSubmitting(false);

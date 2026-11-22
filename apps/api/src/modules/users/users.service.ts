@@ -15,6 +15,7 @@ import { PasswordService } from './password.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type { DbClient } from '../../prisma/prisma.types';
+import type { Prisma } from '@lepera/db';
 
 type PersonalData = { name?: string; cpf?: string; birthDate?: string };
 
@@ -32,24 +33,40 @@ export class UsersService {
     db: DbClient = this.prisma.db,
     extra: { cpf?: string; birthDate?: Date } = {},
   ) {
+    return this.createPrepared(await this.prepareCreate(dto, extra), db);
+  }
+
+  /** Prepara os dados antes de abrir uma transação: bcrypt pode ser demorado. */
+  async prepareCreate(
+    dto: CreateUserDto,
+    extra: { cpf?: string; birthDate?: Date } = {},
+  ): Promise<Prisma.UserCreateInput> {
     const cpf = extra.cpf ?? dto.cpf;
     if (!isValidCpf(cpf)) {
       throw new BadRequestException('CPF inválido');
     }
     const passwordHash = await this.passwords.hash(dto.password);
 
+    return {
+      name: dto.name,
+      email: dto.email,
+      passwordHash,
+      role: dto.role,
+      cpf,
+      birthDate:
+        extra.birthDate ??
+        (dto.birthDate ? parseBirthDate(dto.birthDate) : undefined),
+    };
+  }
+
+  /** Recebe apenas dados preparados internamente; não é um DTO da API. */
+  async createPrepared(
+    data: Prisma.UserCreateInput,
+    db: DbClient = this.prisma.db,
+  ) {
     try {
       return await db.user.create({
-        data: {
-          name: dto.name,
-          email: dto.email,
-          passwordHash,
-          role: dto.role,
-          cpf,
-          birthDate:
-            extra.birthDate ??
-            (dto.birthDate ? parseBirthDate(dto.birthDate) : undefined),
-        },
+        data,
         omit: { passwordHash: true },
       });
     } catch (error) {

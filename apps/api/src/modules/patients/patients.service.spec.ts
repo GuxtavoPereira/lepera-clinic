@@ -20,6 +20,8 @@ describe('PatientsService', () => {
 
   let service: PatientsService;
   let usersCreate: jest.Mock;
+  let prepareCreate: jest.Mock;
+  let transaction: jest.Mock;
   let updatePersonalData: jest.Mock;
   let patientCreate: jest.Mock;
   let patientUpdate: jest.Mock;
@@ -34,6 +36,13 @@ describe('PatientsService', () => {
   let addressCreate: jest.Mock;
 
   beforeEach(() => {
+    prepareCreate = jest.fn().mockResolvedValue({
+      name: adult.name,
+      email: adult.email,
+      cpf: adult.cpf,
+      role: 'PATIENT',
+      passwordHash: 'prepared-hash',
+    });
     usersCreate = jest.fn().mockResolvedValue({
       id: 'user-1',
       name: adult.name,
@@ -54,6 +63,10 @@ describe('PatientsService', () => {
     addressFindFirst = jest.fn().mockResolvedValue(null);
     addressCreate = jest.fn().mockResolvedValue({});
 
+    transaction = jest.fn(
+      (callback: (client: unknown) => Promise<unknown>): Promise<unknown> =>
+        callback(db),
+    );
     const db = {
       patient: {
         create: patientCreate,
@@ -73,15 +86,16 @@ describe('PatientsService', () => {
         update: jest.fn(),
         create: addressCreate,
       },
-      $transaction: jest.fn(
-        (callback: (client: unknown) => Promise<unknown>): Promise<unknown> =>
-          callback(db),
-      ),
+      $transaction: transaction,
     };
 
     service = new PatientsService(
       { db } as unknown as PrismaService,
-      { create: usersCreate, updatePersonalData } as unknown as UsersService,
+      {
+        prepareCreate,
+        createPrepared: usersCreate,
+        updatePersonalData,
+      } as unknown as UsersService,
       {} as AuditService,
     );
   });
@@ -90,10 +104,13 @@ describe('PatientsService', () => {
     it('cria usuário (com CPF e nascimento), perfil e telefone', async () => {
       await service.create(adult);
 
-      expect(usersCreate).toHaveBeenCalledWith(
+      expect(prepareCreate).toHaveBeenCalledWith(
         expect.objectContaining({ role: 'PATIENT', email: adult.email }),
-        expect.anything(),
         { cpf: adult.cpf, birthDate: new Date('1990-05-20T12:00:00.000Z') },
+      );
+      expect(usersCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ passwordHash: 'prepared-hash' }),
+        expect.anything(),
       );
       expect(patientCreate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -103,6 +120,23 @@ describe('PatientsService', () => {
           }) as unknown,
         }),
       );
+    });
+
+    it('aguarda a preparação da senha antes de abrir a transação', async () => {
+      let finishPreparation!: (data: object) => void;
+      prepareCreate.mockReturnValue(
+        new Promise((resolve) => {
+          finishPreparation = resolve;
+        }),
+      );
+      const result = service.create(adult);
+      await Promise.resolve();
+      expect(transaction).not.toHaveBeenCalled();
+      expect(usersCreate).not.toHaveBeenCalled();
+      finishPreparation({ passwordHash: 'prepared-hash' });
+      await result;
+      expect(transaction).toHaveBeenCalledTimes(1);
+      expect(patientCreate).toHaveBeenCalledTimes(1);
     });
 
     it('menor de 18 anos exige responsável legal', async () => {

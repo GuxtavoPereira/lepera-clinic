@@ -77,7 +77,8 @@ export function useRegistrationWizard(
     setStep(next);
   }
   function handleApiError(error: unknown, fallback: string) {
-    const message = error instanceof ApiError ? error.message : fallback;
+    const message =
+      error instanceof ApiError && error.status < 500 ? error.message : fallback;
     setGeneralError(message);
     if (!(error instanceof ApiError)) return;
     if (error.status === 409) {
@@ -87,6 +88,13 @@ export function useRegistrationWizard(
         cpf: "Confira o CPF: já pode existir uma conta com este e-mail ou CPF.",
       });
     } else if (error.status === 400) {
+      if (/responsável legal/i.test(message)) {
+        showErrors({
+          emergencyContactName: "Confira o nome completo do responsável legal.",
+          emergencyContactPhone: "Confira o telefone do responsável legal com DDD.",
+        });
+        return;
+      }
       const field = /cpf/i.test(message)
         ? "cpf"
         : /e-?mail/i.test(message)
