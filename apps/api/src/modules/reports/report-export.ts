@@ -1,3 +1,4 @@
+import { protectReport } from './report-privacy';
 import PDFDocument from 'pdfkit';
 // PDFKit loads these lazily; explicit imports retain them in serverless traces.
 import 'pdfkit/standard-fonts/Helvetica';
@@ -14,7 +15,8 @@ export function csvCell(value: string): string {
 }
 
 export function reportCsv(report: OperationalReport): Buffer {
-  const lines = [report.columns, ...report.rows].map((row) =>
+  const safe = protectReport(report);
+  const lines = [safe.columns, ...safe.rows].map((row) =>
     row.map(csvCell).join(';'),
   );
   return Buffer.from(`\uFEFF${lines.join('\r\n')}\r\n`, 'utf8');
@@ -25,6 +27,7 @@ function dateLabel(date: string): string {
 }
 
 export function reportPdf(report: OperationalReport): Promise<Buffer> {
+  report = protectReport(report);
   return new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',

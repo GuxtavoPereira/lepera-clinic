@@ -1,9 +1,11 @@
 "use client";
+
+import { privateCpf } from "@lepera/contracts";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch, ApiError } from "@/lib/api-client";
-import { maskCpf, maskPhone } from "@/lib/br-format";
+import { maskPhone } from "@/lib/br-format";
 import { formatDatePtBr } from "@/lib/date-format";
 type Patient = {
   user: {
@@ -69,7 +71,7 @@ export default function AdministrativePatientPage() {
           <dl className="grid gap-5 sm:grid-cols-2">
             {[
               ["E-mail", patient.user.email],
-              ["CPF", maskCpf(patient.user.cpf)],
+              ["CPF", privateCpf(patient.user.cpf)],
               [
                 "Nascimento",
                 patient.user.birthDate

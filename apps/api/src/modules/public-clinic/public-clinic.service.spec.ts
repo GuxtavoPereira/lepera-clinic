@@ -14,6 +14,28 @@ describe('PublicClinicService privacy', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
+  it('includes optional public Lattes fields without exposing private data', async () => {
+    doctors.mockResolvedValue([
+      {
+        id: 'd',
+        bio: null,
+        specialty: 'Psicologia',
+        clinicalApproach: null,
+        licenseNumber: '00/000',
+        lattesUrl: 'https://lattes.cnpq.br/1234567890123456',
+        lattesSummary: 'Formação informada pelo profissional',
+        user: { name: 'Teste', photoUrl: null, cpf: 'private' },
+      },
+    ]);
+    receptionists.mockResolvedValue([]);
+    const result = await service.team();
+    expect(result.doctors[0]).toMatchObject({
+      lattesUrl: 'https://lattes.cnpq.br/1234567890123456',
+      lattesSummary: 'Formação informada pelo profissional',
+    });
+    expect(JSON.stringify(result)).not.toContain('private');
+  });
+
   it('publishes only active clinical and reception presentations without account or patient data', async () => {
     doctors.mockResolvedValue([
       {
@@ -51,6 +73,8 @@ describe('PublicClinicService privacy', () => {
           specialty: 'Psicologia Clínica',
           clinicalApproach: 'TCC',
           bio: 'Apresentação profissional',
+          lattesUrl: null,
+          lattesSummary: null,
           licenseNumber: '06/000001',
           photoUrl: null,
         },

@@ -38,8 +38,16 @@ Cada resultado fecha o cenário correspondente, não toda a área automaticament
 | T15 · NOT-02, UX-03 | Após aprovação/cancelamento de T03/T05, abra Avisos no portal, marque um como lido, atualize e siga o destino. | Estado de leitura persiste, contagem atualiza e destino abre a consulta correta. Não pressupõe notificação push ou e-mail. | NÃO TESTADO |
 | T16 · UX-04/05/06, QA-03 | Repita navegação, busca, calendário e um formulário com janela estreita e no navegador do celular; alterne temas. Use zoom de 200% e teclado no computador. | Ações e mensagens continuam acessíveis, sem texto essencial cortado; foco visível e contraste legível. Este é teste do **site**, não do APK. | NÃO TESTADO |
 
+## Terceiro lote — Lattes e CPF protegido
+
+| ID / checklist | O que fazer | Resultado esperado | Resultado do usuário |
+| --- | --- | --- | --- |
+| T17 · PRI-11 | Em uma conta de profissional de demonstração, abra Meu perfil, preencha apenas um resumo de teste no Lattes e salve. Reabra o perfil; em outra janela, recarregue o site público e abra o card desse profissional. Depois apague o resumo e o link, salve e recarregue o card. | Resumo persiste e aparece no card. Ao limpar os dois campos, a seção Lattes desaparece. Nenhuma seção vazia fica visível. | NÃO TESTADO |
+| T18 · PRI-11, UX-02 | No mesmo perfil, tente salvar `https://example.com` no link Lattes. Se possuir um endereço público de currículo autorizado para o teste, use-o depois. Não atribua currículo de outra pessoa ao profissional. | Link externo inválido é recusado com erro junto ao campo e foco. Link Lattes válido fica salvo e abre em nova aba. Sem link autorizado disponível, registre a segunda parte como NÃO TESTADA. | NÃO TESTADO |
+| T19 · PRI-03 | Confira CPF no perfil bloqueado, lista/seletor de pacientes e resumo da ficha. Em uma receita de teste, coloque na descrição um CPF sintético de demonstração com e sem pontuação; gere prévia, PDF e CSV. Não envie esse CPF no retorno. | Telas de leitura e relatórios mostram apenas os dois últimos dígitos; o CPF integral não aparece nos arquivos. Cadastro/correção autorizada mantém o valor original e continua validando normalmente. Não é necessário imprimir. | NÃO TESTADO |
+
 ## Ainda não disponíveis para aceite
 
-Nome social, máscara de CPF ampliada, atualização CID/DSM, testes psicológicos específicos no estoque, novos modelos documentais, reservas de salas, mensagens clínicas, devolutivas, Lattes, conta/tela própria do responsável e prontuário do paciente permanecem na [checklist](../../CHECKLIST.md). Testá-los como se estivessem prontos produziria falsos bugs. Acrescentaremos cenários conforme cada função for entregue no web.
+Nome social, atualização CID/DSM, testes psicológicos específicos no estoque, novos modelos documentais, reservas de salas, mensagens clínicas, devolutivas, conta/tela própria do responsável e prontuário do paciente permanecem na [checklist](../../CHECKLIST.md). Testá-los como se estivessem prontos produziria falsos bugs. Acrescentaremos cenários conforme cada função for entregue no web.
 
 Não marcar como concluídos testes de isolamento entre usuários, concorrência, restauração de backup ou segurança apenas por estes passos. Essas evidências técnicas continuam separadas do seu aceite de uso.

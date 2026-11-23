@@ -6,3 +6,6 @@ export * from "./cpf";
 export * from "./financial";
 export * from "./google-preview";
 export * from "./psychology-specialties";
+
+export * from "./privacy";
+export * from "./lattes";

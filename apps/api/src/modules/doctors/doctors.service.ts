@@ -84,6 +84,8 @@ export class DoctorsService {
           data: {
             clinicalApproach: dto.clinicalApproach,
             bio: dto.bio,
+            lattesUrl: dto.lattesUrl,
+            lattesSummary: dto.lattesSummary,
             room: dto.room,
           },
         });

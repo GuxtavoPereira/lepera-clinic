@@ -1,3 +1,4 @@
+import { protectReport } from './report-privacy';
 import {
   BadRequestException,
   ForbiddenException,
@@ -78,7 +79,7 @@ export class ReportsService {
     query: ReportQueryDto,
     actor: AuthUser,
   ): Promise<ReportPreview> {
-    const report = await this.build(query, actor);
+    const report = protectReport(await this.build(query, actor));
     return {
       ...report,
       rows: report.rows.slice(0, REPORT_PREVIEW_ROWS),

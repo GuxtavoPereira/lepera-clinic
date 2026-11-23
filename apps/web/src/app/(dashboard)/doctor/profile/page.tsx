@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { normalizeLattesUrl } from "@lepera/contracts";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Save, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,8 @@ type Me = {
     specialty: string;
     clinicalApproach: string | null;
     bio: string | null;
+    lattesUrl?: string | null;
+    lattesSummary?: string | null;
     room: string | null;
   } | null;
 };
@@ -48,6 +51,11 @@ export default function DoctorProfilePage() {
   });
   const [clinicalApproach, setClinicalApproach] = useState("");
   const [bio, setBio] = useState("");
+  const [lattesUrl, setLattesUrl] = useState("");
+  const [lattesSummary, setLattesSummary] = useState("");
+  const [lattesError, setLattesError] = useState<string>();
+  const lattesInput = useRef<HTMLInputElement>(null);
+  const savingRef = useRef(false);
   const [room, setRoom] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,6 +76,8 @@ export default function DoctorProfilePage() {
     });
     setClinicalApproach(me.doctor?.clinicalApproach ?? "");
     setBio(me.doctor?.bio ?? "");
+    setLattesUrl(me.doctor?.lattesUrl ?? "");
+    setLattesSummary(me.doctor?.lattesSummary ?? "");
     setRoom(me.doctor?.room ?? "");
   }
 
@@ -92,6 +102,13 @@ export default function DoctorProfilePage() {
   }, []);
 
   async function handleSave() {
+    if (savingRef.current) return;
+    setLattesError(undefined);
+    if (lattesUrl.trim() && !normalizeLattesUrl(lattesUrl)) {
+      setLattesError("Use o link público do Lattes com os 16 dígitos do currículo.");
+      lattesInput.current?.focus();
+      return;
+    }
     if (personal.name.trim().length < 2) {
       setError("Informe o nome completo.");
       return;
@@ -107,6 +124,7 @@ export default function DoctorProfilePage() {
 
     const text = (value: string) => value.trim() || null;
 
+    savingRef.current = true;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -119,6 +137,8 @@ export default function DoctorProfilePage() {
           ...(!cpfLocked ? { cpf: onlyDigits(personal.cpf) } : {}),
           clinicalApproach: text(clinicalApproach),
           bio: text(bio),
+          lattesUrl: lattesUrl.trim() ? normalizeLattesUrl(lattesUrl) : null,
+          lattesSummary: text(lattesSummary),
           room: text(room),
         }),
       });
@@ -129,6 +149,7 @@ export default function DoctorProfilePage() {
         err instanceof ApiError ? err.message : "Não foi possível salvar o perfil.",
       );
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -223,6 +244,15 @@ export default function DoctorProfilePage() {
                 </FormField>
               </div>
             </div>
+          </FormSection>
+
+          <FormSection title="Currículo Lattes (opcional)" description="O resumo e o link preenchidos aqui aparecem ao abrir seu card no site público. Deixe ambos vazios para ocultar esta seção.">
+            <FormField id="lattes-url" label="Link do currículo" error={lattesError} hint="Copie o endereço público: https://lattes.cnpq.br/ seguido dos 16 dígitos.">
+              <input ref={lattesInput} id="lattes-url" type="url" maxLength={200} className={inputClassName} value={lattesUrl} disabled={saving} aria-invalid={Boolean(lattesError)} onChange={(event) => { setLattesUrl(event.target.value); setLattesError(undefined); setNotice(null); }} />
+            </FormField>
+            <FormField id="lattes-summary" label="Resumo do currículo" hint="Até 2.000 caracteres. Informe formação e trajetória profissional que deseja compartilhar publicamente.">
+              <textarea id="lattes-summary" maxLength={2000} rows={5} className={textareaClassName} value={lattesSummary} disabled={saving} onChange={(event) => { setLattesSummary(event.target.value); setNotice(null); }} />
+            </FormField>
           </FormSection>
 
           <div className="flex justify-end border-t border-slate-100 pt-5">

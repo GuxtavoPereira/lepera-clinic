@@ -1,5 +1,7 @@
 "use client";
 
+import { privateCpf } from "@lepera/contracts";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -15,7 +17,7 @@ import {
   type PatientFormState,
 } from "@/components/patients/patient-fields";
 import { ApiError, apiFetch } from "@/lib/api-client";
-import { maskCpf, maskPhone } from "@/lib/br-format";
+import { maskPhone } from "@/lib/br-format";
 import { formatDatePtBr, formatDateTimePtBr } from "@/lib/date-format";
 
 type PatientDetail = {
@@ -241,7 +243,7 @@ export default function PatientDetailsPage() {
             <dl className="grid gap-5 sm:grid-cols-2">
               <Info
                 label="CPF"
-                value={patient.user.cpf ? maskCpf(patient.user.cpf) : null}
+                value={patient.user.cpf ? privateCpf(patient.user.cpf) : null}
               />
               <Info
                 label="Nascimento"

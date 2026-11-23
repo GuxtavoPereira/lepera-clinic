@@ -143,6 +143,8 @@ model Doctor {
   specialty        String // Especialidade
   clinicalApproach String? // Abordagem principal (TCC, Psicanálise, etc.)
   bio              String? @db.Text // Biografia
+  lattesUrl        String? // Link público opcional do currículo
+  lattesSummary    String? @db.Text // Resumo informado pelo profissional
   averageRating    Float   @default(0.0) // Nota média
   totalReviews     Int     @default(0) // Total de avaliações
   room             String? // Consultório/Sala

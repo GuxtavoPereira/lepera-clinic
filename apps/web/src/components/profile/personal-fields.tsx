@@ -1,6 +1,7 @@
 "use client";
 
 import { FormField, inputClassName } from "@/components/forms/form-field";
+import { privateCpf } from "@lepera/contracts";
 import { maskCpf } from "@/lib/br-format";
 
 export type PersonalFormState = {
@@ -68,7 +69,7 @@ export function PersonalFields({
           className={inputClassName}
           inputMode="numeric"
           placeholder="000.000.000-00"
-          value={value.cpf}
+          value={cpfLocked ? privateCpf(value.cpf) : value.cpf}
           onChange={(e) => onChange({ cpf: maskCpf(e.target.value) })}
           readOnly={cpfLocked}
           required={!cpfLocked}

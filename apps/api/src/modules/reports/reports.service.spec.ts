@@ -67,6 +67,22 @@ const financial = (
 });
 
 describe('ReportsService', () => {
+  it('masks CPF inside descriptions in preview and CSV while preserving stored text', async () => {
+    const entry = financial('12.50', {
+      description: 'Sessão CPF 123.456.789-09 / 12345678909',
+    });
+    finances.mockResolvedValue([entry]);
+    const preview = await service.preview(query({ kind: 'financial' }), admin);
+    expect(JSON.stringify(preview)).not.toContain('12345678909');
+    expect(JSON.stringify(preview)).not.toContain('123.456.789-09');
+    expect(JSON.stringify(preview)).toContain('***.***.***-09');
+    const csv = await service.export(
+      { ...query({ kind: 'financial' }), format: 'csv' },
+      admin,
+    );
+    expect(csv.buffer.toString('utf8')).not.toContain('12345678909');
+    expect(entry.description).toContain('123.456.789-09');
+  });
   let service: ReportsService;
   let appointments: jest.Mock<Promise<AppointmentRow[]>, [unknown]>;
   let finances: jest.Mock<Promise<FinancialRow[]>, [unknown]>;

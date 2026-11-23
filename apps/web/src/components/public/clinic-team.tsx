@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeLattesUrl } from "@lepera/contracts";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -26,6 +27,8 @@ type PublicDoctor = {
   specialty: string;
   clinicalApproach: string | null;
   bio: string | null;
+  lattesUrl?: string | null;
+  lattesSummary?: string | null;
   licenseNumber: string;
   photoUrl: string | null;
 };
@@ -94,6 +97,7 @@ export function ClinicTeam() {
   const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<PublicDoctor | null>(null);
   const activeCard = useRef<HTMLButtonElement | null>(null);
+  const selectedLattesUrl = selected?.lattesUrl ? normalizeLattesUrl(selected.lattesUrl) : null;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -313,6 +317,13 @@ export function ClinicTeam() {
                     "A apresentação deste profissional será disponibilizada em breve. Consulte a agenda para conhecer os horários de atendimento."}
                 </p>
               </div>
+              {(selected.lattesSummary?.trim() || selectedLattesUrl) && (
+                <section aria-label="Currículo Lattes" className="space-y-3 rounded-xl border border-border p-5">
+                  <h3 className="font-semibold text-foreground">Currículo Lattes</h3>
+                  {selected.lattesSummary?.trim() && <p className="whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">{selected.lattesSummary}</p>}
+                  {selectedLattesUrl && <a href={selectedLattesUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline underline-offset-4">Consultar currículo no Lattes <span className="sr-only">(abre em nova aba)</span><ArrowUpRight aria-hidden="true" className="size-4" /></a>}
+                </section>
+              )}
               <Link
                 href={`/explore/calendar?doctorId=${encodeURIComponent(selected.id)}`}
                 className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"

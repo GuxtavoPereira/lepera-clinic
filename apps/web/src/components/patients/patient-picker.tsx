@@ -1,11 +1,12 @@
 "use client";
 
+import { privateCpf } from "@lepera/contracts";
+
 import { useState } from "react";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { inputClassName } from "@/components/forms/form-field";
 import { ApiError, apiFetch } from "@/lib/api-client";
-import { maskCpf } from "@/lib/br-format";
 
 export type PickedPatient = { id: string; name: string; email: string };
 
@@ -124,7 +125,7 @@ export function PatientPicker({ value, onChange }: Props) {
                 </span>
                 <span className="text-xs text-slate-500">
                   {patient.user.email}
-                  {patient.user.cpf && ` · CPF ${maskCpf(patient.user.cpf)}`}
+                  {patient.user.cpf && ` · CPF ${privateCpf(patient.user.cpf)}`}
                 </span>
               </button>
             </li>

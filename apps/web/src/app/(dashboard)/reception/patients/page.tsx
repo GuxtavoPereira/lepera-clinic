@@ -1,5 +1,7 @@
 "use client";
 
+import { privateCpf } from "@lepera/contracts";
+
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -8,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, inputClassName } from "@/components/forms/form-field";
 import { NewPatientSheet } from "@/components/patients/new-patient-sheet";
 import { ApiError, apiFetch } from "@/lib/api-client";
-import { maskCpf, maskPhone } from "@/lib/br-format";
+import { maskPhone } from "@/lib/br-format";
 import { formatDatePtBr } from "@/lib/date-format";
 
 type PatientListItem = {
@@ -151,7 +153,7 @@ export default function ReceptionPatientsPage() {
                     </p>
                     <p className="text-xs text-slate-400">
                       {patient.user.cpf
-                        ? `CPF ${maskCpf(patient.user.cpf)}`
+                        ? `CPF ${privateCpf(patient.user.cpf)}`
                         : "CPF não informado"}
                       {patient.user.birthDate &&
                         ` · Nasc. ${formatDatePtBr(patient.user.birthDate)}`}
