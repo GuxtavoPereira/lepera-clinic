@@ -1,6 +1,6 @@
 # Leperapia Clinic — checklist de conclusão 1.3
 
-> **Revisão: 16/11/2026. Fonte canônica: este arquivo no repositório web/API.**
+> **Revisão: 23/11/2026. Fonte canônica: este arquivo no repositório web/API.**
 > Substitui o diagnóstico da `checklist1.2.md`; o histórico anterior é preservado. Abrange site público, portal, API, banco, operação e aplicativo de pacientes. Não autoriza novas expansões automaticamente.
 
 ## Como usar e o que significa concluir
@@ -25,11 +25,11 @@ Cada item precisa de responsável nominal e evidência na execução. As áreas 
 
 | Fonte | Referência | O que demonstra |
 | --- | --- | --- |
-| Código web/API | `main`, [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095) | Base de execução anterior a esta revisão documental |
-| CI web/API | [Execução de 14/11](https://github.com/GuxtavoPereira/lepera-clinic/actions/runs/43641624683) | Lint, tipos, builds e 476 testes automatizados |
-| Mobile `main` | [`f0716a2`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/f0716a2183daa634a8eb251ca9d1d5088c67c367), após [PR #1 integrado](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) | SDK 58.0.25, cancelamento, perfil editável, avisos e correções de isolamento da sessão disponíveis ao clonar a `main` |
-| CI mobile | [Execução de 16/11](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43965245858), código `f0716a2` | Aprovada: lint/tipos, 39 testes, compatibilidade/Doctor, auditoria e exportações web/Android; não substitui aceite físico |
-| APK | [Android preview no repositório principal](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1) | Mesmo APK ARM64 da prévia mobile, com SHA-256 verificado; API sintética na LAN, sem homologação física |
+| Código web/API | `b20c9c3`, publicado | Correção de timeout no cadastro; novas prioridades ainda pendentes |
+| CI web/API | [Execução de 22/11](https://github.com/GuxtavoPereira/lepera-clinic/actions/runs/45031080239) | Aprovada, incluindo 463 testes API |
+| Mobile `main` | `bac7ba5`, SDK 58.0.26 | Código incluído no APK online 0.2.0 |
+| CI mobile | [Execução de 22/11](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/45031669242) | 45 testes, tipos/lint, compatibilidade/Doctor, auditoria e exports aprovados; sem aceite funcional do APK |
+| APK | [0.2.0 online](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.2.0-online.1) | API publicada, build assinada, ARM64+x86_64. Validação funcional pelo usuário |
 | Testes integrados/UI | [Validação 1.2](docs/qa/validacao-1.2.md) | Agenda, concorrência, notificações, relatórios e telas verificadas |
 | Segurança por recurso | [Permissões e privacidade](docs/qa/permissoes-privacidade.md) | 91 chamadas HTTP com sete contas/cinco papéis; não auditoria completa |
 | Desempenho | [Carga local](docs/qa/relatorio-carga.md) | 99.831 leituras HTTP 200; 60 s por nível 10/50/200 usuários; não capacidade de produção |
@@ -38,15 +38,37 @@ Cada item precisa de responsável nominal e evidência na execução. As áreas 
 
 O [registro da 1.0](docs/release-1.0.md) descreve 02/11 e permanece histórico. Não foi repetida toda a suíte nesta revisão documental. Web/API não possuem uma GitHub Release formal até esta data; o APK tem release própria.
 
+## Prioridades máximas solicitadas em 23/11/2026
+
+Esta é a nova ordem de produto, confirmada pelo usuário. Os itens abaixo estão **pendentes**, não são funcionalidades desta build. Preservar o histórico dos registros existentes durante as migrações. Testes funcionais do APK serão feitos pelo usuário; não continuar a automação de testes do APK sem nova solicitação. Os P0 de integridade/acesso continuam sendo critérios para liberar cada alteração.
+
+- [ ] **PRI-01 · Máxima — Somente presencial:** retirar consultas online de opções, textos, filtros e fluxos no site, portal, app, API e novos dados de demonstração. Definir tratamento dos registros antigos sem apagar histórico ou mudar consultas existentes silenciosamente.
+- [ ] **PRI-02 · Máxima — Nome social:** incluir no cadastro e edição; abrir modal perguntando se deseja ser chamado por esse nome em todo o sistema. Persistir preferência e aplicá-la às telas, mensagens e documentos pertinentes, mantendo nome civil separado quando necessário para identificação.
+- [ ] **PRI-03 · Máxima — CPF mascarado:** aplicar máscara de privacidade em relatórios, PDFs/CSV, listagens e exibições correlatas. Manter CPF integral apenas onde a operação autorizada realmente o exija; conferir também o arquivo exportado.
+- [ ] **PRI-04 · Máxima — CID-11 e DSM-5-TR:** atualizar campos, referências e modelos; identificar a versão dos registros antigos, preservar conteúdo e não converter diagnósticos automaticamente. Conferir fontes oficiais e conteúdo permitido na implementação.
+- [ ] **PRI-05 · Máxima — Testes psicológicos no estoque:** categoria específica, identificação/especificação dos testes e materiais, edição/versão, unidade/quantidade e controle de movimentação. Não confundir estoque de materiais com aplicação e correção de instrumentos clínicos (CLI-01/DEC-04).
+- [ ] **PRI-06 · Máxima — Documentos do psicólogo:** criar/preencher laudo psicológico, prontuário, relatório, “Rapor”/entrevista inicial, avaliação psicológica, anotação geral, diário de campo de estagiários e outros modelos definidos. Prever rascunho, autoria, versão, assinatura/liberação, permissões e exportação; revisar modelos antes do uso. Confirmar nomenclatura “Rapor” na definição do modelo.
+- [ ] **PRI-07 · Máxima — FAQ público:** seção de perguntas frequentes no site público, com conteúdo coerente com atendimento exclusivamente presencial, agendamento e orientações da clínica.
+- [ ] **PRI-08 · Máxima — Reserva de salas/consultórios:** cadastro de espaços, calendário visual semelhante à agenda, disponibilidade, reserva/cancelamento e prevenção de conflitos simultâneos; definir relação com a consulta e quem pode reservar.
+- [ ] **PRI-09 · Máxima — Orientações ao paciente:** psicólogo envia mensagens ao paciente vinculado, incluindo desmarcação e orientações após consulta. Definir caixa de mensagens, leitura/avisos e histórico; uma mensagem não altera o estado da consulta por si só.
+- [ ] **PRI-10 · Máxima — Devolutiva de menores:** documento específico, elaborado/liberado pelo psicólogo, acessível aos responsáveis autorizados. Relacionar documento, paciente e vínculo; não tornar todas as anotações acessíveis automaticamente.
+- [ ] **PRI-11 · Máxima — Lattes opcional:** permitir adicionar resumo/link do currículo Lattes do profissional e mostrá-lo no detalhe aberto pelo card público. Quando ausente, não exibir campo ou seção vazia.
+- [ ] **PRI-12 · Máxima — Responsável com conta própria:** executar ACC-09: início “Para mim/Para outra pessoa”, dados e CPF obrigatório do responsável, credenciais próprias, vínculo com a criança e tela do responsável. CPF da criança separado; não associar paciente existente apenas por informar CPF. Incluir acesso às devolutivas autorizadas (PRI-10) e compatibilidade futura do app. [Plano](docs/plans/guardian-accounts.md).
+- [ ] **PRI-13 · Máxima — Paciente acessa o próprio prontuário:** implementar consulta autenticada do prontuário do próprio paciente no portal/app, com autorização por registro, histórico/versão e proteção contra acesso cruzado. Definir explicitamente a publicação e a separação entre prontuário, anotações de trabalho e documentos destinados ao responsável; adaptar CLI-04/SEC, sem acesso irrestrito por papel.
+- [ ] **PRI-14 · Última prioridade, se houver tempo — Resumo em parágrafo:** relatório com as informações principais e úteis do paciente. Definir fontes/escopo, manter referência ao registro original e revisão do profissional; não presumir uso de IA nem gerar diagnóstico automaticamente.
+
+As pendências antigas abaixo permanecem registradas. Quando sobrepostas, PRI-12/ACC-09 são o mesmo incremento e devem compartilhar evidências, sem tratar a duplicação de referência como duas entregas.
+
 ## Ordem recomendada para continuar
 
-1. **Fechar decisões do escopo:** DEC-01 a DEC-08, sobretudo 24h, nova sessão, escalas e assinatura.
-2. **Validar integrações reais:** ACC-01 e ACC-02, com contas de teste controladas.
-3. **Concluir lacunas visíveis:** CLI-01, CLI-02 e AGE-01; ligar avaliações ao relatório de satisfação.
-4. **Finalizar o app:** concluir os itens abertos MOB-02 a MOB-11, instalação física e funções restantes do paciente; MOB-01/MOB-04/MOB-05/MOB-08 já entregues.
-5. **Completar testes da operação:** AGE, FIN, EST e REP; corrigir falhas encontradas.
-6. **Fechar segurança e recuperação:** SEC e OPS antes de pacientes reais.
-7. **Homologar apresentação e release:** QA, DOC e REL; repetir testes dos fluxos alterados.
+1. **Executar as novas prioridades máximas:** PRI-01 a PRI-13; PRI-14 fica por último. Conta do responsável corresponde a PRI-12/ACC-09.
+2. **Fechar decisões do escopo:** DEC-01 a DEC-08, sobretudo 24h, nova sessão, escalas e assinatura.
+3. **Validar integrações reais:** ACC-01 e ACC-02, com contas de teste controladas.
+4. **Concluir lacunas visíveis:** CLI-01, CLI-02 e AGE-01; ligar avaliações ao relatório de satisfação.
+5. **Finalizar o app:** concluir os itens abertos MOB-02 a MOB-11, instalação física e funções restantes do paciente; MOB-01/MOB-04/MOB-05/MOB-08 já entregues.
+6. **Completar testes da operação:** AGE, FIN, EST e REP; corrigir falhas encontradas.
+7. **Fechar segurança e recuperação:** SEC e OPS antes de pacientes reais.
+8. **Homologar apresentação e release:** QA, DOC e REL; repetir testes dos fluxos alterados.
 
 As etapas podem avançar em paralelo quando contratos e arquivos forem independentes. Não é necessário aguardar todos os P2 para corrigir um P0.
 
@@ -67,7 +89,7 @@ As etapas podem avançar em paralelo quando contratos e arquivos forem independe
 - [x] **BASE-13 — Google/recuperação:** prévia Google de 30 min; reset com token de uso único de 30 min e invalidação de sessões antigas. Integrações reais seguem em ACC.
 - [x] **BASE-14 — Demo:** seed de 16 usuários/18 consultas/12 prontuários cifrados e carga adicional de novembro/dezembro de 2026; banco isolado validado.
 - [x] **BASE-15 — Mobile:** SDK 58, Paper MD3, login, início, consultas, calendário, pedido exato/modalidade, cancelamento próprio, perfil editável, avisos internos, temas e SecureStore nativo. Lint/tipos/exports/Doctor 20/20 e CI registrados; aceite nativo permanece separado.
-- [x] **BASE-16 — Android:** APK da build mobile `a7fe849` publicado no repositório mobile e disponibilizado também nos Releases do principal, com hash, assinatura de teste e limites da LAN. Aceite físico pendente.
+- [x] **BASE-16 — Android:** APK online 0.2.0 do código `bac7ba5`, assinado com chave própria, API HTTPS embarcada, checksum e metadados nos Releases. Testes funcionais pelo usuário; roteiro nativo automatizado anterior não concluído. Não equivale a homologação.
 - [x] **BASE-17 — Carga e recuperação local:** carga curta, CPU/RAM e restauração sintética registradas. Homologação longa, gravações e recuperação operacional abertas.
 - [x] **BASE-18 — Documentação:** README e checklist reconciliados com código, mobile, Vercel e Trello; checklist anterior preservada como histórico.
 
@@ -96,10 +118,13 @@ Responsáveis: **Web + API + QA**, com responsável pelas contas externas.
 - [ ] **ACC-02 · P1 · Validação — Gmail real:** confirmar recebimento, remetente e URL; redefinir senha de conta controlada; conferir token expirado/reutilizado, concorrência, senha anterior e sessões antigas. Sem tokens/senhas nos logs. Variáveis presentes não provam entrega.
 - [ ] **ACC-03 · P1 · Implementação — Comunicação do cadastro:** implementar mensagem de cadastro planejada; conforme DEC-10, confirmar endereço, reenviar com limite e corrigir e-mail errado. Hoje cadastro cria sessão e não envia boas-vindas/verificação.
 - [ ] **ACC-04 · P0 · Validação — Abuso/enumeração:** conferir login, cadastro, reset, reenvio e Google com contas existentes/inexistentes, falhas SMTP e limites; respostas apropriadas sem exposição indevida. Depende de SEC-02.
-- [ ] **ACC-05 · P1 · Validação — Paridade de formulários:** comparar criação/edição público, recepção e admin, grupos/campos, erros e foco; CPF/e-mail duplicados, nascimento inválido, opcionais e responsável.
+- [ ] **ACC-05 · P1 · Validação — Paridade de formulários:** comparar criação/edição público, recepção e admin, grupos/campos, erros e foco; CPF/e-mail duplicados, nascimento inválido, opcionais e responsável. Em 21–22/11, cadastro de menor com responsável passou em PostgreSQL isolado; correção `b20c9c3` retira bcrypt da transação para evitar expiração quando o hash demora. A falha original em produção não foi reproduzida e requer nova tentativa do cadastro afetado. [Evidência e limites](docs/qa/patient-registration.md).
 - [ ] **ACC-06 · P1 · Validação/implementação — Perfil por papel:** salvar/recarregar campos, menu/avatar/busca e senha; provar que edição própria não muda papel/status/campos protegidos. No mobile, grupos de campos e negativas passaram em banco sintético (MOB-04). Falta controle atômico de versão na API para edições simultâneas do mesmo campo: a comparação de leituras no app reduz o risco, mas não elimina a janela entre leitura e gravação.
 - [ ] **ACC-07 · P1 · Validação — Desativação:** usuário inativo perde acesso e histórico permanece; definir efeitos em consultas futuras/disponibilidade. Testar ativos/inativos, paginação e filtros com base maior.
 - [ ] **ACC-08 · P2 · Decisão — Foto:** `photoUrl` existe; decidir URL administrada ou upload. Se aprovado, especificar tipos/tamanho, armazenamento, autorização e remoção; campo URL não equivale a upload pronto.
+
+- [ ] **ACC-09 · P1 · Implementação prioritária — Conta do responsável:** escolha inicial “Para mim” / “Para outra pessoa”; na segunda, o responsável entra com sua própria conta e acompanha paciente vinculado. Dados/CPF e credenciais do responsável separados dos dados/CPF do paciente; vínculo autorizado, agenda/consultas e isolamento por paciente. Não reutilizar os campos de contato como prova de autorização nem vincular cadastro existente somente por CPF. Prevê API/banco, portal, recuperação e adaptação mobile; o APK 0.2.0 desta rodada continua para contas de pacientes. Critérios detalhados no [plano do próximo incremento](docs/plans/guardian-accounts.md).
+
 
 ## Agenda, recepção e lista de espera
 
@@ -169,14 +194,14 @@ Responsáveis: **Web + QA + Produto/Clínica**.
 
 Responsáveis: **Mobile + QA + API para contratos**. Repositório: [lepera-clinic-mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile). Manter SDK 58; não criar módulos da equipe sem ampliar escopo.
 
-- [x] **MOB-01 · P1 · Integração — Branch atual:** [PR #1 integrado](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) em 15/11, merge `3f1ad5f`, após [CI aprovada](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43720353538) no código `607de78`. `main` local/remota sincronizadas; clone padrão entrega SDK 58.0.25, horários exatos, telas atuais e cancelamento. README atualizado.
+- [x] **MOB-01 · P1 · Integração — Branch atual:** [PR #1 integrado](https://github.com/GuxtavoPereira/lepera-clinic-mobile/pull/1) em 15/11, merge `3f1ad5f`, após [CI aprovada](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/43720353538) no código `607de78`. `main` local/remota sincronizadas; clone padrão entrega SDK 58.0.26, horários exatos, telas atuais e cancelamento. README atualizado.
 - [ ] **MOB-02 · P1 · Validação — Android físico:** instalar APK/cliente de desenvolvimento e registrar aparelho, Android, commit/API; abertura fria, login paciente/recusa de outros papéis, calendário e pedido aprovado pela recepção.
 - [ ] **MOB-03 · P1 · Validação — Expo Go:** QR SDK 58, rede/API com `/api`, firewall e instruções PowerShell `.cmd`; alternativa development build quando Expo Go instalado não for compatível.
-- [x] **MOB-04 · P1 · Implementação — Editar perfil:** formulário agrupado, erros/foco, CPF existente bloqueado e definição obrigatória quando ausente; somente campos alterados no PATCH, confirmação por releitura e atualização do nome na sessão. Nove testes unitários, sete cenários de interface e cinco grupos de integração/preservação em PostgreSQL sintético passaram; cinco cenários de cancelamento repetidos. [Código `dc5b411`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/dc5b411addcd8774fcaa2333883d30e38446134d) e [evidências/limites](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md). Aceite físico permanece em MOB-02/MOB-11; concorrência atômica na API em ACC-06. APK anterior não inclui a função.
-- [x] **MOB-05 · P1 · Implementação — Cancelamento:** entregue em **Minhas consultas**, confirmação/motivo opcional, antecedência de 24h, bloqueio de duplo envio e atualização antes de repetir após erro. Seis testes de regras, cinco cenários de interface e oito grupos de integração API/PostgreSQL sintético conferiram persistência, autorização, vaga, auditoria e avisos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md). Aceite físico permanece em MOB-02/MOB-11; o APK `v0.1.0-preview.1` ainda não inclui a função.
-- [ ] **MOB-06 · P1 · Implementação — Recuperação nativa:** formulário, link/deep link seguro, uso único/expiração e retorno ao login; token fora da telemetria. Hoje encaminha ao site.
+- [x] **MOB-04 · P1 · Implementação — Editar perfil:** formulário agrupado, erros/foco, CPF existente bloqueado e definição obrigatória quando ausente; somente campos alterados no PATCH, confirmação por releitura e atualização do nome na sessão. Nove testes unitários, sete cenários de interface e cinco grupos de integração/preservação em PostgreSQL sintético passaram; cinco cenários de cancelamento repetidos. [Código `dc5b411`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/dc5b411addcd8774fcaa2333883d30e38446134d) e [evidências/limites](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md). Aceite físico permanece em MOB-02/MOB-11; concorrência atômica na API em ACC-06. O APK online 0.2.0 inclui a função.
+- [x] **MOB-05 · P1 · Implementação — Cancelamento:** entregue em **Minhas consultas**, confirmação/motivo opcional, antecedência de 24h, bloqueio de duplo envio e atualização antes de repetir após erro. Seis testes de regras, cinco cenários de interface e oito grupos de integração API/PostgreSQL sintético conferiram persistência, autorização, vaga, auditoria e avisos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/cancellation.md). Aceite físico permanece em MOB-02/MOB-11; o APK online 0.2.0 inclui a função.
+- [ ] **MOB-06 · P1 · Implementação — Recuperação nativa:** formulário, link/deep link seguro, uso único/expiração e retorno ao login; token fora da telemetria. Formulários nativos e colagem segura do link HTTPS implementados em `21c4bbc`: 6 testes adicionais (45 totais), oito cenários UI e cinco grupos API/PostgreSQL passaram. Falta abertura automática por links verificados, recebimento real de e-mail e aceite físico. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/recovery.md).
 - [ ] **MOB-07 · P1 · Decisão/validação — Cadastro:** aceitar formalmente cadastro web externo com retorno claro ou incluir cadastro nativo; preservar CPF/dados obrigatórios e não anunciar o fluxo nativo antes de existir.
-- [x] **MOB-08 · P1 · Integração — Avisos:** NOT-02 integrado à `main` mobile em `6008be7`, com atualização ao focar/retomar e atualização manual. Estado compartilhado pela API, sem canal em tempo real. Sete cenários de perfil e cinco de cancelamento passaram novamente. APK anterior não inclui a função; aceite físico em MOB-02/MOB-11. Push, se aprovado, depende de NOT-03 e entrega real.
+- [x] **MOB-08 · P1 · Integração — Avisos:** NOT-02 integrado à `main` mobile em `6008be7`, com atualização ao focar/retomar e atualização manual. Estado compartilhado pela API, sem canal em tempo real. Sete cenários de perfil e cinco de cancelamento passaram novamente. O APK online 0.2.0 inclui a função; aceite físico em MOB-02/MOB-11. Push, se aprovado, depende de NOT-03 e entrega real.
 - [ ] **MOB-09 · P0 · Validação — Sessão/privacidade:** correções de 16/11 isolam respostas por ciclo de sessão, ordenam armazenamento, ocultam dados antes da exclusão e bloqueiam recuperação de token pendente de limpeza. Identidade/perfil são conferidos no login e na atualização de perfil. Dezoito testes de sessão (39 totais), seis cenários de interface e cinco grupos com API/PostgreSQL passaram; 20 cenários anteriores repetidos. Desativação, reset real de senha e troca de papel encerraram o acesso na próxima verificação. [Evidências/limites](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/session.md). **Permanece aberto:** abertura fria/retomada e SecureStore em Android físico; privacidade ao alternar apps e recuperação se a exclusão persistente falhar até o processo ser encerrado. Logout local não revoga token copiado no servidor.
 - [ ] **MOB-10 · P1 · Validação — Rede/calendário:** offline/retorno, lentidão, timeout, troca de aba, duplo envio, vaga ocupada, refresh, fuso/vazio. Prévia web não substitui comportamento nativo.
 - [ ] **MOB-11 · P1 · Validação — UX nativa:** TalkBack, fonte ampliada, contraste, áreas seguras, teclado, voltar Android, rotação suportada e telas pequenas; corrigir cortes/gestos sem alternativa.
@@ -232,7 +257,7 @@ Responsáveis: **Coordenação + QA + responsáveis dos módulos**.
 - [ ] **DOC-05 · P2 · Condicional — Canva/ensaio:** após autorização/assets, apresentação editável/roteiro fiel com telas reais e estados entregue/pendente/futuro; ensaiar e preparar contingência de internet/e-mail/Google.
 - [ ] **DOC-06 · P1 · Demonstração — Reprodutibilidade:** banco sintético, contas/agenda válidas na data e evidências alternativas sem dados reais. Carga atual é fixa em novembro/dezembro de 2026.
 - [ ] **REL-01 · P1 · Release — Web/API:** após aceite, tag/release formal, versão coerente, changelog, migrations, testes/limites e retorno. `1.0.0` no package não equivale à release publicada.
-- [ ] **REL-02 · P1 · Release — Mobile:** artefato do commit aceito, hash, assinatura/canal, API, instruções/limites. Não substituir silenciosamente APK LAN por outro conteúdo sob a mesma versão.
+- [ ] **REL-02 · P1 · Release — Mobile:** APK 0.2.0 publicado em 23/11 nos dois repositórios, com API publicada, hash, assinatura própria, metadados e instruções. O APK LAN anterior foi preservado. Falta o aceite funcional do usuário; a publicação atual é uma prévia para avaliação.
 - [ ] **REL-03 · P1 · Encerramento — Aceite final:** CI do commit publicado, versões front/API/app, smoke, responsáveis, adiamentos e suporte; atualizar README/checklist e registrar aceite da clínica antes de anunciar conclusão.
 
 ## Expansões fora do aceite atual
@@ -244,7 +269,7 @@ Preservadas para não perder solicitações/ideias. **Não implementar automatic
 - [ ] **FUT-03 — Google completo/biometria:** vínculo seguro, duplicidade, CPF e recuperação antes de substituir prévia atual; Face ID/biometria não entregues.
 - [ ] **FUT-04 — Pagamentos avançados:** gateway/banco, parcelamento, parcial, reembolso real, conciliação automática e emissão fiscal dependem de requisitos/provedor.
 - [ ] **FUT-05 — Estoque ampliado:** fornecedores, compras, lotes/validade, múltiplos locais/unidades fracionárias apenas se exigidos; atual é materiais/movimentações.
-- [ ] **FUT-06 — Teleatendimento/documentos:** modalidade online/link não significa videoconferência integrada; documentos psicológicos formais, laudos e certificados exigem escopo próprio.
+- **FUT-06 — Escopo substituído em 23/11:** teleatendimento retirado do planejamento por PRI-01 (somente presencial); documentos psicológicos promovidos à prioridade máxima PRI-06. Referência histórica, não pendência adicional.
 - [ ] **FUT-07 — App da equipe:** recepção, profissionais/admin ficam fora da primeira fase exclusiva para pacientes.
 - [ ] **FUT-08 — Analytics:** após DEC-12, eventos de horários/Google/cadastro/solicitação/confirmação; métricas mensais agregadas/minimizadas, sem prontuários ou nomes/e-mails de visitantes por padrão.
 - [ ] **FUT-09 — Outros canais:** WhatsApp/chat dependem de aprovação, provedor, custo e política de privacidade.
@@ -285,3 +310,7 @@ Não marcar apenas porque compilou. Registrar:
 - **15/11/2026 — MOB-04:** perfil editável entregue em `dc5b411`, com nove testes de regras, sete cenários de interface e cinco grupos de integração/preservação em banco sintético. Tipos/lint e bundles web/Android passaram; cancelamento conferido novamente após a atualização da sessão. Conta temporária removida e dados anteriores preservados. Concorrência atômica de perfil registrada em ACC-06; APK novo e aceite físico permanecem abertos. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/profile.md).
 - **16/11/2026 — NOT-02/MOB-08:** avisos entregues em `6008be7`, com seis testes adicionais (21 totais), oito cenários de interface e seis grupos de integração/preservação em banco sintético. Leitura/contagem, acesso à consulta própria, referências antigas/alheias, atualização entre acessos e falhas conferidos; sete cenários de perfil e cinco de cancelamento repetidos. Lint/tipos e bundles web/Android aprovados localmente. Dados anteriores preservados, sem alteração de backend/migration/produção. Push, nova build e aceite físico continuam pendentes. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/notifications.md).
 - **16/11/2026 — avanço em MOB-09:** `f0716a2` corrige resposta antiga encerrando login novo, concorrência no token e dados visíveis após falha de exclusão. Dezoito testes adicionados (39 totais), seis cenários de sessão, 20 cenários de regressão e cinco grupos de integração/preservação passaram. Token adulterado, conta desativada, reset real e mudança de papel conferidos. MOB-09 segue aberto para armazenamento/retomada físicos e limites documentados. [Evidências](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/session.md).
+
+- **22/11/2026 — cadastro e recuperação:** web/API `b20c9c3` publicado e CI aprovada (463 testes API). Menor com responsável testado sem gravações sintéticas em produção; timeout por hash lento reproduzido e corrigido. Recuperação nativa implementada/testada; abertura automática e entrega Gmail ainda pendentes. SDK mobile alinhado a 58.0.26; nove alertas moderados transitivos, nenhum alto/crítico na auditoria desta rodada.
+
+- **23/11/2026 — entrega do APK e novas prioridades:** APK online 0.2.0 disponibilizado para avaliação pelo usuário. Testes do APK interrompidos a pedido; sem alegação de homologação nativa. Registrados PRI-01 a PRI-13 com prioridade máxima e PRI-14 como último item opcional. Novas exigências ainda não estão na build publicada.

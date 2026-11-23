@@ -6,21 +6,21 @@
 
 Next.js 16 · NestJS 11 · PostgreSQL · Aplicativo de pacientes com Expo SDK 58
 
-[🌐 Site e portal](https://lepera-clinic.vercel.app) · [⬇️ APK Android](https://github.com/GuxtavoPereira/lepera-clinic/releases/download/android-v0.1.0-preview.1/leperapia-paciente-0.1.0-android-preview-arm64.apk) · [📋 Checklist de conclusão](CHECKLIST.md) · [📱 Código mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile) · [🗂️ Trello](https://trello.com/b/gbfJq3qw/lepera-clinic)
+[🌐 Site e portal](https://lepera-clinic.vercel.app) · [⬇️ APK Android](https://github.com/GuxtavoPereira/lepera-clinic/releases/download/android-v0.2.0-online.1/leperapia-paciente-0.2.0-online.apk) · [📋 Checklist de conclusão](CHECKLIST.md) · [📱 Código mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile) · [🗂️ Trello](https://trello.com/b/gbfJq3qw/lepera-clinic)
 
 </div>
 
 ## Estado do projeto
 
-**Documentação revisada em 16/11/2026.** O sistema web já possui os fluxos principais de pacientes, recepção, profissionais e administração. Os relatórios estão ativos. O aplicativo com Expo SDK 58, calendário atual, cancelamento, perfil editável e avisos está na `main` mobile. O APK disponível é uma prévia anterior; a nova build e o aceite em aparelho físico continuam pendentes.
+**Documentação revisada em 23/11/2026.** O APK 0.2.0 está conectado à API HTTPS publicada, sem depender do computador ligado. A validação funcional do APK será feita pelo usuário, conforme solicitado. As novas prioridades de 23/11 estão registradas na checklist; ainda não fazem parte desta versão.
 
 A versão `1.0.0` do pacote não significa que todo o escopo esteja concluído. Há três telas em construção, integrações aguardando validação real e tarefas de preparação para operação. A [checklist canônica](CHECKLIST.md) reúne o que está entregue, o que falta implementar, o que falta testar e as decisões pendentes. Não há uma release formal web/API publicada no GitHub até esta revisão.
 
-| Referência verificada | Estado em 16/11/2026 |
+| Referência verificada | Estado em 23/11/2026 |
 | --- | --- |
-| Web/API — `main` | Código em [`db5747d`](https://github.com/GuxtavoPereira/lepera-clinic/commit/db5747d6e2f7da585ceecebe53edf72fef7c7095), CI aprovada e frontend/backend publicados nesse commit |
-| Mobile — `main` | SDK 58.0.25, horários exatos, cancelamento, perfil editável, avisos e isolamento de sessão em [`f0716a2`](https://github.com/GuxtavoPereira/lepera-clinic-mobile/commit/f0716a2183daa634a8eb251ca9d1d5088c67c367); [evidências da última rodada](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/session.md) |
-| Android | [Prévia disponível neste repositório](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1), ARM64, assinatura de teste, API de demonstração na rede local |
+| Web/API — `main` | Correção de cadastro `b20c9c3` publicada no site/API; [CI aprovada](https://github.com/GuxtavoPereira/lepera-clinic/actions/runs/45031080239) |
+| Mobile — `main` | SDK 58.0.26, código `bac7ba5`; [CI aprovada](https://github.com/GuxtavoPereira/lepera-clinic-mobile/actions/runs/45031669242). Compilação não equivale a aceite funcional do APK |
+| Android | [APK 0.2.0 online](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.2.0-online.1), ARM64 + x86_64, assinatura própria. Testes funcionais a cargo do usuário |
 | Gmail | Variáveis SMTP presentes no backend de produção; entrega real e recuperação completa ainda precisam de aceite |
 | Google | ID do cliente configurado e fluxo de consulta temporária implementado; autenticação interativa com conta real ainda precisa de aceite |
 
@@ -338,22 +338,19 @@ EXPO_PUBLIC_API_URL=https://lepera-clinic-backend.vercel.app/api
 
 **No aplicativo, a URL inclui `/api`.** Para uma API sintética local, use o IP do computador, por exemplo `http://192.168.1.100:3333/api`, substituindo o endereço. `localhost` no celular é o próprio celular. A porta da API precisa estar acessível na rede. A prévia no navegador (`npm.cmd run web`) também exige que `WEB_URL` da API autorize sua origem.
 
-### APK existente e próximas builds
+### APK conectado à API publicada
 
-**[⬇️ Baixar APK Android — Leperapia Paciente](https://github.com/GuxtavoPereira/lepera-clinic/releases/download/android-v0.1.0-preview.1/leperapia-paciente-0.1.0-android-preview-arm64.apk)**
+**[⬇️ Baixar Leperapia Paciente 0.2.0](https://github.com/GuxtavoPereira/lepera-clinic/releases/download/android-v0.2.0-online.1/leperapia-paciente-0.2.0-online.apk)**
 
-O APK está nos [Releases deste repositório](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.1.0-preview.1), com instruções e arquivo de verificação SHA-256. É o mesmo artefato da [prévia mobile original](https://github.com/GuxtavoPereira/lepera-clinic-mobile/releases/tag/v0.1.0-preview.1), sem recompilação: `leperapia-paciente-0.1.0-android-preview-arm64.apk`, 31.019.965 bytes, pacote `com.leperapia.paciente.preview`.
+O [release](https://github.com/GuxtavoPereira/lepera-clinic/releases/tag/android-v0.2.0-online.1) inclui APK, SHA256SUMS.txt e build-info.json. O aplicativo usa **https://lepera-clinic-backend.vercel.app/api** pela internet, sem Metro, Expo Go ou API local. Entre com a mesma conta de paciente do site.
 
-**Esse APK foi gerado do commit mobile `a7fe849` e ainda não contém cancelamento, perfil editável nem avisos.** As funções estão no código atualizado; uma nova build e o teste em aparelho físico continuam pendentes. Exportar o bundle Android não gera um novo APK.
+- Pacote `com.leperapia.paciente`, versão 0.2.0 (2), Expo 58.0.26; ARM64 e x86_64, Android mínimo declarado API 24.
+- Instale e abra **Leperapia Paciente**. A antiga edição **(Prévia)** tem outro identificador e pode ser desinstalada; a instalação nova exige login.
+- Código mobile: `bac7ba5e05418f41506adeab38ed18130907ab4d`; tamanho: 53.944.177 bytes; SHA-256: `fe51ddbdd7fc6e3835bccb9830c0fe90382793b20d3084f380edc98e7f113050`.
+- Build concluída e assinada com chave própria, mantida fora do repositório. A validação funcional fica com o usuário; o roteiro nativo automatizado anterior não foi concluído. Não é uma versão homologada em aparelho físico nem publicada na Play Store.
+- Contém calendário, pedidos, cancelamento, perfil, avisos, temas e recuperação nativa por colagem do link recebido. Cadastro continua no site. Conta separada do responsável e novas prioridades de 23/11 ainda estão pendentes.
 
-No Android ARM64, baixe e abra o arquivo; permita a instalação dessa origem quando solicitado e abra **Leperapia Paciente (Prévia)**. Para login e agenda, mantenha o celular na rede da API de demonstração `http://192.168.1.111:8083/api`, com a API ligada. Alterar o `.env` no PC não muda o endereço incluído neste APK; outra API exige nova build.
-
-- JavaScript incluído; não precisa do Metro ou Expo Go para abrir.
-- Login e consultas dependem da **API sintética na LAN indicada na release**. Não é uma edição autônoma conectada à produção.
-- Assinatura de teste, sem distribuição na Play Store. Aceite físico e iOS ainda pendentes.
-- SHA-256: `87fda6ceacfd77792f08b7a762dea66a334543629f91f5ec77d470ed14a55fac`.
-
-`eas.json` já define development, preview APK e production AAB. Ainda é necessário concluir o vínculo/configuração de distribuição, assinatura de produção e homologação nativa. Recuperação dentro do app, notificações e aceite físico do perfil/cancelamento fazem parte da [checklist](CHECKLIST.md#aplicativo-de-pacientes).
+O APK antigo LAN foi preservado como histórico. [Registro da build e limites](https://github.com/GuxtavoPereira/lepera-clinic-mobile/blob/main/docs/qa/android-online.md). O perfil EAS `online` e o script local de assinatura estão no repositório mobile.
 
 ## Testes e evidências
 
@@ -419,15 +416,9 @@ Para criar um superadmin fora do seed, `pnpm db:super-admin` exige `SUPER_ADMIN_
 
 ## Limites e próximos passos
 
-A lista detalhada, priorizada e com critérios de aceite está em [CHECKLIST.md](CHECKLIST.md). Os pontos mais imediatos são:
+A lista completa está em [CHECKLIST.md](CHECKLIST.md), com as **prioridades máximas solicitadas em 23/11**: atendimento somente presencial; nome social e preferência de tratamento; CPF mascarado; CID-11/DSM-5-TR; testes psicológicos no estoque; documentos clínicos adicionais; FAQ; reserva de consultórios; orientações do psicólogo ao paciente; devolutiva para responsáveis; Lattes opcional; conta/CPF/tela do responsável; e acesso do paciente ao próprio prontuário. O resumo em parágrafo fica por último, se houver tempo.
 
-1. Concluir escalas em `/doctor/session/[id]/scales` e avaliações em `/patient/reviews/[appointmentId]`.
-2. Resolver a tela `/reception/new-session`, hoje em construção, alinhando o fluxo de quatro etapas ao agendamento funcional em `/reception/appointments/new`.
-3. Validar Google e recuperação real por Gmail; concluir a comunicação de cadastro planejada.
-4. Concluir recuperação nativa mobile, gerar nova build com cancelamento/perfil/avisos, homologar em aparelho físico e preparar distribuição com API estável e assinatura apropriada; push depende de decisão de escopo.
-5. Fechar decisões da agenda, completar validação de usabilidade/acessibilidade e preparar segurança, backups, monitoramento e operação.
-
-SaaS multiclínica, Electron, pagamento online/fiscal e login Google completo são expansões/decisões de escopo, não funcionalidades prontas. A versão atual é para uma clínica, com app de pacientes. Os controles existentes não equivalem a certificação de conformidade ou autorização de uso com dados reais.
+Também permanecem as lacunas anteriores: escalas e avaliações, nova sessão da recepção, validação real Google/Gmail, links nativos de recuperação, concorrência/controle de acesso, usabilidade, operação, backups, monitoramento e aceite final. Os testes do APK ficam com o usuário. As novas prioridades ainda não estão implementadas nesta build; inclusive a remoção da modalidade online.
 
 ## Créditos e contexto acadêmico
 
