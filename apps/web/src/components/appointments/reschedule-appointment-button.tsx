@@ -50,6 +50,8 @@ export function RescheduleAppointmentButton({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  if (appointment.modality === "ONLINE") return <p className="max-w-sm text-sm text-muted-foreground">Registro online anterior: combine com o paciente o cancelamento e um novo agendamento presencial.</p>;
+
   return (
     <Sheet
       open={open}
@@ -260,7 +262,7 @@ function RescheduleForm({
         <p>Horário atual · {formatDateTimePtBr(appointment.startDatetime)}</p>
         <p className="text-muted-foreground">
           {appointment.durationMinutes} minutos ·{" "}
-          {appointment.modality === "ONLINE" ? "Online" : "Presencial"}
+          {appointment.modality === "ONLINE" ? "Online (registro anterior)" : "Presencial"}
         </p>
       </div>
       <fieldset disabled={saving} className="min-w-0 space-y-5">

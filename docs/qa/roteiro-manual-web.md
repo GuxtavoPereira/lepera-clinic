@@ -1,0 +1,45 @@
+# Testes em conjunto — sistema web
+
+Revisão: 23/11/2026. **Prioridade: site público, portais e API.** O APK fica para uma etapa posterior. Este roteiro não exige ferramentas de programação.
+
+## Como vamos registrar os resultados
+
+Use as contas e os dados de demonstração do README. Para cadastro e recuperação de senha, use um e-mail seu, que você consiga abrir. Não use informações de pacientes reais nos testes nem envie CPF, senha, token, prontuário ou link de recuperação no chat.
+
+Abra o [site](https://lepera-clinic.vercel.app). Use duas janelas de navegador, uma normal e outra anônima, para trabalhar como paciente e recepção ao mesmo tempo. Anote a data/hora escolhida e o nome fictício do paciente. Use consultas futuras e registros com descrição `TESTE MANUAL` para localizar as alterações depois. Não resete o banco.
+
+Responda, por exemplo: **T03 — PASSOU — Chrome, computador — solicitação apareceu pendente e a recepção confirmou o mesmo horário.** Se falhar: **T03 — FALHOU — passo 2 — esperava X, apareceu Y**. Informe página, papel usado, horário aproximado e mensagem do erro. Uma imagem sem dados pessoais ajuda, mas não é obrigatória. Use **NÃO TESTADO** ou **BLOQUEADO** quando não conseguir executar.
+
+Cada resultado fecha o cenário correspondente, não toda a área automaticamente. Uma aprovação de fluxo visual não comprova segurança do servidor, concorrência, backups ou entrega de e-mail. Vamos registrar falhas, corrigir e pedir apenas a repetição do cenário afetado.
+
+## Primeiro lote — prioridade para sua próxima rodada
+
+| ID / checklist | O que fazer | Resultado esperado | Resultado do usuário |
+| --- | --- | --- | --- |
+| T01 · PRI-07, UX-01/05/06 | Na página inicial, clique em **Dúvidas**. Abra e feche as seis perguntas; use também Tab e Enter. Alterne claro/escuro e reduza a janela. | O link chega ao FAQ; perguntas abrem/fecham, foco aparece e texto fica legível. O conteúdo informa atendimento presencial e confirmação pela recepção. | NÃO TESTADO |
+| T02 · PRI-01, UX-02 | Como paciente, abra Solicitar consulta e alterne Horário disponível/Encaixe. Como recepção, abra Nova consulta e Definir encaixe em um pedido presencial. | Nenhuma dessas telas oferece online ou videochamada. A sala é identificada como sala/consultório. | NÃO TESTADO |
+| T03 · AGE-02/03, QA-02 | Paciente: selecione profissional, dia e horário livre; envie. Recepção: localize e aprove. Paciente e profissional: atualizem suas agendas. | Antes da aprovação o pedido está pendente. Depois, os três veem o mesmo dia/hora/profissional; apenas uma consulta é criada e a vaga deixa de estar livre. | NÃO TESTADO |
+| T04 · AGE-02/03 | Envie outro pedido presencial, desta vez de Encaixe, com data/período. Na recepção, escolha um horário compatível e aprove. Depois envie um terceiro pedido e recuse-o. | O encaixe aprovado vira consulta; o pedido recusado não cria consulta e o paciente vê a recusa. | NÃO TESTADO |
+| T05 · AGE-04, QA-02 | Em consulta de teste com mais de 24h, paciente cancela e atualiza a página. Em outra consulta, a recepção remarca com motivo e sem cobrança ativa. | Cancelamento permanece salvo e libera a vaga. Remarcação preserva o histórico e cria o novo horário, visível também ao paciente e profissional. | NÃO TESTADO |
+| T06 · PRI-01 | Se houver pedido antigo online, abra-o na recepção. Confira consulta online antiga nas listas; não mude registros reais. | Registro aparece identificado como anterior. Pedido online não permite aprovação e explica como refazer presencialmente. Consulta antiga não é convertida silenciosamente nem remarcada como online. Ausência de exemplos = NÃO TESTADO. | NÃO TESTADO |
+| T07 · ACC-06, UX-03 | Entre com cada perfil de demonstração; clique no nome/avatar, abra Perfil e volte. Use a busca por uma tela e, em recepção/admin, por paciente fictício. | Perfil correto sem 404; busca leva ao destino autorizado; sair encerra a sessão. | NÃO TESTADO |
+| T08 · CLI-03, QA-02 | Como profissional vinculado, abra uma consulta de teste e preencha um prontuário fictício. Salve, saia e reabra. Somente em registro descartável, assine e tente editar. | Texto salvo permanece completo. A assinatura é identificada e edição posterior respeita o bloqueio atual. Anote campos/ações pouco práticos. | NÃO TESTADO |
+
+## Segundo lote — módulos existentes
+
+| ID / checklist | O que fazer | Resultado esperado | Resultado do usuário |
+| --- | --- | --- | --- |
+| T09 · ACC-03/04, UX-02 | Cadastre uma conta **para você** com dados sintéticos válidos e e-mail controlado. Tente primeiro CPF inválido e confirmação de senha diferente; depois corrija. Teste login e recarregue o perfil. | Erros claros, campos preservados quando possível, uma única conta válida e dados corretos após novo login. Conta própria do responsável é pendência, não requisito deste teste. | NÃO TESTADO |
+| T10 · ACC-01 | Use Login com Google com sua conta controlada no domínio publicado. Consulte a agenda e tente avançar para solicitar. | Login sem origin_mismatch; prévia permite horários, mas exige completar cadastro para solicitar e não expõe dados de outros pacientes. | NÃO TESTADO |
+| T11 · ACC-02, UX-02 | Com conta de teste e e-mail acessível, solicite recuperação, abra a mensagem e defina nova senha. Entre com a nova, tente a antiga e reutilize o link. | E-mail chega; nova senha entra; antiga falha; link já usado é recusado. Não encaminhe o link nem a senha. Falha na chegada do e-mail deve ser relatada separadamente. | NÃO TESTADO |
+| T12 · FIN-01/02 | Admin: crie receita pendente de R$ 10,50 e despesa de R$ 2,25 identificadas como teste; filtre, quite e confira os totalizadores. Teste cancelamento/estorno quando disponível e exporte o período. | Valores decimais, estados, histórico, totais e arquivo coerentes; nenhuma indicação de transferência bancária real. Registre os totais antes/depois. | NÃO TESTADO |
+| T13 · EST-01/02 | Crie material fictício com saldo 5 e mínimo 3; registre entrada de 2 e saída de 5 com justificativa. Tente retirar mais do que o saldo. | Saldo final 2, alerta de mínimo e histórico coerente; saída excessiva recusada sem saldo negativo. Categoria específica de testes psicológicos ainda é pendência. | NÃO TESTADO |
+| T14 · REP-01/02 | Gere relatórios de consultas, financeiro e estoque no período dos seus testes. Compare tela/PDF/CSV e gere também um período vazio. | Mesmos registros/totais, acentos e datas legíveis; período vazio explicado. Outros seis tipos de relatório ficam para uma segunda rodada de aceite. | NÃO TESTADO |
+| T15 · NOT-02, UX-03 | Após aprovação/cancelamento de T03/T05, abra Avisos no portal, marque um como lido, atualize e siga o destino. | Estado de leitura persiste, contagem atualiza e destino abre a consulta correta. Não pressupõe notificação push ou e-mail. | NÃO TESTADO |
+| T16 · UX-04/05/06, QA-03 | Repita navegação, busca, calendário e um formulário com janela estreita e no navegador do celular; alterne temas. Use zoom de 200% e teclado no computador. | Ações e mensagens continuam acessíveis, sem texto essencial cortado; foco visível e contraste legível. Este é teste do **site**, não do APK. | NÃO TESTADO |
+
+## Ainda não disponíveis para aceite
+
+Nome social, máscara de CPF ampliada, atualização CID/DSM, testes psicológicos específicos no estoque, novos modelos documentais, reservas de salas, mensagens clínicas, devolutivas, Lattes, conta/tela própria do responsável e prontuário do paciente permanecem na [checklist](../../CHECKLIST.md). Testá-los como se estivessem prontos produziria falsos bugs. Acrescentaremos cenários conforme cada função for entregue no web.
+
+Não marcar como concluídos testes de isolamento entre usuários, concorrência, restauração de backup ou segurança apenas por estes passos. Essas evidências técnicas continuam separadas do seu aceite de uso.

@@ -135,7 +135,7 @@ function AppointmentCard({
             <p className="flex items-center gap-2">
               <Clock3 className="size-4 text-slate-400" />
               {appointment.durationMinutes} minutos ·{" "}
-              {appointment.modality === "ONLINE" ? "Online" : "Presencial"}
+              {appointment.modality === "ONLINE" ? "Online (registro anterior)" : "Presencial"}
             </p>
           </div>
 

@@ -152,7 +152,7 @@ export function DashboardAppointmentList({
             ) : null}
             <p className="text-sm text-muted-foreground">
               {dashboardDateTime(item.startDatetime)} ·{" "}
-              {item.modality === "ONLINE" ? "Online" : "Presencial"}
+              {item.modality === "ONLINE" ? "Online (registro anterior)" : "Presencial"}
             </p>
             <span className="inline-flex rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground">
               {STATUS_LABEL[item.status] ?? item.status}

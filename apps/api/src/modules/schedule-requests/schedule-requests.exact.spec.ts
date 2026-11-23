@@ -20,6 +20,40 @@ describe('Schedule requests: exact slots and concurrency', () => {
   let free: jest.Mock;
   let transaction: jest.Mock;
   let service: ScheduleRequestsService;
+  it('rejects an online request without creating a pending request', async () => {
+    await expect(
+      service.create(
+        {
+          type: 'novo_paciente',
+          mode: 'FLEXIBLE',
+          preferredShift: 'MORNING',
+          modality: 'ONLINE',
+        },
+        actor,
+      ),
+    ).rejects.toThrow('somente consultas presenciais');
+    expect(create).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it.each(['EXACT', 'FLEXIBLE'])(
+    'preserves a legacy online %s request without approving it',
+    async (mode) => {
+      request.mockResolvedValue({
+        id: 'request',
+        status: 'PENDING',
+        mode,
+        modality: 'ONLINE',
+      });
+      await expect(service.approve('request', {}, reviewer)).rejects.toThrow(
+        'somente consultas presenciais',
+      );
+      expect(appt).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
+    },
+  );
+
   beforeEach(() => {
     create = jest.fn().mockResolvedValue({ id: 'request' });
     duplicate = jest.fn().mockResolvedValue(null);
@@ -31,7 +65,7 @@ describe('Schedule requests: exact slots and concurrency', () => {
       preferredDoctorId: 'd',
       requestedStartDatetime: new Date(start),
       durationMinutes: 50,
-      modality: 'ONLINE',
+      modality: 'IN_PERSON',
       patient: { userId: 'patient-user' },
     });
     update = jest.fn().mockResolvedValue({ count: 1 });
@@ -76,7 +110,7 @@ describe('Schedule requests: exact slots and concurrency', () => {
     mode: 'EXACT' as const,
     preferredDoctorId: 'd',
     requestedStartDatetime: start,
-    modality: 'ONLINE' as const,
+    modality: 'IN_PERSON' as const,
   };
   it('persists the selected slot without trusting a time embedded in a note', async () => {
     await service.create(exact, actor);
@@ -135,7 +169,7 @@ describe('Schedule requests: exact slots and concurrency', () => {
         doctorId: 'd',
         startDatetime: start,
         durationMinutes: 50,
-        modality: 'ONLINE',
+        modality: 'IN_PERSON',
       }),
       'r',
       true,

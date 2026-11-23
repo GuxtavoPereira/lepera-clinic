@@ -29,9 +29,9 @@ describe('AppointmentsService.reschedule', () => {
     durationMinutes: 50,
     updatedAt: new Date(version),
     status: 'CONFIRMED',
-    modality: 'ONLINE',
+    modality: 'IN_PERSON',
     type: 'RETURN',
-    roomOrLink: 'https://example.test/room',
+    roomOrLink: 'Sala 2',
     receptionNotes: 'Nota antiga preservada',
     rescheduledToId: null,
     patient: { userId: 'patient-user' },
@@ -55,6 +55,15 @@ describe('AppointmentsService.reschedule', () => {
   let transaction: jest.Mock;
   let patient: jest.Mock;
   let doctor: jest.Mock;
+
+  it('does not silently convert or duplicate a legacy online consultation', async () => {
+    original.mockResolvedValue(previous({ modality: 'ONLINE' }));
+    await expect(service.reschedule('old', dto, actor)).rejects.toThrow(
+      'somente consultas presenciais',
+    );
+    expect(claim).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+  });
 
   beforeEach(() => {
     original = jest.fn().mockResolvedValue(previous());
@@ -111,9 +120,9 @@ describe('AppointmentsService.reschedule', () => {
       doctorId: 'doctor-1',
       receptionistId: 'reception-1',
       durationMinutes: 50,
-      modality: 'ONLINE',
+      modality: 'IN_PERSON',
       type: 'RETURN',
-      roomOrLink: 'https://example.test/room',
+      roomOrLink: 'Sala 2',
       startDatetime: new Date(dto.startDatetime),
       endDatetime: new Date('2099-05-02T13:50:00.000Z'),
       receptionNotes: dto.reason.trim(),

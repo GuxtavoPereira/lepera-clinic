@@ -32,7 +32,7 @@ function RequestAppointmentForm() {
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [shift, setShift] = useState("INDIFFERENT");
-  const [modality, setModality] = useState("IN_PERSON");
+  const modality = "IN_PERSON";
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(true);
   const [slotsLoading, setSlotsLoading] = useState(true);
@@ -155,9 +155,9 @@ function RequestAppointmentForm() {
           <button type="button" className="inline-flex min-h-11 items-center gap-2 text-sm text-primary underline underline-offset-4" disabled={slotsLoading || sending} onClick={refreshSlots}><RefreshCw className="size-4" /> Atualizar horários</button>
         </fieldset>
       </> : <FormField id="request-shift" label="Turno de preferência" hint="O encaixe será analisado pela recepção; esta opção não garante um horário."><select id="request-shift" value={shift} disabled={sending} onChange={(event) => setShift(event.target.value)} className={inputClassName}><option value="INDIFFERENT">Qualquer turno</option><option value="MORNING">Manhã</option><option value="AFTERNOON">Tarde</option></select></FormField>}
-      <FormField id="request-modality" label="Modalidade"><select id="request-modality" className={inputClassName} value={modality} disabled={sending} onChange={(event) => setModality(event.target.value)}><option value="IN_PERSON">Presencial</option><option value="ONLINE">Online</option></select></FormField>
+      <p className="self-center text-sm text-muted-foreground">Atendimento presencial na clínica.</p>
       <FormField id="request-reason" label="Observação para a recepção (opcional)" hint="Não informe dados clínicos sensíveis neste campo."><textarea id="request-reason" className={textareaClassName} maxLength={2000} value={reason} disabled={sending} onChange={(event) => setReason(event.target.value)} placeholder="Ex.: tenho flexibilidade no período da tarde" /></FormField>
-      {selectedSlot && mode === "EXACT" && <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm"><p className="font-semibold">Revise seu pedido</p><p className="mt-1">{formatDateTimePtBr(selectedSlot.start)} · {selectedSlot.doctorName} · {modality === "ONLINE" ? "Online" : "Presencial"}</p><p className="mt-2 text-muted-foreground">O horário será reservado somente após a aprovação da recepção.</p></div>}
+      {selectedSlot && mode === "EXACT" && <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm"><p className="font-semibold">Revise seu pedido</p><p className="mt-1">{formatDateTimePtBr(selectedSlot.start)} · {selectedSlot.doctorName} · Presencial</p><p className="mt-2 text-muted-foreground">O horário será reservado somente após a aprovação da recepção.</p></div>}
       {error && <p role="alert" className={errorClass}>{error}</p>}
       {success && <p role="status" className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">{success}</p>}
       <div className="flex justify-end border-t pt-5"><Button type="submit" disabled={sending || loading || (mode === "EXACT" && slotsLoading)} className="min-h-11 w-full sm:w-auto">{sending ? <Loader2 className="size-4 animate-spin" /> : <CalendarPlus className="size-4" />}{sending ? "Enviando..." : mode === "EXACT" ? "Solicitar este horário" : "Enviar pedido de encaixe"}</Button></div>

@@ -3,6 +3,10 @@
 > **Revisão: 23/11/2026. Fonte canônica: este arquivo no repositório web/API.**
 > Substitui o diagnóstico da `checklist1.2.md`; o histórico anterior é preservado. Abrange site público, portal, API, banco, operação e aplicativo de pacientes. Não autoriza novas expansões automaticamente.
 
+## Prioridade de execução confirmada em 23/11
+
+**O sistema principal web é a prioridade:** site público, portal, API e banco. PRI-01 a PRI-13 serão implementados e aceitos primeiro nele. Adaptações dessas funções ao APK ficam para depois; não são critério para fechar a entrega web. A seção mobile preserva o backlog, mas está adiada. [Roteiro de testes para Gustavo](docs/qa/roteiro-manual-web.md): responder com ID, PASSOU/FALHOU e observação; marcar apenas cenários efetivamente confirmados.
+
 ## Como usar e o que significa concluir
 
 Esta é a consolidação de **todas as pendências identificadas nesta revisão**, a partir do código local/remoto, documentação, Trello e histórico solicitado. Não é possível garantir que nenhum defeito ainda desconhecido exista. Não atribuímos um percentual de conclusão a itens de tamanhos e estados diferentes.
@@ -40,21 +44,21 @@ O [registro da 1.0](docs/release-1.0.md) descreve 02/11 e permanece histórico. 
 
 ## Prioridades máximas solicitadas em 23/11/2026
 
-Esta é a nova ordem de produto, confirmada pelo usuário. Os itens abaixo estão **pendentes**, não são funcionalidades desta build. Preservar o histórico dos registros existentes durante as migrações. Testes funcionais do APK serão feitos pelo usuário; não continuar a automação de testes do APK sem nova solicitação. Os P0 de integridade/acesso continuam sendo critérios para liberar cada alteração.
+Esta é a nova ordem de produto, confirmada pelo usuário. Os itens abaixo acompanham implementação e aceite do sistema web. O APK 0.2.0 não inclui as novas prioridades. Preservar o histórico dos registros existentes durante as migrações. Testes funcionais do APK serão feitos pelo usuário; não continuar a automação de testes do APK sem nova solicitação. Os P0 de integridade/acesso continuam sendo critérios para liberar cada alteração.
 
-- [ ] **PRI-01 · Máxima — Somente presencial:** retirar consultas online de opções, textos, filtros e fluxos no site, portal, app, API e novos dados de demonstração. Definir tratamento dos registros antigos sem apagar histórico ou mudar consultas existentes silenciosamente.
+- [ ] **PRI-01 · Máxima — Somente presencial:** retirar consultas online de opções, textos, filtros e fluxos no site, portal, API e novos dados de demonstração; adaptação visual do app depois. Implementado no código web/API em 23/11: formulários somente presenciais, bloqueio de novas gravações online e seeds presenciais. Histórico preservado; pedidos online antigos devem ser recusados/refeitos e consultas antigas canceladas/refeitas após combinar com o paciente. Sem migração nem execução de seed no banco publicado. **Aguardando aceite T02–T06 após publicação.**
 - [ ] **PRI-02 · Máxima — Nome social:** incluir no cadastro e edição; abrir modal perguntando se deseja ser chamado por esse nome em todo o sistema. Persistir preferência e aplicá-la às telas, mensagens e documentos pertinentes, mantendo nome civil separado quando necessário para identificação.
 - [ ] **PRI-03 · Máxima — CPF mascarado:** aplicar máscara de privacidade em relatórios, PDFs/CSV, listagens e exibições correlatas. Manter CPF integral apenas onde a operação autorizada realmente o exija; conferir também o arquivo exportado.
 - [ ] **PRI-04 · Máxima — CID-11 e DSM-5-TR:** atualizar campos, referências e modelos; identificar a versão dos registros antigos, preservar conteúdo e não converter diagnósticos automaticamente. Conferir fontes oficiais e conteúdo permitido na implementação.
 - [ ] **PRI-05 · Máxima — Testes psicológicos no estoque:** categoria específica, identificação/especificação dos testes e materiais, edição/versão, unidade/quantidade e controle de movimentação. Não confundir estoque de materiais com aplicação e correção de instrumentos clínicos (CLI-01/DEC-04).
 - [ ] **PRI-06 · Máxima — Documentos do psicólogo:** criar/preencher laudo psicológico, prontuário, relatório, “Rapor”/entrevista inicial, avaliação psicológica, anotação geral, diário de campo de estagiários e outros modelos definidos. Prever rascunho, autoria, versão, assinatura/liberação, permissões e exportação; revisar modelos antes do uso. Confirmar nomenclatura “Rapor” na definição do modelo.
-- [ ] **PRI-07 · Máxima — FAQ público:** seção de perguntas frequentes no site público, com conteúdo coerente com atendimento exclusivamente presencial, agendamento e orientações da clínica.
+- [ ] **PRI-07 · Máxima — FAQ público:** Seção implementada com seis perguntas, link Dúvidas no menu, teclado e temas do site. Conteúdo cobre presencial, solicitação, aprovação, encaixe, cancelamento e contato. **Aguardando aceite T01 após publicação.**
 - [ ] **PRI-08 · Máxima — Reserva de salas/consultórios:** cadastro de espaços, calendário visual semelhante à agenda, disponibilidade, reserva/cancelamento e prevenção de conflitos simultâneos; definir relação com a consulta e quem pode reservar.
 - [ ] **PRI-09 · Máxima — Orientações ao paciente:** psicólogo envia mensagens ao paciente vinculado, incluindo desmarcação e orientações após consulta. Definir caixa de mensagens, leitura/avisos e histórico; uma mensagem não altera o estado da consulta por si só.
 - [ ] **PRI-10 · Máxima — Devolutiva de menores:** documento específico, elaborado/liberado pelo psicólogo, acessível aos responsáveis autorizados. Relacionar documento, paciente e vínculo; não tornar todas as anotações acessíveis automaticamente.
 - [ ] **PRI-11 · Máxima — Lattes opcional:** permitir adicionar resumo/link do currículo Lattes do profissional e mostrá-lo no detalhe aberto pelo card público. Quando ausente, não exibir campo ou seção vazia.
 - [ ] **PRI-12 · Máxima — Responsável com conta própria:** executar ACC-09: início “Para mim/Para outra pessoa”, dados e CPF obrigatório do responsável, credenciais próprias, vínculo com a criança e tela do responsável. CPF da criança separado; não associar paciente existente apenas por informar CPF. Incluir acesso às devolutivas autorizadas (PRI-10) e compatibilidade futura do app. [Plano](docs/plans/guardian-accounts.md).
-- [ ] **PRI-13 · Máxima — Paciente acessa o próprio prontuário:** implementar consulta autenticada do prontuário do próprio paciente no portal/app, com autorização por registro, histórico/versão e proteção contra acesso cruzado. Definir explicitamente a publicação e a separação entre prontuário, anotações de trabalho e documentos destinados ao responsável; adaptar CLI-04/SEC, sem acesso irrestrito por papel.
+- [ ] **PRI-13 · Máxima — Paciente acessa o próprio prontuário:** implementar consulta autenticada do prontuário do próprio paciente no portal web primeiro, com autorização por registro, histórico/versão e proteção contra acesso cruzado. Definir explicitamente a publicação e a separação entre prontuário, anotações de trabalho e documentos destinados ao responsável; adaptar CLI-04/SEC, sem acesso irrestrito por papel.
 - [ ] **PRI-14 · Última prioridade, se houver tempo — Resumo em parágrafo:** relatório com as informações principais e úteis do paciente. Definir fontes/escopo, manter referência ao registro original e revisão do profissional; não presumir uso de IA nem gerar diagnóstico automaticamente.
 
 As pendências antigas abaixo permanecem registradas. Quando sobrepostas, PRI-12/ACC-09 são o mesmo incremento e devem compartilhar evidências, sem tratar a duplicação de referência como duas entregas.
@@ -65,7 +69,7 @@ As pendências antigas abaixo permanecem registradas. Quando sobrepostas, PRI-12
 2. **Fechar decisões do escopo:** DEC-01 a DEC-08, sobretudo 24h, nova sessão, escalas e assinatura.
 3. **Validar integrações reais:** ACC-01 e ACC-02, com contas de teste controladas.
 4. **Concluir lacunas visíveis:** CLI-01, CLI-02 e AGE-01; ligar avaliações ao relatório de satisfação.
-5. **Finalizar o app:** concluir os itens abertos MOB-02 a MOB-11, instalação física e funções restantes do paciente; MOB-01/MOB-04/MOB-05/MOB-08 já entregues.
+5. **Aceitar o sistema web com o usuário:** executar T01–T16 do roteiro, corrigir falhas e registrar evidência por cenário. O APK fica adiado até depois das prioridades do web.
 6. **Completar testes da operação:** AGE, FIN, EST e REP; corrigir falhas encontradas.
 7. **Fechar segurança e recuperação:** SEC e OPS antes de pacientes reais.
 8. **Homologar apresentação e release:** QA, DOC e REL; repetir testes dos fluxos alterados.
@@ -190,7 +194,7 @@ Responsáveis: **Web + QA + Produto/Clínica**.
 - [ ] **UX-09 · P2 · Validação — Desempenho/descoberta:** medir LCP/INP/CLS em cenário móvel, imagens/fontes/equipe; revisar títulos, descrição, favicon, compartilhamento e sitemap/robots conforme escopo, indexando somente páginas públicas.
 - [ ] **UX-10 · P2 · Validação — Imagens/movimento:** licenças, fallback, alt e imagem responsiva. Parallax/microinterações da checklist anterior são opcionais e dependem de aprovação, movimento reduzido e desempenho.
 
-## Aplicativo de pacientes
+## Aplicativo de pacientes — etapa posterior ao sistema web
 
 Responsáveis: **Mobile + QA + API para contratos**. Repositório: [lepera-clinic-mobile](https://github.com/GuxtavoPereira/lepera-clinic-mobile). Manter SDK 58; não criar módulos da equipe sem ampliar escopo.
 
@@ -314,3 +318,5 @@ Não marcar apenas porque compilou. Registrar:
 - **22/11/2026 — cadastro e recuperação:** web/API `b20c9c3` publicado e CI aprovada (463 testes API). Menor com responsável testado sem gravações sintéticas em produção; timeout por hash lento reproduzido e corrigido. Recuperação nativa implementada/testada; abertura automática e entrega Gmail ainda pendentes. SDK mobile alinhado a 58.0.26; nove alertas moderados transitivos, nenhum alto/crítico na auditoria desta rodada.
 
 - **23/11/2026 — entrega do APK e novas prioridades:** APK online 0.2.0 disponibilizado para avaliação pelo usuário. Testes do APK interrompidos a pedido; sem alegação de homologação nativa. Registrados PRI-01 a PRI-13 com prioridade máxima e PRI-14 como último item opcional. Novas exigências ainda não estão na build publicada.
+
+- **23/11/2026 — web primeiro:** prioridade explicitamente corrigida pelo usuário. Implementados presencial e FAQ no código; aceite de uso pendente. Criado roteiro T01–T16 para teste conjunto do sistema web. Nenhuma alteração/rebuild do APK nesta etapa.

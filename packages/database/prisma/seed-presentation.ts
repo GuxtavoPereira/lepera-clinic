@@ -286,7 +286,7 @@ async function main() {
                     : counter % 3 === 0
                       ? "CONFIRMED"
                       : "SCHEDULED",
-                  modality: counter % 4 === 0 ? "ONLINE" : "IN_PERSON",
+                  modality: "IN_PERSON",
                   type: "SESSION",
                   roomOrLink: doctor.room,
                   receptionNotes: `${marker}: atendimento fictício para apresentação.`,
@@ -353,7 +353,7 @@ async function main() {
               mode: "EXACT",
               type: "novo_paciente",
               durationMinutes: 50,
-              modality: i % 2 === 0 ? "IN_PERSON" : "ONLINE",
+              modality: "IN_PERSON",
               reason: `${marker}: pedido fictício com horário escolhido.`,
             },
           });
@@ -414,7 +414,7 @@ async function main() {
             durationMinutes: 50,
             status: "COMPLETED",
             type: "SESSION",
-            modality: i % 2 === 0 ? "IN_PERSON" : "ONLINE",
+            modality: "IN_PERSON",
             roomOrLink: doctor.room,
           },
           select: { id: true, patientId: true, doctorId: true },

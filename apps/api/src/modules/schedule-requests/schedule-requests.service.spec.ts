@@ -103,7 +103,7 @@ describe('ScheduleRequestsService', () => {
       patientId: 'patient-1',
       status: 'PENDING',
       mode: 'FLEXIBLE',
-      modality: 'ONLINE',
+      modality: 'IN_PERSON',
       patient: { userId: 'user-1' },
     });
     const requestUpdateMany = jest.fn().mockResolvedValue({ count: 1 });

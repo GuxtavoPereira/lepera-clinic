@@ -143,7 +143,7 @@ function ReceptionCalendar() {
       {selected && (
         <section ref={selectedDetails} tabIndex={-1} aria-labelledby="selected-appointment-title" className="scroll-mt-24 space-y-3 rounded-2xl border border-slate-200 bg-white p-5 focus:outline-none focus:ring-2 focus:ring-teal-500">
           <h2 id="selected-appointment-title" className="flex items-center gap-2 font-semibold"><CalendarDays className="size-4" />{selected.patient?.user.name ?? "Consulta"}</h2>
-          <p className="text-sm text-slate-600">{selected.doctor.user.name} · {calendarDateKey(selected.startDatetime).split("-").reverse().join("/")} · {calendarTimeLabel(selected.startDatetime)} às {calendarTimeLabel(selected.endDatetime)} · {selected.modality === "ONLINE" ? "Online" : "Presencial"}</p>
+          <p className="text-sm text-slate-600">{selected.doctor.user.name} · {calendarDateKey(selected.startDatetime).split("-").reverse().join("/")} · {calendarTimeLabel(selected.startDatetime)} às {calendarTimeLabel(selected.endDatetime)} · {selected.modality === "ONLINE" ? "Online (registro anterior)" : "Presencial"}</p>
           {(selected.status === "SCHEDULED" || selected.status === "CONFIRMED") && <CancelAppointmentButton key={selected.id} appointmentId={selected.id} onCancelled={reload} />}
           <Link href="/reception/appointments" className="block text-sm text-primary underline underline-offset-4">Gerenciar consultas e pedidos de cancelamento na lista</Link>
         </section>

@@ -18,7 +18,9 @@ export class CreateScheduleRequestDto {
   requestedStartDatetime?: string;
 
   @IsOptional()
-  @IsEnum(Modality)
+  @IsIn(['IN_PERSON'], {
+    message: 'A clínica realiza somente consultas presenciais',
+  })
   modality?: Modality;
 
   @IsIn(['novo_paciente', 'reagendamento'])

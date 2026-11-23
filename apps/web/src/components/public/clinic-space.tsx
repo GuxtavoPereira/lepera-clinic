@@ -49,7 +49,7 @@ export function ClinicGallery() {
               aria-hidden="true"
               className="size-4 shrink-0 text-primary dark:text-sidebar-primary"
             />
-            Opções de atendimento presencial e online
+            Atendimento presencial em um espaço acolhedor
           </li>
           <li className="flex items-center gap-2">
             <CalendarDays

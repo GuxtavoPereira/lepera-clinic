@@ -11,7 +11,7 @@ describe('AppointmentsService', () => {
     doctorId: 'doctor-1',
     startDatetime: '2026-10-08T10:00:00.000Z',
     durationMinutes: 50,
-    modality: 'ONLINE' as const,
+    modality: 'IN_PERSON' as const,
     type: 'SESSION' as const,
   };
   const appointment = {
@@ -35,6 +35,17 @@ describe('AppointmentsService', () => {
   let appointmentFindMany: jest.Mock;
   let appointmentCount: jest.Mock;
   let auditLog: jest.Mock;
+
+  it('rejects online appointments before any database write', async () => {
+    await expect(
+      service.create(
+        { ...dto, modality: 'ONLINE' },
+        { sub: 'admin', role: 'ADMIN' },
+      ),
+    ).rejects.toThrow('somente consultas presenciais');
+    expect(transaction).not.toHaveBeenCalled();
+    expect(appointmentCreate).not.toHaveBeenCalled();
+  });
 
   beforeEach(async () => {
     patientFindUnique = jest.fn().mockResolvedValue({ id: dto.patientId });

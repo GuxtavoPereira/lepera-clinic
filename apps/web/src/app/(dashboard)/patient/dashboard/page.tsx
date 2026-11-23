@@ -93,7 +93,7 @@ export default function PatientDashboardPage() {
               </p>
               <p className="text-sm text-muted-foreground">
                 {appointmentDuration(next)} minutos ·{" "}
-                {next.modality === "ONLINE" ? "Online" : "Presencial"}
+                {next.modality === "ONLINE" ? "Online (registro anterior)" : "Presencial"}
               </p>
             </div>
             <Link href="/patient/appointments" className={dashboardActionClass}>

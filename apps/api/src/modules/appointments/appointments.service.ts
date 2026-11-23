@@ -1,3 +1,4 @@
+import { requireInPerson } from './in-person-policy';
 import { isTransactionConflict } from '../../prisma/prisma-errors';
 import {
   BadRequestException,
@@ -290,6 +291,7 @@ export class AppointmentsService {
     receptionistId?: string,
     requirePublishedSlot = false,
   ) {
+    requireInPerson(dto.modality);
     const startDatetime = new Date(dto.startDatetime);
     const endDatetime = new Date(
       startDatetime.getTime() + dto.durationMinutes * 60_000,
@@ -431,6 +433,7 @@ export class AppointmentsService {
             },
           });
           if (!previous) throw new NotFoundException('Consulta não encontrada');
+          requireInPerson(previous.modality);
           if (
             !CANCELLABLE_STATUSES.includes(previous.status) ||
             previous.startDatetime.getTime() <= Date.now() ||
@@ -571,6 +574,7 @@ export class AppointmentsService {
     user: AuthUser,
     ctx: RequestContext = {},
   ) {
+    requireInPerson(dto.modality);
     const outsideAvailability = dto.allowOutsideAvailability === true;
     const receptionNotes = outsideAvailability
       ? dto.receptionNotes?.trim()

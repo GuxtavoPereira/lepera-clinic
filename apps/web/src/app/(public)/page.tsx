@@ -1,3 +1,4 @@
+import { ClinicFaq } from "@/components/public/clinic-faq";
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -293,6 +294,7 @@ export default function LandingPage() {
           </ol>
         </div>
       </section>
+      <ClinicFaq />
       <section
         id="contato"
         aria-labelledby="contact-title"

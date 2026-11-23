@@ -11,6 +11,7 @@ const publicLinks = [
   { href: "/#equipe", label: "Equipe" },
   { href: "/#sobre", label: "Sobre nós" },
   { href: "/#espaco", label: "Nosso espaço" },
+  { href: "/#faq", label: "Dúvidas" },
   { href: "/#contato", label: "Contato" },
 ];
 
@@ -42,7 +43,7 @@ export function Navbar() {
 
         <nav
           aria-label="Navegação principal"
-          className="hidden items-center gap-4 lg:flex xl:gap-6"
+          className="hidden items-center gap-4 xl:flex xl:gap-6"
         >
           {publicLinks.map((link) => (
             <Link
@@ -68,7 +69,7 @@ export function Navbar() {
           <button
             ref={menuButton}
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary xl:hidden"
             aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
@@ -87,7 +88,7 @@ export function Navbar() {
         id="mobile-navigation"
         aria-label="Navegação principal móvel"
         hidden={!menuOpen}
-        className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-y border-border bg-background px-4 py-3 shadow-lg lg:hidden"
+        className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-y border-border bg-background px-4 py-3 shadow-lg xl:hidden"
       >
         <div className="mx-auto grid max-w-6xl gap-1">
           {publicLinks.map((link) => (

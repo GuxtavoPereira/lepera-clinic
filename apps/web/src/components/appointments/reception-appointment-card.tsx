@@ -80,7 +80,7 @@ export function ReceptionAppointmentCard({
             <p className="flex items-center gap-2">
               <Clock3 aria-hidden="true" className="size-4 shrink-0" />
               {appointment.durationMinutes} minutos ·{" "}
-              {appointment.modality === "ONLINE" ? "Online" : "Presencial"}
+              {appointment.modality === "ONLINE" ? "Online (registro anterior)" : "Presencial"}
             </p>
           </div>
           {appointment.status === "CANCELLED" && appointment.cancelReason && (

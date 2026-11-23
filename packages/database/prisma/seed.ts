@@ -184,8 +184,8 @@ async function seed(prisma: Prisma.TransactionClient) {
       const appointment = await prisma.appointment.create({ data: {
         patientId: patient.id, doctorId: doctor.id, receptionistId: receptionist.receptionist!.id,
         startDatetime, endDatetime: new Date(startDatetime.getTime() + 50 * 60_000), durationMinutes: 50,
-        modality: sessionIndex === 0 ? "IN_PERSON" : "ONLINE", type: sessionIndex === 0 ? "EVALUATION" : "SESSION", status: "COMPLETED",
-        roomOrLink: sessionIndex === 0 ? doctor.room : "https://meet.example.test/lepera-demo", sessionSequence: sessionIndex + 1,
+        modality: "IN_PERSON", type: sessionIndex === 0 ? "EVALUATION" : "SESSION", status: "COMPLETED",
+        roomOrLink: doctor.room, sessionSequence: sessionIndex + 1,
       } });
       appointmentCount++;
       const recordId = randomUUID();
@@ -223,8 +223,8 @@ async function seed(prisma: Prisma.TransactionClient) {
     const futureAppointment = await prisma.appointment.create({ data: {
       patientId: patient.id, doctorId: doctor.id, receptionistId: receptionist.receptionist!.id,
       startDatetime: futureStart, endDatetime: new Date(futureStart.getTime() + 50 * 60_000), durationMinutes: 50,
-      modality: i % 2 === 0 ? "IN_PERSON" : "ONLINE", type: i === 0 ? "RETURN" : "SESSION",
-      status: i % 2 === 0 ? "CONFIRMED" : "SCHEDULED", roomOrLink: i % 2 === 0 ? doctor.room : "https://meet.example.test/lepera-demo",
+      modality: "IN_PERSON", type: i === 0 ? "RETURN" : "SESSION",
+      status: i % 2 === 0 ? "CONFIRMED" : "SCHEDULED", roomOrLink: doctor.room,
       sessionSequence: 3, receptionNotes: "Agendamento fictício para demonstração; não corresponde a paciente real.",
     } });
     appointmentCount++;

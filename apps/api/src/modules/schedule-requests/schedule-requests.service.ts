@@ -1,3 +1,4 @@
+import { requireInPerson } from '../appointments/in-person-policy';
 import { isTransactionConflict } from '../../prisma/prisma-errors';
 import {
   BadRequestException,
@@ -62,6 +63,7 @@ export class ScheduleRequestsService {
   ) {}
 
   async create(dto: CreateScheduleRequestDto, user: AuthUser) {
+    requireInPerson(dto.modality);
     const exact = dto.mode === 'EXACT';
     if (!exact && !dto.preferredDate && !dto.preferredShift) {
       throw new BadRequestException(
@@ -200,6 +202,7 @@ export class ScheduleRequestsService {
     user: AuthUser,
     ctx: RequestContext = {},
   ) {
+    requireInPerson(dto.modality);
     const reviewerId = await this.resolveReviewerId(user);
     try {
       return await this.prisma.db.$transaction(
@@ -222,6 +225,7 @@ export class ScheduleRequestsService {
             throw new NotFoundException('Solicitação não encontrada');
           if (request.status !== 'PENDING')
             throw new ConflictException('Esta solicitação já foi analisada');
+          requireInPerson(request.modality);
           let assignment: CreateAppointmentDto;
           if (request.mode === 'EXACT') {
             if (

@@ -38,7 +38,7 @@ export default function NewAppointmentPage() {
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [startDatetime, setStartDatetime] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("50");
-  const [modality, setModality] = useState<"IN_PERSON" | "ONLINE">("IN_PERSON");
+  const modality = "IN_PERSON";
   const [type, setType] = useState("SESSION");
   const [roomOrLink, setRoomOrLink] = useState("");
   const [receptionNotes, setReceptionNotes] = useState("");
@@ -223,19 +223,7 @@ export default function NewAppointmentPage() {
                 required
               />
             </FormField>
-            <FormField id="modality" label="Modalidade">
-              <select
-                id="modality"
-                className={inputClassName}
-                value={modality}
-                onChange={(e) =>
-                  setModality(e.target.value as "IN_PERSON" | "ONLINE")
-                }
-              >
-                <option value="IN_PERSON">Presencial</option>
-                <option value="ONLINE">Online</option>
-              </select>
-            </FormField>
+            <p className="self-center text-sm text-muted-foreground">Atendimento presencial na clínica.</p>
             <FormField id="type" label="Tipo de consulta">
               <select
                 id="type"
@@ -251,13 +239,13 @@ export default function NewAppointmentPage() {
             </FormField>
           </div>
 
-          <FormField id="roomOrLink" label="Sala ou link (opcional)">
+          <FormField id="roomOrLink" label="Sala / consultório (opcional)">
             <input
               id="roomOrLink"
               className={inputClassName}
               value={roomOrLink}
               onChange={(e) => setRoomOrLink(e.target.value)}
-              placeholder="Ex.: Sala 2 ou link da videochamada"
+              placeholder="Ex.: Sala 2"
             />
           </FormField>
 

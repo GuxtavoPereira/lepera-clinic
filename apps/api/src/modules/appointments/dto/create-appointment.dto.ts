@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -24,7 +25,9 @@ export class CreateAppointmentDto {
   durationMinutes!: number;
 
   @IsOptional()
-  @IsEnum(Modality)
+  @IsIn(['IN_PERSON'], {
+    message: 'A clínica realiza somente consultas presenciais',
+  })
   modality?: Modality;
 
   @IsOptional()
