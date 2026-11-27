@@ -1,5 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import type { AuthUser } from '../../common/guards/jwt-auth.guard';
+import { AuditService } from '../audit/audit.service';
 import type { RequestContext } from '../audit/request-context';
 import { GuardianPortalService } from '../guardian-portal/guardian-portal.service';
 import { UsersService } from '../users/users.service';
@@ -24,6 +26,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly patients: PatientsService,
     private readonly guardianPortal: GuardianPortalService,
+    @Optional() private readonly audit?: AuditService,
   ) {}
 
   async login(email: string, password: string) {
@@ -59,6 +62,21 @@ export class AuthService {
   async registerGuardian(dto: RegisterGuardianDto, ctx: RequestContext = {}) {
     const created = await this.guardianPortal.registerGuardian(dto, ctx);
     return this.issueToken(created);
+  }
+
+  /** SEC-01: revoga a sessão no servidor incrementando `sessionVersion`. */
+  async logout(user: AuthUser, ctx: RequestContext = {}) {
+    await this.users.revokeSessions(user.sub);
+    if (this.audit) {
+      await this.audit.log({
+        actor: user,
+        action: 'user.logout',
+        resource: 'User',
+        resourceId: user.sub,
+        ...ctx,
+      });
+    }
+    return { ok: true };
   }
 
   private async issueToken(user: SessionUser) {

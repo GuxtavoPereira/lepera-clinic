@@ -24,6 +24,7 @@ type PersonalData = {
   useSocialName?: boolean;
   cpf?: string;
   birthDate?: string;
+  expectedUpdatedAt?: string;
 };
 
 @Injectable()
@@ -187,16 +188,38 @@ export class UsersService {
         'Informe o nome social antes de ativar a preferência',
       );
     }
+    const updateData = {
+      name: data.name,
+      civilName: data.civilName,
+      socialName: data.socialName,
+      useSocialName: data.useSocialName,
+      cpf: data.cpf,
+      birthDate: data.birthDate ? parseBirthDate(data.birthDate) : undefined,
+    };
+
+    if (data.expectedUpdatedAt !== undefined) {
+      const expected = new Date(data.expectedUpdatedAt);
+      if (!Number.isFinite(expected.getTime())) {
+        throw new BadRequestException('Versão de atualização inválida');
+      }
+      const result = await db.user.updateMany({
+        where: { id: userId, updatedAt: expected },
+        data: updateData,
+      });
+      if (result.count !== 1) {
+        throw new ConflictException(
+          'Este perfil foi alterado em outra sessão ou aba. Recarregue os dados antes de salvar novamente.',
+        );
+      }
+      return db.user.findUniqueOrThrow({
+        where: { id: userId },
+        omit: { passwordHash: true },
+      });
+    }
+
     return db.user.update({
       where: { id: userId },
-      data: {
-        name: data.name,
-        civilName: data.civilName,
-        socialName: data.socialName,
-        useSocialName: data.useSocialName,
-        cpf: data.cpf,
-        birthDate: data.birthDate ? parseBirthDate(data.birthDate) : undefined,
-      },
+      data: updateData,
       omit: { passwordHash: true },
     });
   }
@@ -264,6 +287,14 @@ export class UsersService {
 
   findByEmailWithPassword(email: string) {
     return this.prisma.db.user.findUnique({ where: { email } });
+  }
+
+  /** SEC-01: invalida no servidor todos os tokens JWT emitidos anteriormente. */
+  async revokeSessions(userId: string) {
+    await this.prisma.db.user.updateMany({
+      where: { id: userId, isActive: true },
+      data: { sessionVersion: { increment: 1 } },
+    });
   }
 
   /** Privilégios: ADMIN gerencia os demais papéis, mas não administradores;

@@ -1,6 +1,10 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import {
+  JwtAuthGuard,
+  type AuthUser,
+} from '../../common/guards/jwt-auth.guard';
+import {
   RateLimit,
   RateLimitGuard,
 } from '../../common/guards/rate-limit.guard';
@@ -70,5 +74,12 @@ export class AuthController {
   })
   registerGuardian(@Body() dto: RegisterGuardianDto, @Req() req: Request) {
     return this.auth.registerGuardian(dto, requestContext(req));
+  }
+
+  // POST /api/auth/logout — revoga o token atual no servidor via sessionVersion (SEC-01).
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  logout(@Req() req: Request & { user: AuthUser }) {
+    return this.auth.logout(req.user, requestContext(req));
   }
 }

@@ -79,6 +79,7 @@ const ACTION_LABEL: Record<string, string> = {
   "session_scale.save": "Escalas da sessão registradas",
   "session_scale.read": "Escalas da sessão consultadas",
   "review.create": "Avaliação de consulta enviada",
+  "user.logout": "Sessão encerrada",
 };
 const loadUsers = async (signal: AbortSignal) => {
   const users = await apiFetch<UserRow[]>("/users", { signal });

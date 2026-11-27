@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsISO8601,
   ValidateIf,
   IsOptional,
   IsString,
@@ -21,4 +22,9 @@ export class SocialNameDto {
   @ValidateIf((_object: SocialNameDto, value: unknown) => value !== undefined)
   @IsBoolean()
   useSocialName?: boolean;
+
+  /** ACC-06: controle otimista de concorrência (opcional para compatibilidade com APK 0.2.0). */
+  @IsOptional()
+  @IsISO8601()
+  expectedUpdatedAt?: string;
 }

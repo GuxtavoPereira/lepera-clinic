@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Patch,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   JwtAuthGuard,
   type AuthUser,
@@ -33,6 +41,7 @@ export class ProfileController {
 
   // GET /api/profile/me
   @Get('me')
+  @Header('Cache-Control', 'private, no-store')
   getMe(@Req() req: Req) {
     return this.profile.getMe(req.user);
   }

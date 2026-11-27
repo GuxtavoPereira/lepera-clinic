@@ -18,6 +18,7 @@ type Profile = {
   birthDate: string | null;
   role: string;
   isActive: boolean;
+  updatedAt?: string;
 };
 const labels: Record<string, string> = {
   ADMIN: "Administração",

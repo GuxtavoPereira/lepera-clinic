@@ -104,7 +104,19 @@ export async function registerGuardian(payload: RegisterGuardianPayload) {
   return data.user;
 }
 
-export function logout() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+
+export function logout(revokeOnServer = true) {
+  if (typeof window !== "undefined" && revokeOnServer) {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      void fetch(`${API_URL}/api/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        keepalive: true,
+      }).catch(() => {});
+    }
+  }
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   notify();

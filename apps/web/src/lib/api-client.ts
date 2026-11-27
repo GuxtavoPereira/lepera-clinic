@@ -25,7 +25,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     // desativada): encerra a sessão local; o AuthGuard leva ao login.
     // Login com senha errada não cai aqui (ainda não há token).
     if (res.status === 401 && token) {
-      logout();
+      logout(false);
     }
 
     const body = await res.json().catch(() => null);
