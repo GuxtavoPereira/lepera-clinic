@@ -771,3 +771,14 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+// SEC-02: Contadores distribuídos de rate limit compartilhados entre instâncias serverless.
+model RateLimitBucket {
+  key       String   @id @db.VarChar(255)
+  count     Int      @default(1)
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+  @@map("rate_limit_buckets")
+}

@@ -12,7 +12,8 @@ async function bootstrap() {
 
   app.disable('x-powered-by');
 
-  const trustProxy = config.get<number>('TRUST_PROXY') ?? 0;
+  const trustProxy =
+    config.get<number>('TRUST_PROXY') ?? (process.env.VERCEL ? 1 : 0);
   if (trustProxy > 0) {
     app.set('trust proxy', trustProxy);
   }
