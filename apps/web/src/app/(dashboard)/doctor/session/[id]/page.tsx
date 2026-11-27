@@ -21,6 +21,8 @@ type RecordResponse = {
   id: string;
   isSigned: boolean;
   signedAt: string | null;
+  releasedToPatient?: boolean;
+  releasedAt?: string | null;
   sessionSequence: number;
   mainComplaint: string | null;
   clinicalNotes: string | null;
@@ -200,6 +202,35 @@ export default function SessionPage() {
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Não foi possível assinar.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleTogglePatientRelease(nextReleased: boolean) {
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await apiFetch<SessionData>(
+        `/clinical-records/by-appointment/${appointmentId}/patient-release`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ released: nextReleased }),
+        },
+      );
+      setData(result);
+      setNotice(
+        nextReleased
+          ? "Evolução liberada para visualização no portal do paciente (Meu prontuário)."
+          : "Evolução recolhida do portal do paciente; permanece restrita ao profissional.",
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Não foi possível alterar a liberação para o paciente.",
       );
     } finally {
       setSaving(false);
@@ -485,6 +516,33 @@ export default function SessionPage() {
                 </Button>
               </div>
             )}
+          </div>
+        )}
+        {signed && (
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-5">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-900">
+                Acesso do paciente (Meu prontuário)
+              </p>
+              <p className="text-xs text-slate-500">
+                {data.record?.releasedToPatient
+                  ? `Liberado para leitura do próprio paciente${data.record.releasedAt ? ` em ${formatDateTimePtBr(data.record.releasedAt)}` : ""}.`
+                  : "Restrito ao profissional. Libere apenas se desejar disponibilizar esta evolução assinada ao paciente."}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant={data.record?.releasedToPatient ? "outline" : "default"}
+              disabled={saving}
+              onClick={() =>
+                void handleTogglePatientRelease(!data.record?.releasedToPatient)
+              }
+            >
+              {saving && <Loader2 className="size-4 animate-spin" />}
+              {data.record?.releasedToPatient
+                ? "Recolher do portal do paciente"
+                : "Liberar no portal do paciente"}
+            </Button>
           </div>
         )}
       </form>

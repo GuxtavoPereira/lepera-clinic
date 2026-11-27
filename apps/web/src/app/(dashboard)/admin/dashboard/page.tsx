@@ -70,6 +70,12 @@ const ACTION_LABEL: Record<string, string> = {
   "guardian.link.revoke": "Vínculo de responsável revogado",
   "guardian_feedback.read": "Devolutiva consultada",
   "guardian_feedback.export": "Devolutiva exportada em PDF",
+  "clinical_record.patient_release": "Prontuário liberado ao paciente",
+  "clinical_record.patient_unrelease": "Prontuário recolhido do paciente",
+  "patient_record.session.read": "Paciente consultou evolução",
+  "patient_record.document.read": "Paciente consultou documento",
+  "patient_record.document.export": "Paciente exportou documento em PDF",
+  "clinical_summary.read": "Resumo em parágrafo gerado",
 };
 const loadUsers = async (signal: AbortSignal) => {
   const users = await apiFetch<UserRow[]>("/users", { signal });

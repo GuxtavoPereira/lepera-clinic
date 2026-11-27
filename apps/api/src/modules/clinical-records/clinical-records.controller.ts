@@ -4,6 +4,8 @@ import {
   Get,
   Header,
   Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Req,
@@ -17,6 +19,7 @@ import {
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { requestContext } from '../audit/request-context';
 import { ClinicalRecordsService } from './clinical-records.service';
+import { SetPatientReleaseDto } from './dto/patient-release.dto';
 import { SaveClinicalRecordDto } from './dto/save-clinical-record.dto';
 
 type Req = {
@@ -68,5 +71,35 @@ export class ClinicalRecordsController {
   @Post('by-appointment/:appointmentId/sign')
   sign(@Param('appointmentId') appointmentId: string, @Req() req: Req) {
     return this.records.sign(appointmentId, req.user, requestContext(req));
+  }
+
+  // PATCH /api/clinical-records/by-appointment/:appointmentId/patient-release (PRI-13)
+  @Patch('by-appointment/:appointmentId/patient-release')
+  @Header('Cache-Control', 'private, no-store')
+  setPatientRelease(
+    @Param('appointmentId') appointmentId: string,
+    @Body() dto: SetPatientReleaseDto,
+    @Req() req: Req,
+  ) {
+    return this.records.setPatientRelease(
+      appointmentId,
+      dto.released,
+      req.user,
+      requestContext(req),
+    );
+  }
+
+  // GET /api/clinical-records/patient-summary/:patientId (PRI-14)
+  @Get('patient-summary/:patientId')
+  @Header('Cache-Control', 'private, no-store')
+  patientSummary(
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+    @Req() req: Req,
+  ) {
+    return this.records.getPatientParagraphSummary(
+      patientId,
+      req.user,
+      requestContext(req),
+    );
   }
 }

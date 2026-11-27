@@ -337,6 +337,8 @@ model ClinicalRecord {
 
   isSigned        Boolean   @default(false) // status - "pendente" ou "assinado"
   signedAt        DateTime? // assinado_em
+  releasedToPatient Boolean   @default(false) // PRI-13: liberação explícita ao paciente
+  releasedAt        DateTime? // PRI-13: data/hora da liberação ao paciente
   documentNumber  String? // numero_documento (Ex: PRON-2026...)
   attachmentsPath String? // Caminho para anexos (da imagem)
 
@@ -347,6 +349,7 @@ model ClinicalRecord {
 
   @@index([doctorId, createdAt])
   @@index([patientId])
+  @@index([patientId, isSigned, releasedToPatient])
   @@map("clinical_records")
 }
 

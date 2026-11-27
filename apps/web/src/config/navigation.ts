@@ -70,6 +70,7 @@ export const navigation: Record<Role, NavItem[]> = {
       icon: Calendar,
     },
     { label: "Calendário", href: "/patient/calendar", icon: Calendar },
+    { label: "Meu prontuário", href: "/patient/records", icon: ClipboardList },
     { label: "Orientações", href: "/patient/messages", icon: MessageSquareText },
     { label: "Lista de espera", href: "/patient/waitlist", icon: ListTodo },
     { label: "Perfil", href: "/patient/profile", icon: User },
