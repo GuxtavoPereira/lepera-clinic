@@ -50,6 +50,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Agenda", href: "/doctor/calendar", icon: Calendar },
     { label: "Pacientes", href: "/doctor/patients", icon: Users },
     { label: "Prontuários", href: "/doctor/records", icon: ClipboardList },
+    { label: "Documentos", href: "/doctor/documents", icon: FileText },
     { label: "Disponibilidade", href: "/doctor/availability", icon: Clock },
     { label: "Perfil", href: "/doctor/profile", icon: User },
     REPORTS_ITEM,

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { AppointmentStatus } from "@lepera/contracts";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ClipboardList } from "lucide-react";
+import { ArrowLeft, ClipboardList, FileText } from "lucide-react";
 import {
   dashboardActionClass,
   DashboardEmpty,
@@ -66,11 +66,20 @@ function PatientSummaryContent({ patientId }: { patientId: string }) {
         <ArrowLeft aria-hidden="true" className="size-4" />
         Meus pacientes
       </Link>
-      <header>
-        <p className="text-sm text-muted-foreground">Ficha do paciente</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {patient?.user.name ?? "Resumo do paciente"}
-        </h1>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">Ficha do paciente</p>
+          <h1 className="mt-1 text-2xl font-semibold text-foreground">
+            {patient?.user.name ?? "Resumo do paciente"}
+          </h1>
+        </div>
+        <Link
+          href={`/doctor/documents?patientId=${encodeURIComponent(patientId)}`}
+          className={dashboardActionClass}
+        >
+          <FileText aria-hidden="true" className="size-4" />
+          Documentos do paciente
+        </Link>
       </header>
       {error ? (
         <Alert kind="error">{error}</Alert>

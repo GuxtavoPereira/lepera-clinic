@@ -161,6 +161,7 @@ model Doctor {
   cancellationRequests CancellationRequest[]
   reviews              Review[]
   progressNotes        ClinicalRecord[]
+  clinicalDocuments    ClinicalDocument[]
 
   @@map("doctors")
 }
@@ -187,7 +188,8 @@ model Patient {
   requests      ScheduleRequest[]
   waitlists     Waitlist[]
   reviews       Review[]
-  progressNotes ClinicalRecord[]
+  progressNotes     ClinicalRecord[]
+  clinicalDocuments ClinicalDocument[]
 
   @@map("patients")
 }
@@ -284,6 +286,7 @@ model Appointment {
   requests             ScheduleRequest[]
   cancellationRequests CancellationRequest[]
   notifications        Notification[]
+  clinicalDocuments    ClinicalDocument[]
 
   // Índices das consultas de conflito (RN01) e das listagens
   @@index([doctorId, startDatetime])
@@ -344,6 +347,65 @@ model SessionScale {
   observation String? @db.Text // observacao
 
   @@map("session_scales")
+}
+
+enum ClinicalDocumentType {
+  PSYCHOLOGICAL_REPORT
+  PROGRESS_RECORD
+  CLINICAL_REPORT
+  INITIAL_INTERVIEW
+  PSYCHOLOGICAL_ASSESSMENT
+  GENERAL_NOTE
+  FIELD_DIARY
+  GUARDIAN_FEEDBACK
+  OTHER
+}
+
+enum ClinicalDocumentStatus {
+  DRAFT
+  SIGNED
+  SUPERSEDED
+}
+
+enum ClinicalDocumentVisibility {
+  INTERNAL
+  PATIENT_RELEASED
+  GUARDIAN_RELEASED
+}
+
+model ClinicalDocument {
+  id            String       @id @default(uuid())
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        Doctor       @relation(fields: [doctorId], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  type              ClinicalDocumentType
+  title             String                     @db.VarChar(160)
+  documentNumber    String?                    @db.VarChar(40)
+  version           Int                        @default(1)
+  previousVersionId String?                    @unique
+  previousVersion   ClinicalDocument?          @relation("ClinicalDocumentRevisions", fields: [previousVersionId], references: [id], onDelete: SetNull)
+  nextVersion       ClinicalDocument?          @relation("ClinicalDocumentRevisions")
+
+  status     ClinicalDocumentStatus     @default(DRAFT)
+  visibility ClinicalDocumentVisibility @default(INTERNAL)
+
+  // Conteúdo estruturado gravado criptografado (AES-256-GCM, RNF01).
+  content String @db.Text
+
+  signedAt   DateTime?
+  releasedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId, updatedAt])
+  @@index([patientId, updatedAt])
+  @@index([type, status])
+  @@map("clinical_documents")
 }
 
 // ------------------------------------------
