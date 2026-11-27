@@ -1,10 +1,13 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   RateLimit,
   RateLimitGuard,
 } from '../../common/guards/rate-limit.guard';
+import { requestContext } from '../audit/request-context';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterGuardianDto } from './dto/register-guardian.dto';
 import { RegisterPatientDto } from './dto/register.dto';
 import { PasswordRecoveryService } from './password-recovery.service';
 import {
@@ -55,5 +58,17 @@ export class AuthController {
   })
   register(@Body() dto: RegisterPatientDto) {
     return this.auth.register(dto);
+  }
+
+  // POST /api/auth/register-guardian — cadastro público do RESPONSÁVEL + dependente menor.
+  @Post('register-guardian')
+  @RateLimit({
+    name: 'register-guardian',
+    limit: 5,
+    windowMs: 60 * 60_000,
+    byEmail: true,
+  })
+  registerGuardian(@Body() dto: RegisterGuardianDto, @Req() req: Request) {
+    return this.auth.registerGuardian(dto, requestContext(req));
   }
 }

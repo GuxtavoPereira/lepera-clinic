@@ -17,7 +17,7 @@ import { maskPhone } from "@/lib/br-format";
 import { formatDateTimePtBr } from "@/lib/date-format";
 
 type PatientSummary = {
-  user: { name: string; email: string; age: number | null };
+  user: { name: string; email: string | null; age: number | null };
   phones: { phone: string }[];
   appointments: { id: string; startDatetime: string; status: AppointmentStatus }[];
 };
@@ -98,7 +98,7 @@ function PatientSummaryContent({ patientId }: { patientId: string }) {
             <dl className="grid gap-4 rounded-2xl border border-border bg-card p-4 text-card-foreground sm:grid-cols-2">
               <div className="min-w-0">
                 <dt className="text-sm text-muted-foreground">E-mail</dt>
-                <dd className="break-all">{patient.user.email}</dd>
+                <dd className="break-all">{patient.user.email ?? "Sem login próprio (dependente)"}</dd>
               </div>
               <div>
                 <dt className="text-sm text-muted-foreground">Telefone</dt>

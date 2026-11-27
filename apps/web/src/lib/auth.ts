@@ -8,7 +8,7 @@ export const AUTH_EVENT = "lepera:auth-changed";
 type StoredUser = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   role: Role;
 };
 
@@ -62,9 +62,41 @@ export async function login(email: string, password: string) {
   return data.user;
 }
 
+/** Corpo de POST /auth/register-guardian (cadastro público de responsável + dependente menor). */
+export type RegisterGuardianPayload = {
+  name: string;
+  socialName?: string | null;
+  useSocialName?: boolean;
+  email: string;
+  password: string;
+  cpf: string;
+  birthDate: string;
+  phone: string;
+  dependent: {
+    name: string;
+    socialName?: string | null;
+    useSocialName?: boolean;
+    cpf: string;
+    birthDate: string;
+    relationship: string;
+    insuranceProvider?: string;
+    insuranceNumber?: string;
+  };
+};
+
 /** Cadastra o paciente e já deixa a sessão aberta. */
 export async function registerPatient(payload: RegisterPayload) {
   const data = await apiFetch<LoginResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  persistSession(data);
+  return data.user;
+}
+
+/** Cadastra o responsável com dependente menor (sem login próprio) e abre a sessão do responsável. */
+export async function registerGuardian(payload: RegisterGuardianPayload) {
+  const data = await apiFetch<LoginResponse>("/auth/register-guardian", {
     method: "POST",
     body: JSON.stringify(payload),
   });

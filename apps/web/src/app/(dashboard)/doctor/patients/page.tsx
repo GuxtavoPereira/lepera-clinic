@@ -11,7 +11,7 @@ import { formatDatePtBr, formatDateTimePtBr } from "@/lib/date-format";
 
 type DoctorPatient = {
   id: string;
-  user: { name: string; email: string; birthDate: string | null };
+  user: { name: string; email: string | null; birthDate: string | null };
   phones: { phone: string }[];
   appointments: { startDatetime: string; status: string }[];
   _count: { appointments: number };
@@ -130,7 +130,7 @@ export default function DoctorPatientsPage() {
                     {patient.user.name}
                   </p>
                   <p className="truncate text-sm text-slate-500">
-                    {patient.user.email}
+                    {patient.user.email ?? "Sem login próprio (dependente)"}
                   </p>
                   <p className="text-xs text-slate-400">
                     {patient.user.birthDate &&

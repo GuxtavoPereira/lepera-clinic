@@ -13,3 +13,4 @@ export * from "./inventory";
 export * from "./clinical-documents";
 export * from "./rooms";
 export * from "./guidance-messages";
+export * from "./guardians";

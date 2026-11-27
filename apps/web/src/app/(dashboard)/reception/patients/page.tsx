@@ -18,7 +18,7 @@ type PatientListItem = {
   status: string;
   user: {
     name: string;
-    email: string;
+    email: string | null;
     cpf: string | null;
     birthDate: string | null;
     isActive: boolean;
@@ -149,7 +149,7 @@ export default function ReceptionPatientsPage() {
                       {patient.user.name}
                     </p>
                     <p className="truncate text-sm text-slate-500">
-                      {patient.user.email}
+                      {patient.user.email ?? "Sem login próprio (dependente)"}
                     </p>
                     <p className="text-xs text-slate-400">
                       {patient.user.cpf

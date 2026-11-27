@@ -119,7 +119,7 @@ describe('Password recovery', () => {
       message: expect.any(String) as unknown,
     });
     expect(userUpdate).toHaveBeenCalledWith({
-      where: { id: 'u', isActive: true },
+      where: { id: 'u', isActive: true, loginEnabled: true },
       data: { passwordHash: 'bcrypt-hash', sessionVersion: { increment: 1 } },
     });
     expect(claim).toHaveBeenCalledTimes(2);

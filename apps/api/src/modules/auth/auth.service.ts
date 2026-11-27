@@ -1,14 +1,17 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import type { RequestContext } from '../audit/request-context';
+import { GuardianPortalService } from '../guardian-portal/guardian-portal.service';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from '../users/password.service';
 import { PatientsService } from '../patients/patients.service';
+import { RegisterGuardianDto } from './dto/register-guardian.dto';
 import { RegisterPatientDto } from './dto/register.dto';
 
 type SessionUser = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   role: string;
   sessionVersion?: number;
 };
@@ -20,11 +23,17 @@ export class AuthService {
     private readonly passwords: PasswordService,
     private readonly jwt: JwtService,
     private readonly patients: PatientsService,
+    private readonly guardianPortal: GuardianPortalService,
   ) {}
 
   async login(email: string, password: string) {
     const user = await this.users.findByEmailWithPassword(email);
-    if (!user) {
+    if (
+      !user ||
+      user.loginEnabled === false ||
+      !user.passwordHash ||
+      !user.email
+    ) {
       throw new UnauthorizedException('E-mail ou senha inválidos');
     }
 
@@ -43,6 +52,12 @@ export class AuthService {
   /** Cadastro público: cria o paciente e já devolve a sessão (auto-login). */
   async register(dto: RegisterPatientDto) {
     const created = await this.patients.create(dto);
+    return this.issueToken(created);
+  }
+
+  /** Cadastro público do responsável + dependente menor sem login próprio. */
+  async registerGuardian(dto: RegisterGuardianDto, ctx: RequestContext = {}) {
+    const created = await this.guardianPortal.registerGuardian(dto, ctx);
     return this.issueToken(created);
   }
 

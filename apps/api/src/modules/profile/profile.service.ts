@@ -51,9 +51,9 @@ export class ProfileService {
   ) {
     const record = await this.prisma.db.user.findUnique({
       where: { id: user.sub },
-      select: { passwordHash: true },
+      select: { passwordHash: true, loginEnabled: true },
     });
-    if (!record) {
+    if (!record || record.loginEnabled === false || !record.passwordHash) {
       throw new NotFoundException('Usuário não encontrado');
     }
 

@@ -33,6 +33,7 @@ const LABELS: Record<Role, string> = {
   DOCTOR: "Profissional",
   RECEPTIONIST: "Recepção",
   PATIENT: "Paciente",
+  GUARDIAN: "Responsável",
 };
 const ROLES: Role[] = ["ADMIN", "DOCTOR", "RECEPTIONIST", "PATIENT"];
 type Props = {

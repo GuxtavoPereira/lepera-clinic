@@ -47,6 +47,7 @@ const ROLE_LABEL: Record<Role, string> = {
   DOCTOR: "Profissionais",
   RECEPTIONIST: "Recepção",
   PATIENT: "Pacientes",
+  GUARDIAN: "Responsáveis",
 };
 const ACTION_LABEL: Record<string, string> = {
   "clinical_record.create": "Prontuário criado",
@@ -64,6 +65,11 @@ const ACTION_LABEL: Record<string, string> = {
   "cancellation_request.reject": "Cancelamento recusado",
   "user.password_change": "Senha alterada",
   "user.profile_update": "Perfil atualizado",
+  "guardian.register": "Responsável cadastrado",
+  "guardian.dependent.create": "Dependente adicionado",
+  "guardian.link.revoke": "Vínculo de responsável revogado",
+  "guardian_feedback.read": "Devolutiva consultada",
+  "guardian_feedback.export": "Devolutiva exportada em PDF",
 };
 const loadUsers = async (signal: AbortSignal) => {
   const users = await apiFetch<UserRow[]>("/users", { signal });

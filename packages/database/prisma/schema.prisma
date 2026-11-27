@@ -18,6 +18,7 @@ enum Role {
   PATIENT // Paciente
   DOCTOR // Médico/Psicólogo
   ADMIN // Administrador (gestão da clínica)
+  GUARDIAN // Responsável legal por dependentes menores
 }
 
 enum AppointmentStatus {
@@ -106,8 +107,10 @@ model User {
   civilName    String? // Nome civil preservado separadamente
   socialName   String? // Nome social opcional
   useSocialName Boolean @default(false)
-  email        String    @unique // E-mail para login
-  passwordHash String // Senha criptografada (senha_hash)
+  email        String?   @unique // E-mail para login (nulo para dependente sem login)
+  passwordHash String? // Senha criptografada (nulo para dependente sem login)
+  loginEnabled Boolean   @default(true) // false para dependente sem credenciais próprias
+  contactPhone String?   @db.VarChar(20) // Telefone de contato da conta
   cpf          String    @unique // Documento CPF
   birthDate    DateTime? // Data de nascimento
   photoUrl     String? // URL da foto de perfil
@@ -129,7 +132,11 @@ model User {
   transactions   FinancialTransaction[]
   auditLogs      AuditLog[]
   passwordResetTokens PasswordResetToken[]
-  roomReservations    RoomReservation[]
+  roomReservations       RoomReservation[]
+  guardianLinks          GuardianPatient[] @relation("GuardianUserLinks")
+  guardianLinksCreated   GuardianPatient[] @relation("GuardianLinkCreator")
+  guardianLinksRevoked   GuardianPatient[] @relation("GuardianLinkRevoker")
+  scheduleRequestsSent   ScheduleRequest[] @relation("ScheduleRequestRequester")
 
   @@map("users")
 }
@@ -193,6 +200,7 @@ model Patient {
   progressNotes     ClinicalRecord[]
   clinicalDocuments ClinicalDocument[]
   guidanceMessages  PatientGuidanceMessage[]
+  guardianLinks     GuardianPatient[]
 
   @@map("patients")
 }
@@ -488,6 +496,34 @@ model PatientGuidanceMessage {
   @@map("patient_guidance_messages")
 }
 
+enum GuardianLinkStatus {
+  ACTIVE
+  REVOKED
+}
+
+model GuardianPatient {
+  id              String             @id @default(uuid())
+  guardianUserId  String
+  guardianUser    User               @relation("GuardianUserLinks", fields: [guardianUserId], references: [id])
+  patientId       String
+  patient         Patient            @relation(fields: [patientId], references: [id])
+  relationship    String             @db.VarChar(60)
+  status          GuardianLinkStatus @default(ACTIVE)
+  createdByUserId String?
+  createdBy       User?              @relation("GuardianLinkCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  revokedByUserId String?
+  revokedBy       User?              @relation("GuardianLinkRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  revokedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([guardianUserId, patientId])
+  @@index([guardianUserId, status])
+  @@index([patientId, status])
+  @@map("guardian_patients")
+}
+
 // ------------------------------------------
 // GESTÃO DE FLUXO (Solicitações e Filas)
 // ------------------------------------------
@@ -516,6 +552,8 @@ model ScheduleRequest {
 
   generatedApptId      String? // FK -> consultas
   generatedAppointment Appointment? @relation(fields: [generatedApptId], references: [id])
+  requestedByUserId    String?
+  requestedBy          User?        @relation("ScheduleRequestRequester", fields: [requestedByUserId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 

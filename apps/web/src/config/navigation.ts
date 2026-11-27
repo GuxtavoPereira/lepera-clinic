@@ -89,6 +89,13 @@ export const navigation: Record<Role, NavItem[]> = {
     REPORTS_ITEM,
     SECURITY_ITEM,
   ],
+  GUARDIAN: [
+    { label: "Painel", href: "/guardian/dashboard", icon: Home },
+    { label: "Agendamentos", href: "/guardian/appointments", icon: Calendar },
+    { label: "Devolutivas", href: "/guardian/feedback", icon: FileText },
+    { label: "Perfil", href: "/profile", icon: User },
+    SECURITY_ITEM,
+  ],
 };
 
 /** Cada perfil abre uma pagina existente para seus dados pessoais. */

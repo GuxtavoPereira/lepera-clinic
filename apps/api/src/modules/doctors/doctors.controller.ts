@@ -30,7 +30,7 @@ export class DoctorsController {
   }
 
   @Get()
-  @Roles('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR')
+  @Roles('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR', 'GUARDIAN')
   findAll() {
     return this.doctorsService.findAll();
   }

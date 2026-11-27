@@ -26,7 +26,7 @@ export const UpdateUserSchema = CreateUserBaseSchema.omit({ password: true })
     civilName: z.string().trim().min(2).max(120).optional(),
     cpf: CpfSchema.optional(),
     birthDate: BirthDateSchema.nullable().optional(),
-    photoUrl: z.string().url().nullable().optional(), 
+    photoUrl: z.string().url().nullable().optional(),
   });
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 
@@ -50,7 +50,9 @@ export const UserResponseSchema = z.object({
   civilName: z.string().nullable().optional(),
   socialName: z.string().nullable().optional(),
   useSocialName: z.boolean().optional(),
-  email: z.string(),
+  email: z.string().nullable(),
+  loginEnabled: z.boolean().optional(),
+  contactPhone: z.string().nullable().optional(),
   cpf: CpfSchema,
   birthDate: z.string().nullable(),
   photoUrl: z.string().nullable(),

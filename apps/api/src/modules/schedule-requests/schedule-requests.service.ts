@@ -191,6 +191,7 @@ export class ScheduleRequestsService {
           include: { user: { select: { id: true, name: true, email: true } } },
         },
         preferredDoctor: { include: { user: { select: { name: true } } } },
+        requestedBy: { select: { id: true, name: true, role: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -212,6 +213,7 @@ export class ScheduleRequestsService {
             select: {
               id: true,
               patientId: true,
+              requestedByUserId: true,
               status: true,
               mode: true,
               preferredDoctorId: true,
@@ -309,7 +311,7 @@ export class ScheduleRequestsService {
           await tx.notification.create({
             data: {
               appointmentId: appointment.id,
-              userId: request.patient.userId,
+              userId: request.requestedByUserId ?? request.patient.userId,
               type: 'confirmacao',
               title: 'Consulta confirmada',
               message: `Sua consulta foi confirmada para ${new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(assignment.startDatetime))}. Consulte os detalhes na sua agenda.`,
@@ -342,7 +344,11 @@ export class ScheduleRequestsService {
         async (tx) => {
           const request = await tx.scheduleRequest.findUnique({
             where: { id },
-            select: { id: true, patient: { select: { userId: true } } },
+            select: {
+              id: true,
+              requestedByUserId: true,
+              patient: { select: { userId: true } },
+            },
           });
           if (!request)
             throw new NotFoundException('Solicitação não encontrada');
@@ -358,7 +364,7 @@ export class ScheduleRequestsService {
             throw new ConflictException('Esta solicitação já foi analisada');
           await tx.notification.create({
             data: {
-              userId: request.patient.userId,
+              userId: request.requestedByUserId ?? request.patient.userId,
               type: 'alerta',
               title: 'Solicitação não aprovada',
               message:

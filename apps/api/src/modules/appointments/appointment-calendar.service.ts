@@ -86,6 +86,12 @@ export class AppointmentCalendarService {
   }
 
   async availableSlots(query: CalendarQueryDto, user: AuthUser) {
+    if (user.role === 'GUARDIAN') {
+      return this.freeSlots(
+        query,
+        query.doctorId ? { doctorId: query.doctorId } : {},
+      );
+    }
     const viewer = await this.viewer(user, query.doctorId);
     return this.freeSlots(query, viewer);
   }

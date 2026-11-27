@@ -79,9 +79,9 @@ export class PasswordRecoveryService {
       );
     const user = await this.prisma.db.user.findUnique({
       where: { email },
-      select: { id: true, isActive: true },
+      select: { id: true, isActive: true, loginEnabled: true },
     });
-    if (user?.isActive) {
+    if (user?.isActive && user.loginEnabled !== false) {
       const token = randomBytes(32).toString('base64url');
       const created = await this.prisma.db.passwordResetToken.create({
         data: {
@@ -118,14 +118,15 @@ export class PasswordRecoveryService {
         userId: true,
         usedAt: true,
         expiresAt: true,
-        user: { select: { isActive: true } },
+        user: { select: { isActive: true, loginEnabled: true } },
       },
     });
     if (
       !record ||
       record.usedAt ||
       record.expiresAt <= new Date() ||
-      !record.user.isActive
+      !record.user.isActive ||
+      record.user.loginEnabled === false
     )
       throw new BadRequestException(INVALID_TOKEN);
     const passwordHash = await this.passwords.hash(password);
@@ -142,7 +143,7 @@ export class PasswordRecoveryService {
           });
           if (claimed.count !== 1) throw new BadRequestException(INVALID_TOKEN);
           const updated = await tx.user.updateMany({
-            where: { id: record.userId, isActive: true },
+            where: { id: record.userId, isActive: true, loginEnabled: true },
             data: { passwordHash, sessionVersion: { increment: 1 } },
           });
           if (updated.count !== 1) throw new BadRequestException(INVALID_TOKEN);

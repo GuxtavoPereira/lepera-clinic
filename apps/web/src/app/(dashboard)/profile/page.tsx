@@ -25,6 +25,7 @@ const labels: Record<string, string> = {
   DOCTOR: "Profissional",
   PATIENT: "Paciente",
   RECEPTIONIST: "Recepção",
+  GUARDIAN: "Responsável",
 };
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);

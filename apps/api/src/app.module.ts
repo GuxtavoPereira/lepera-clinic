@@ -19,6 +19,7 @@ import { ClinicalRecordsModule } from './modules/clinical-records/clinical-recor
 import { ClinicalDocumentsModule } from './modules/clinical-documents/clinical-documents.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { GuidanceMessagesModule } from './modules/guidance-messages/guidance-messages.module';
+import { GuardianPortalModule } from './modules/guardian-portal/guardian-portal.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -51,6 +52,7 @@ import { PublicClinicModule } from './modules/public-clinic/public-clinic.module
     ClinicalDocumentsModule,
     RoomsModule,
     GuidanceMessagesModule,
+    GuardianPortalModule,
     AvailabilityModule,
     WaitlistModule,
     NotificationsModule,

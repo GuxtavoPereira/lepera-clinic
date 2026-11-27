@@ -46,7 +46,14 @@ export class AppointmentsController {
   }
 
   @Get('available-slots')
-  @Roles('ADMIN', 'RECEPTIONIST', 'SUPER_ADMIN', 'DOCTOR', 'PATIENT')
+  @Roles(
+    'ADMIN',
+    'RECEPTIONIST',
+    'SUPER_ADMIN',
+    'DOCTOR',
+    'PATIENT',
+    'GUARDIAN',
+  )
   availableSlots(
     @Query() query: CalendarQueryDto,
     @Req() request: { user: AuthUser },

@@ -26,6 +26,11 @@ const roleStyles: Record<Role, { label: string; tone: string; dot: string }> = {
     tone: "bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-200",
     dot: "bg-teal-700 dark:bg-teal-400",
   },
+  GUARDIAN: {
+    label: "Responsável",
+    tone: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
+    dot: "bg-emerald-700 dark:bg-emerald-400",
+  },
 };
 
 export function RoleBadge({ role, label }: { role: Role; label?: string }) {

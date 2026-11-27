@@ -37,6 +37,7 @@ const ROLE_FILTERS: Array<{ label: string; value: Role | "ALL" }> = [
   { label: "Profissionais", value: "DOCTOR" },
   { label: "Recepção", value: "RECEPTIONIST" },
   { label: "Pacientes", value: "PATIENT" },
+  { label: "Responsáveis", value: "GUARDIAN" },
 ];
 
 const STATUS_FILTERS = [
@@ -137,7 +138,7 @@ function UsersManagement() {
         u.name.toLowerCase().includes(term) ||
         u.civilName?.toLowerCase().includes(term) ||
         u.socialName?.toLowerCase().includes(term) ||
-        u.email.toLowerCase().includes(term);
+        u.email?.toLowerCase().includes(term);
       return matchesRole && matchesStatus && matchesSearch;
     });
   }, [users, search, roleFilter, statusFilter]);
@@ -292,7 +293,7 @@ function UsersManagement() {
                     <div className="flex items-center gap-4 mt-1 flex-wrap">
                       <span className="flex min-w-0 max-w-full items-center gap-1 break-all text-xs text-muted-foreground">
                         <Mail className="h-2.75 w-2.75" />
-                        {u.email}
+                        {u.email ?? "Sem login próprio (dependente)"}
                       </span>
                       <span className="flex min-w-0 max-w-full items-center gap-1 break-all text-xs text-muted-foreground">
                         <Calendar className="h-2.75 w-2.75" />

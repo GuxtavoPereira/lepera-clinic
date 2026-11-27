@@ -17,7 +17,8 @@ export type ScheduleRequest = {
   reason: string | null;
   status: "PENDING" | "APPROVED" | "REJECTED";
   createdAt: string;
-  patient: { user: { name: string; email: string } };
+  patient: { user: { name: string; email: string | null } };
+  requestedBy?: { id: string; name: string; role: string } | null;
   preferredDoctor: { user: { name: string } } | null;
   generatedAppointment: { startDatetime: string; endDatetime: string; status: string } | null;
 };

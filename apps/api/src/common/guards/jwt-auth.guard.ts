@@ -45,9 +45,14 @@ export class JwtAuthGuard implements CanActivate {
     // mudado de perfil) nesse intervalo: confere no banco a cada requisição.
     const account = await this.prisma.db.user.findUnique({
       where: { id: payload.sub },
-      select: { isActive: true, role: true, sessionVersion: true },
+      select: {
+        isActive: true,
+        loginEnabled: true,
+        role: true,
+        sessionVersion: true,
+      },
     });
-    if (!account || !account.isActive) {
+    if (!account || !account.isActive || account.loginEnabled === false) {
       throw new UnauthorizedException('Conta desativada ou inexistente');
     }
     if ((payload.sessionVersion ?? 0) !== (account.sessionVersion ?? 0)) {

@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
 import { PatientsModule } from '../patients/patients.module';
+import { GuardianPortalModule } from '../guardian-portal/guardian-portal.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import {
@@ -14,6 +15,7 @@ import {
   imports: [
     UsersModule,
     PatientsModule,
+    GuardianPortalModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

@@ -6,6 +6,7 @@ export const HOME_BY_ROLE: Record<Role, string> = {
   DOCTOR: "/doctor/dashboard",
   PATIENT: "/patient/dashboard",
   RECEPTIONIST: "/reception/dashboard",
+  GUARDIAN: "/guardian/dashboard",
 };
 
 const ROLE_PREFIXES: Record<Role, string[]> = {
@@ -14,6 +15,7 @@ const ROLE_PREFIXES: Record<Role, string[]> = {
   DOCTOR: ["/doctor", "/rooms"],
   PATIENT: ["/patient"],
   RECEPTIONIST: ["/reception", "/rooms"],
+  GUARDIAN: ["/guardian"],
 };
 
 const SHARED_PREFIXES = ["/notifications", "/settings", "/profile", "/reports"];
@@ -23,6 +25,7 @@ function matches(pathname: string, prefix: string) {
 }
 
 export function canAccess(role: Role, pathname: string): boolean {
+  if (role === "GUARDIAN" && matches(pathname, "/reports")) return false;
   if (SHARED_PREFIXES.some((prefix) => matches(pathname, prefix))) return true;
   return ROLE_PREFIXES[role].some((prefix) => matches(pathname, prefix));
 }
