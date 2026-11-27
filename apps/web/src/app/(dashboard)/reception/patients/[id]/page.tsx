@@ -29,6 +29,9 @@ type PatientDetail = {
   emergencyContactPhone: string | null;
   user: {
     name: string;
+    civilName?: string | null;
+    socialName?: string | null;
+    useSocialName?: boolean;
     email: string;
     cpf: string | null;
     birthDate: string | null;
@@ -241,6 +244,13 @@ export default function PatientDetailsPage() {
         <div className="space-y-6">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <dl className="grid gap-5 sm:grid-cols-2">
+              {patient.user.useSocialName &&
+                patient.user.civilName &&
+                patient.user.civilName !== patient.user.name && (
+                  <div className="sm:col-span-2">
+                    <Info label="Nome civil" value={patient.user.civilName} />
+                  </div>
+                )}
               <Info
                 label="CPF"
                 value={patient.user.cpf ? privateCpf(patient.user.cpf) : null}

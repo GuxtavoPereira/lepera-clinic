@@ -74,6 +74,8 @@ describe('PatientsService professional access', () => {
         user: {
           OR: [
             { name: { contains: 'lucas', mode: 'insensitive' } },
+            { civilName: { contains: 'lucas', mode: 'insensitive' } },
+            { socialName: { contains: 'lucas', mode: 'insensitive' } },
             { email: { contains: 'lucas', mode: 'insensitive' } },
           ],
         },

@@ -7,6 +7,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@lepera/db';
+import type {
+  InventoryCategory,
+  PsychologicalTestMaterial,
+} from '@lepera/contracts';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { DbClient } from '../../prisma/prisma.types';
@@ -25,11 +29,42 @@ const itemSelect = {
   id: true,
   name: true,
   description: true,
+  category: true,
+  testEdition: true,
+  testMaterial: true,
   stockQuantity: true,
   minimumStock: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.InventoryItemSelect;
+
+type Specification = {
+  category: InventoryCategory;
+  testEdition: string | null;
+  testMaterial: PsychologicalTestMaterial | null;
+};
+
+function resolveSpecification(
+  dto: UpdateInventoryItemDto,
+  current?: Specification,
+): Specification {
+  const category = dto.category ?? current?.category ?? 'GENERAL';
+  if (category === 'GENERAL') {
+    if (dto.testEdition !== undefined || dto.testMaterial !== undefined) {
+      throw new BadRequestException(
+        'Edição e tipo de material são específicos de testes psicológicos.',
+      );
+    }
+    return { category, testEdition: null, testMaterial: null };
+  }
+  const testEdition = dto.testEdition?.trim() ?? current?.testEdition;
+  const testMaterial = dto.testMaterial ?? current?.testMaterial;
+  if (!testEdition || !testMaterial)
+    throw new BadRequestException(
+      'Informe a edição e o tipo de material do teste psicológico.',
+    );
+  return { category, testEdition, testMaterial };
+}
 
 @Injectable()
 export class InventoryService {
@@ -87,6 +122,7 @@ export class InventoryService {
           description: dto.description || null,
           minimumStock: dto.minimumStock,
           stockQuantity: 0,
+          ...resolveSpecification(dto),
         },
         select: itemSelect,
       });
@@ -127,6 +163,7 @@ export class InventoryService {
           description:
             dto.description === undefined ? undefined : dto.description || null,
           minimumStock: dto.minimumStock,
+          ...resolveSpecification(dto, previous),
         },
       });
       if (changed.count !== 1) throw this.changedError();
@@ -251,6 +288,7 @@ export class InventoryService {
 
   private where(query: ListInventoryDto): Prisma.InventoryItemWhereInput {
     return {
+      ...(query.category ? { category: query.category } : {}),
       ...(query.lowStock
         ? {
             stockQuantity: {
@@ -263,6 +301,7 @@ export class InventoryService {
             OR: [
               { name: { contains: query.search, mode: 'insensitive' } },
               { description: { contains: query.search, mode: 'insensitive' } },
+              { testEdition: { contains: query.search, mode: 'insensitive' } },
             ],
           }
         : {}),

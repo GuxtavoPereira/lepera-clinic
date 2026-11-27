@@ -1,7 +1,16 @@
+import {
+  testMaterialLabels,
+  type InventoryCategory,
+  type PsychologicalTestMaterial,
+} from "@lepera/contracts";
+
 export type InventoryItem = {
   id: string;
   name: string;
   description: string | null;
+  category: InventoryCategory;
+  testEdition: string | null;
+  testMaterial: PsychologicalTestMaterial | null;
   stockQuantity: number;
   minimumStock: number;
   createdAt: string;
@@ -47,4 +56,9 @@ export function stockStatus(item: InventoryItem) {
   if (item.stockQuantity === 0) return "Sem estoque";
   if (item.stockQuantity <= item.minimumStock) return "Repor material";
   return "Em dia";
+}
+
+export function testSpecification(item: InventoryItem) {
+  if (item.category !== "PSYCHOLOGICAL_TEST" || !item.testMaterial) return "";
+  return `Teste psicológico · ${testMaterialLabels[item.testMaterial]} · ${item.testEdition}`;
 }

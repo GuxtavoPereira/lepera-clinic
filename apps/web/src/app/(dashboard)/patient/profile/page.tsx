@@ -13,9 +13,11 @@ import {
   type PatientFormState,
   type PatientSource,
 } from "@/components/patients/patient-fields";
+import { syncStoredUserName } from "@/lib/auth";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
 type Me = PatientSource["user"] & {
+  id: string;
   email: string;
   patient: PatientSource["patient"] | null;
 };
@@ -31,6 +33,7 @@ export default function PatientProfilePage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   function apply(me: Me) {
+    syncStoredUserName(me.id, me.name);
     if (!me.patient) return;
     const next = patientToForm({ user: me, patient: me.patient });
     setEmail(me.email);

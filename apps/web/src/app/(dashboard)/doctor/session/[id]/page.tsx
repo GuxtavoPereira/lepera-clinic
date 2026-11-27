@@ -28,6 +28,8 @@ type RecordResponse = {
   diagnosticHypothesis: string | null;
   cid10: string | null;
   dsm5: string | null;
+  cid11: string | null;
+  dsm5Tr: string | null;
   approachUsed: string | null;
   therapeuticPlan: string | null;
   nextSessionDate: string | null;
@@ -44,8 +46,8 @@ type FormState = {
   clinicalNotes: string;
   homework: string;
   diagnosticHypothesis: string;
-  cid10: string;
-  dsm5: string;
+  cid11: string;
+  dsm5Tr: string;
   approachUsed: string;
   therapeuticPlan: string;
   nextSessionDate: string;
@@ -57,8 +59,8 @@ const EMPTY_FORM: FormState = {
   clinicalNotes: "",
   homework: "",
   diagnosticHypothesis: "",
-  cid10: "",
-  dsm5: "",
+  cid11: "",
+  dsm5Tr: "",
   approachUsed: "",
   therapeuticPlan: "",
   nextSessionDate: "",
@@ -72,8 +74,8 @@ function toForm(record: RecordResponse | null): FormState {
     clinicalNotes: record.clinicalNotes ?? "",
     homework: record.homework ?? "",
     diagnosticHypothesis: record.diagnosticHypothesis ?? "",
-    cid10: record.cid10 ?? "",
-    dsm5: record.dsm5 ?? "",
+    cid11: record.cid11 ?? "",
+    dsm5Tr: record.dsm5Tr ?? "",
     approachUsed: record.approachUsed ?? "",
     therapeuticPlan: record.therapeuticPlan ?? "",
     nextSessionDate: record.nextSessionDate?.slice(0, 10) ?? "",
@@ -337,25 +339,48 @@ export default function SessionPage() {
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="cid10" label="CID-10">
+            <Field id="cid11" label="CID-11 (opcional)">
               <input
-                id="cid10"
+                id="cid11"
                 className={inputClassName}
-                value={form.cid10}
-                onChange={(e) => update("cid10", e.target.value)}
+                maxLength={100}
+                value={form.cid11}
+                onChange={(e) => update("cid11", e.target.value)}
                 disabled={signed}
               />
             </Field>
-            <Field id="dsm5" label="DSM-5">
+            <Field id="dsm5Tr" label="DSM-5-TR (opcional)">
               <input
-                id="dsm5"
+                id="dsm5Tr"
                 className={inputClassName}
-                value={form.dsm5}
-                onChange={(e) => update("dsm5", e.target.value)}
+                maxLength={100}
+                value={form.dsm5Tr}
+                onChange={(e) => update("dsm5Tr", e.target.value)}
                 disabled={signed}
               />
             </Field>
           </div>
+          {(data.record?.cid10 || data.record?.dsm5) && (
+            <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                Classificações anteriores desta sessão
+              </h3>
+              <dl className="grid gap-2 text-sm">
+                {data.record.cid10 && (
+                  <div>
+                    <dt className="font-medium">CID-10</dt>
+                    <dd className="whitespace-pre-wrap break-words">{data.record.cid10}</dd>
+                  </div>
+                )}
+                {data.record.dsm5 && (
+                  <div>
+                    <dt className="font-medium">DSM-5</dt>
+                    <dd className="whitespace-pre-wrap break-words">{data.record.dsm5}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
           <Field id="approachUsed" label="Abordagem utilizada">
             <input
               id="approachUsed"

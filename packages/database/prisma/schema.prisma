@@ -102,7 +102,10 @@ enum MovementType {
 
 model User {
   id           String    @id @default(uuid()) // ID único
-  name         String // Nome completo
+  name         String // Nome de exibição, sincronizado pela preferência
+  civilName    String? // Nome civil preservado separadamente
+  socialName   String? // Nome social opcional
+  useSocialName Boolean @default(false)
   email        String    @unique // E-mail para login
   passwordHash String // Senha criptografada (senha_hash)
   cpf          String    @unique // Documento CPF
@@ -305,9 +308,11 @@ model ClinicalRecord {
   mainComplaint        String? @db.Text // queixa_principal
   clinicalNotes        String? @db.Text // observacoes_clinicas / clinical_evolution
   homework             String? @db.Text // tarefas_para_casa
-  diagnosticHypothesis String? @db.Text // hipotese_diagnostica (Ex: F41.1 - TAG)
-  cid10                String? @db.Text // CID-10
-  dsm5                 String? @db.Text // DSM-5
+  diagnosticHypothesis String? @db.Text // hipótese anotada pelo profissional
+  cid10                String? @db.Text // CID-10 (histórico)
+  dsm5                 String? @db.Text // DSM-5 (histórico)
+  cid11                String? @db.Text // CID-11
+  dsm5Tr               String? @db.Text // DSM-5-TR
   approachUsed         String? @db.Text // abordagem_utilizada
   therapeuticPlan      String? @db.Text // plano_terapeutico (conduct)
 
@@ -510,10 +515,26 @@ model FinancialTransaction {
   @@map("financial_transactions")
 }
 
+enum InventoryCategory {
+  GENERAL
+  PSYCHOLOGICAL_TEST
+}
+
+enum PsychologicalTestMaterial {
+  KIT
+  MANUAL
+  BOOKLET
+  PROTOCOL
+  RESPONSE_SHEET
+}
+
 model InventoryItem {
   id            String  @id @default(uuid())
   name          String // Nome do item (Medicação/Material)
   description   String? @db.Text // Descrição
+  category      InventoryCategory @default(GENERAL)
+  testEdition   String? @db.VarChar(80)
+  testMaterial  PsychologicalTestMaterial?
   stockQuantity Int     @default(0) // Quantidade atual
   minimumStock  Int     @default(5) // Estoque mínimo para alerta
 

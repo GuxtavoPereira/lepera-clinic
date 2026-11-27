@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   stockDate,
+  testSpecification,
   type InventoryItem,
   type MovementHistory,
 } from "./inventory-types";
@@ -130,7 +131,7 @@ export function StockMovementSheet({
                 : "Registrar saída"}
           </SheetTitle>
           <SheetDescription>
-            {current.name} · Saldo atual: {current.stockQuantity} unidades ·
+            {current.name} · {current.category === "PSYCHOLOGICAL_TEST" && `${testSpecification(current)} · `}Saldo atual: {current.stockQuantity} unidades ·
             Mínimo: {current.minimumStock}
           </SheetDescription>
         </SheetHeader>

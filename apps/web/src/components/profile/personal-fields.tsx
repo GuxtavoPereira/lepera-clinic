@@ -1,10 +1,11 @@
 "use client";
 
+import { SocialNameFields, type SocialNameState } from "./social-name-fields";
 import { FormField, inputClassName } from "@/components/forms/form-field";
 import { privateCpf } from "@lepera/contracts";
 import { maskCpf } from "@/lib/br-format";
 
-export type PersonalFormState = {
+export type PersonalFormState = SocialNameState & {
   name: string;
   cpf: string; // com máscara
   birthDate: string; // AAAA-MM-DD
@@ -30,7 +31,7 @@ export function PersonalFields({
   return (
     <div className="grid gap-5 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <FormField id={`${idPrefix}-name`} label="Nome completo">
+        <FormField id={`${idPrefix}-name`} label="Nome civil completo">
           <input
             id={`${idPrefix}-name`}
             className={inputClassName}
@@ -42,6 +43,7 @@ export function PersonalFields({
         </FormField>
       </div>
 
+      <div className="sm:col-span-2"><SocialNameFields value={value} onChange={onChange} idPrefix={idPrefix} /></div>
       {email !== undefined && (
         <div className="sm:col-span-2">
           <FormField id={`${idPrefix}-email`} label="E-mail">

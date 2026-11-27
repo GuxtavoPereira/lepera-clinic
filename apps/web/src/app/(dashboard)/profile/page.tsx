@@ -1,11 +1,17 @@
 "use client";
+import { NamePreferenceEditor } from "@/components/profile/name-preference-editor";
+import { privateCpf } from "@lepera/contracts";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { UserRound } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
-import { maskCpf } from "@/lib/br-format";
+import { syncStoredUserName } from "@/lib/auth";
 import { formatDatePtBr } from "@/lib/date-format";
 type Profile = {
+  id: string;
+  civilName?: string | null;
+  socialName?: string | null;
+  useSocialName?: boolean;
   name: string;
   email: string;
   cpf: string;
@@ -27,7 +33,10 @@ export default function ProfilePage() {
     const controller = new AbortController();
     void apiFetch<Profile>("/profile/me", { signal: controller.signal })
       .then((data) => {
-        if (!controller.signal.aborted) setProfile(data);
+        if (!controller.signal.aborted) {
+          syncStoredUserName(data.id, data.name);
+          setProfile(data);
+        }
       })
       .catch((err: unknown) => {
         if (!controller.signal.aborted)
@@ -62,8 +71,13 @@ export default function ProfilePage() {
           <dl className="grid gap-5 sm:grid-cols-2">
             {[
               ["Nome", profile.name],
+              ...(profile.useSocialName &&
+              profile.civilName &&
+              profile.civilName !== profile.name
+                ? ([["Nome civil", profile.civilName]] as const)
+                : []),
               ["E-mail", profile.email],
-              ["CPF", maskCpf(profile.cpf)],
+              ["CPF", privateCpf(profile.cpf)],
               [
                 "Nascimento",
                 profile.birthDate
@@ -86,6 +100,7 @@ export default function ProfilePage() {
           </p>
         </section>
       )}
+      {profile && <NamePreferenceEditor profile={profile} onSaved={(updated) => setProfile((old) => old ? { ...old, ...updated } : old)} />}
       <Link
         href="/settings/security"
         className="inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"

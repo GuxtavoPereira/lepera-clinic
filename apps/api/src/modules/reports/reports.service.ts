@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@lepera/db';
+import { testMaterialLabels } from '@lepera/contracts';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { clinicInstant } from '../appointments/calendar-time';
@@ -654,6 +655,9 @@ export class ReportsService {
     const entries = await this.prisma.db.inventoryItem.findMany({
       select: {
         name: true,
+        category: true,
+        testEdition: true,
+        testMaterial: true,
         stockQuantity: true,
         minimumStock: true,
         updatedAt: true,
@@ -673,6 +677,7 @@ export class ReportsService {
         'Estoque mínimo',
         'Situação',
         'Última atualização',
+        'Categoria',
       ],
       rows: entries.map((entry) => [
         entry.name,
@@ -680,6 +685,9 @@ export class ReportsService {
         String(entry.minimumStock),
         entry.stockQuantity <= entry.minimumStock ? 'Repor estoque' : 'Regular',
         dateTime.format(entry.updatedAt),
+        entry.category === 'PSYCHOLOGICAL_TEST' && entry.testMaterial
+          ? `Teste psicológico · ${testMaterialLabels[entry.testMaterial]} · ${entry.testEdition ?? ''}`.trim()
+          : 'Material geral',
       ]),
       totalRows: entries.length,
       metrics: [

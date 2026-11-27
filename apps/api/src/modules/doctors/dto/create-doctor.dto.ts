@@ -1,9 +1,10 @@
+import { SocialNameDto } from '../../users/dto/social-name.dto';
 import { Transform } from 'class-transformer';
 import { digitsOnly, trimLower } from '../../../common/transforms';
 import { IsCpf } from '../../../common/validators/is-cpf.decorator';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
-export class CreateDoctorDto {
+export class CreateDoctorDto extends SocialNameDto {
   // Campos do usuário-base
   @IsString()
   @MinLength(2)

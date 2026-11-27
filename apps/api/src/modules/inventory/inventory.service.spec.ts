@@ -14,6 +14,9 @@ const item = {
   id: 'item-id',
   name: 'Papel A4',
   description: 'Material',
+  category: 'GENERAL',
+  testEdition: null,
+  testMaterial: null,
   stockQuantity: 10,
   minimumStock: 5,
   createdAt: new Date('2026-11-01T12:00:00Z'),
@@ -95,6 +98,9 @@ describe('InventoryService', () => {
       data: {
         name: 'Papel A4',
         description: null,
+        category: 'GENERAL',
+        testEdition: null,
+        testMaterial: null,
         minimumStock: 5,
         stockQuantity: 0,
       },
@@ -121,6 +127,7 @@ describe('InventoryService', () => {
           OR: [
             { name: { contains: 'papel', mode: 'insensitive' } },
             { description: { contains: 'papel', mode: 'insensitive' } },
+            { testEdition: { contains: 'papel', mode: 'insensitive' } },
           ],
         },
         skip: 10,
@@ -270,7 +277,13 @@ describe('InventoryService', () => {
     expect(inventoryItem.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: item.id, updatedAt: item.updatedAt },
-        data: { name: 'Papel A5', minimumStock: 3 },
+        data: {
+          name: 'Papel A5',
+          minimumStock: 3,
+          category: 'GENERAL',
+          testEdition: null,
+          testMaterial: null,
+        },
       }),
     );
     expect(log).toHaveBeenCalledWith(
@@ -282,6 +295,91 @@ describe('InventoryService', () => {
   it('rejects an empty metadata update', async () => {
     await expect(service.update(item.id, {}, admin)).rejects.toBeInstanceOf(
       BadRequestException,
+    );
+  });
+
+  it('requires an edition and physical material when registering a test', async () => {
+    const incomplete = {
+      category: 'PSYCHOLOGICAL_TEST' as const,
+      name: 'Instrumento fictício',
+      minimumStock: 1,
+    };
+    await expect(
+      service.create({ ...incomplete, testMaterial: 'KIT' }, admin),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.create({ ...incomplete, testEdition: '2ª edição' }, admin),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(inventoryItem.create).not.toHaveBeenCalled();
+    await service.create(
+      { ...incomplete, testMaterial: 'KIT', testEdition: '2ª edição' },
+      admin,
+    );
+    expect(inventoryItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          category: 'PSYCHOLOGICAL_TEST',
+          testMaterial: 'KIT',
+          testEdition: '2ª edição',
+          stockQuantity: 0,
+        }) as unknown,
+      }),
+    );
+  });
+
+  it('preserves test specifications on a partial update and clears them when reclassified', async () => {
+    inventoryItem.findUnique.mockResolvedValue({
+      ...item,
+      category: 'PSYCHOLOGICAL_TEST',
+      testEdition: '2ª edição',
+      testMaterial: 'MANUAL',
+    });
+    await service.update(item.id, { minimumStock: 2 }, admin);
+    expect(inventoryItem.updateMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          category: 'PSYCHOLOGICAL_TEST',
+          testEdition: '2ª edição',
+          testMaterial: 'MANUAL',
+        }) as unknown,
+      }),
+    );
+    await service.update(item.id, { category: 'GENERAL' }, admin);
+    expect(inventoryItem.updateMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          category: 'GENERAL',
+          testEdition: null,
+          testMaterial: null,
+        }) as unknown,
+      }),
+    );
+  });
+
+  it('does not store test metadata on general items or incomplete conversions', async () => {
+    await expect(
+      service.update(item.id, { testEdition: '1ª edição' }, admin),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.update(item.id, { category: 'PSYCHOLOGICAL_TEST' }, admin),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(inventoryItem.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('combines the category filter with the low-stock filter', async () => {
+    await service.findAll(
+      { page: 1, pageSize: 15, lowStock: true, category: 'PSYCHOLOGICAL_TEST' },
+      admin,
+    );
+    expect(inventoryItem.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          category: 'PSYCHOLOGICAL_TEST',
+          stockQuantity: { lte: inventoryItem.fields.minimumStock },
+        },
+      }),
     );
   });
 

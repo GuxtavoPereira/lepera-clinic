@@ -51,6 +51,18 @@ describe('Inventory DTO validation', () => {
   });
 
   it.each([
+    { category: 'UNKNOWN' },
+    { testEdition: ' '.repeat(5) },
+    { testEdition: 'a'.repeat(81) },
+    { testMaterial: 'PATIENT_ANSWERS' },
+    { testMaterial: null },
+  ])('rejects invalid inventory specification %j', async (body) => {
+    await expect(
+      pipe.transform(body, { type: 'body', metatype: UpdateInventoryItemDto }),
+    ).rejects.toThrow();
+  });
+
+  it.each([
     {},
     { movementType: 'EXIT', quantity: 1 },
     { movementType: 'EXIT', quantity: 1, justification: '  ' },

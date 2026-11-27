@@ -197,6 +197,8 @@ describe('PatientsService', () => {
           user: {
             OR: [
               { name: { contains: '529.982', mode: 'insensitive' } },
+              { civilName: { contains: '529.982', mode: 'insensitive' } },
+              { socialName: { contains: '529.982', mode: 'insensitive' } },
               { email: { contains: '529.982', mode: 'insensitive' } },
               { cpf: { contains: '529982' } },
             ],
@@ -211,7 +213,7 @@ describe('PatientsService', () => {
       const [{ where }] = patientCount.mock.calls[0] as [
         { where: { user: { OR: unknown[] } } },
       ];
-      expect(where.user.OR).toHaveLength(2);
+      expect(where.user.OR).toHaveLength(4);
     });
   });
 

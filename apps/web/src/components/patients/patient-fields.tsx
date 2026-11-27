@@ -53,6 +53,9 @@ export const EMPTY_PATIENT_FORM: PatientFormState = {
 export type PatientSource = {
   user: {
     name: string;
+    civilName?: string | null;
+    socialName?: string | null;
+    useSocialName?: boolean;
     cpf: string | null;
     birthDate: string | null;
   };
@@ -77,7 +80,9 @@ export type PatientSource = {
 export function patientToForm({ user, patient }: PatientSource): PatientFormState {
   const address = patient.addresses[0];
   return {
-    name: user.name,
+    name: user.civilName ?? user.name,
+    socialName: user.socialName ?? "",
+    useSocialName: user.useSocialName ?? false,
     cpf: maskCpf(user.cpf ?? ""),
     birthDate: toDateInput(user.birthDate),
     phone: maskPhone(patient.phones[0]?.phone ?? ""),
@@ -110,6 +115,7 @@ export function validatePatientForm(
   opts: { cpfRequired: boolean },
 ): string | null {
   if (form.name.trim().length < 2) return "Informe o nome completo.";
+  if (form.socialName?.trim() && form.socialName.trim().length < 2) return "O nome social deve ter pelo menos 2 caracteres.";
   if ((opts.cpfRequired || form.cpf) && !isValidCpf(form.cpf)) {
     return "CPF inválido.";
   }
@@ -151,7 +157,9 @@ export function buildPatientPayload(
   const hasAddress = ADDRESS_KEYS.every((key) => form[key].trim() !== "");
 
   return {
-    name: form.name.trim(),
+    civilName: form.name.trim(),
+    socialName: form.socialName?.trim() || null,
+    useSocialName: Boolean(form.socialName?.trim() && form.useSocialName),
     birthDate: form.birthDate || undefined,
     ...(!opts.cpfLocked && cpfChanged && form.cpf
       ? { cpf: onlyDigits(form.cpf) }

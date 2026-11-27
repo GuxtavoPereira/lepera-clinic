@@ -17,7 +17,14 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import type { DbClient } from '../../prisma/prisma.types';
 import type { Prisma } from '@lepera/db';
 
-type PersonalData = { name?: string; cpf?: string; birthDate?: string };
+type PersonalData = {
+  name?: string;
+  civilName?: string;
+  socialName?: string | null;
+  useSocialName?: boolean;
+  cpf?: string;
+  birthDate?: string;
+};
 
 @Injectable()
 export class UsersService {
@@ -45,10 +52,17 @@ export class UsersService {
     if (!isValidCpf(cpf)) {
       throw new BadRequestException('CPF inválido');
     }
+    if (dto.useSocialName && !dto.socialName?.trim())
+      throw new BadRequestException(
+        'Informe o nome social antes de ativar a preferência',
+      );
     const passwordHash = await this.passwords.hash(dto.password);
 
     return {
       name: dto.name,
+      civilName: dto.name,
+      socialName: dto.socialName?.trim() || null,
+      useSocialName: dto.useSocialName ?? false,
       email: dto.email,
       passwordHash,
       role: dto.role,
@@ -146,7 +160,7 @@ export class UsersService {
     }
     const current = await db.user.findUnique({
       where: { id: userId },
-      select: { cpf: true },
+      select: { cpf: true, socialName: true },
     });
     if (!current) {
       throw new NotFoundException('Usuário não encontrado');
@@ -163,10 +177,23 @@ export class UsersService {
       );
     }
 
+    if (
+      data.useSocialName &&
+      !(
+        data.socialName !== undefined ? data.socialName : current.socialName
+      )?.trim()
+    ) {
+      throw new BadRequestException(
+        'Informe o nome social antes de ativar a preferência',
+      );
+    }
     return db.user.update({
       where: { id: userId },
       data: {
         name: data.name,
+        civilName: data.civilName,
+        socialName: data.socialName,
+        useSocialName: data.useSocialName,
         cpf: data.cpf,
         birthDate: data.birthDate ? parseBirthDate(data.birthDate) : undefined,
       },
@@ -200,6 +227,20 @@ export class UsersService {
 
   async update(id: string, dto: UpdateUserDto, actor: AuthUser) {
     await this.assertCanManage(actor, id, 'update');
+    if (dto.useSocialName) {
+      const current = await this.prisma.db.user.findUnique({
+        where: { id },
+        select: { socialName: true },
+      });
+      if (
+        !(
+          dto.socialName !== undefined ? dto.socialName : current?.socialName
+        )?.trim()
+      )
+        throw new BadRequestException(
+          'Informe o nome social antes de ativar a preferência',
+        );
+    }
 
     return this.prisma.db.user.update({
       where: { id },

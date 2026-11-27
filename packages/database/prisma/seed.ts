@@ -21,7 +21,7 @@ const encryptionKey = Buffer.from(keyHex, "hex");
 const DEV_PASSWORD = process.env.SEED_PASSWORD || "Senha@123";
 if (DEV_PASSWORD.length < 8 || DEV_PASSWORD.length > 72) throw new Error("SEED_PASSWORD precisa ter entre 8 e 72 caracteres.");
 const RESET_DATABASE = process.env.RESET_DATABASE === "true";
-type ClinicalField = "mainComplaint" | "clinicalNotes" | "homework" | "diagnosticHypothesis" | "cid10" | "dsm5" | "approachUsed" | "therapeuticPlan";
+type ClinicalField = "mainComplaint" | "clinicalNotes" | "homework" | "diagnosticHypothesis" | "approachUsed" | "therapeuticPlan";
 
 function cpf(base: string) {
   const digits = base.replace(/\D/g, "").slice(0, 9);
@@ -194,7 +194,7 @@ async function seed(prisma: Prisma.TransactionClient) {
         clinicalNotes: sessionIndex === 0 ? "PRONTUÁRIO FICTÍCIO: objetivos iniciais e estratégias gerais de autocuidado foram combinados." : "PRONTUÁRIO FICTÍCIO: revisão das estratégias combinadas na sessão anterior.",
         homework: "Exercício demonstrativo de autocuidado para popular a interface; não utilizar em atendimento real.",
         diagnosticHypothesis: "Dado demonstrativo sem valor diagnóstico; não utilizar para decisões clínicas.",
-        cid10: "", dsm5: "", approachUsed: doctor.clinicalApproach ?? "Abordagem demonstrativa",
+        approachUsed: doctor.clinicalApproach ?? "Abordagem demonstrativa",
         therapeuticPlan: "Plano fictício exclusivamente para teste da interface e da API.",
       };
       await prisma.clinicalRecord.create({ data: {
@@ -203,7 +203,6 @@ async function seed(prisma: Prisma.TransactionClient) {
         clinicalNotes: encryptClinicalField(values.clinicalNotes, recordId, "clinicalNotes"),
         homework: encryptClinicalField(values.homework, recordId, "homework"),
         diagnosticHypothesis: encryptClinicalField(values.diagnosticHypothesis, recordId, "diagnosticHypothesis"),
-        cid10: null, dsm5: null,
         approachUsed: encryptClinicalField(values.approachUsed, recordId, "approachUsed"),
         therapeuticPlan: encryptClinicalField(values.therapeuticPlan, recordId, "therapeuticPlan"),
         nextSessionDate: dateAtOffset(7 + i, 9), nextSessionRoom: doctor.room,

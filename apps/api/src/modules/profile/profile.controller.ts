@@ -6,6 +6,8 @@ import {
 import { requestContext } from '../audit/request-context';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ProfileService } from './profile.service';
+import { UsersService } from '../users/users.service';
+import { SocialNameDto } from '../users/dto/social-name.dto';
 
 type Req = {
   user: AuthUser;
@@ -17,7 +19,17 @@ type Req = {
 @Controller('profile')
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
-  constructor(private readonly profile: ProfileService) {}
+  constructor(
+    private readonly profile: ProfileService,
+    private readonly users: UsersService,
+  ) {}
+
+  @Patch('me/name-preference')
+  updateNamePreference(@Body() dto: SocialNameDto, @Req() req: Req) {
+    return this.users.updatePersonalData(req.user.sub, dto, {
+      allowCpfChange: false,
+    });
+  }
 
   // GET /api/profile/me
   @Get('me')

@@ -1,3 +1,4 @@
+import { SocialNameDto } from '../../users/dto/social-name.dto';
 import { Transform, Type } from 'class-transformer';
 import {
   IsEmail,
@@ -59,7 +60,7 @@ export class AddressDto {
 }
 
 /** Campos comuns do cadastro de paciente (público ou feito pela recepção). */
-export class PatientDataDto {
+export class PatientDataDto extends SocialNameDto {
   @Transform(trim)
   @IsString()
   @MinLength(2, { message: 'O nome precisa de pelo menos 2 caracteres' })

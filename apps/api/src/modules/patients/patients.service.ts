@@ -52,6 +52,8 @@ export class PatientsService {
     const userData = await this.users.prepareCreate(
       {
         name: dto.name,
+        socialName: dto.socialName,
+        useSocialName: dto.useSocialName,
         cpf: dto.cpf,
         email: dto.email,
         password: dto.password,
@@ -95,6 +97,8 @@ export class PatientsService {
     const or: Prisma.UserWhereInput[] = search
       ? [
           { name: { contains: search, mode: 'insensitive' } },
+          { civilName: { contains: search, mode: 'insensitive' } },
+          { socialName: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
         ]
       : [];
@@ -157,6 +161,8 @@ export class PatientsService {
             user: {
               OR: [
                 { name: { contains: search, mode: 'insensitive' } },
+                { civilName: { contains: search, mode: 'insensitive' } },
+                { socialName: { contains: search, mode: 'insensitive' } },
                 { email: { contains: search, mode: 'insensitive' } },
               ],
             },

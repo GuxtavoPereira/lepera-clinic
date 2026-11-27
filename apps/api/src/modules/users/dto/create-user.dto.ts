@@ -1,3 +1,4 @@
+import { SocialNameDto } from './social-name.dto';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
@@ -15,7 +16,7 @@ import { IsCpf } from '../../../common/validators/is-cpf.decorator';
 export type Role = 'RECEPTIONIST' | 'PATIENT' | 'DOCTOR' | 'ADMIN';
 const ROLES: Role[] = ['RECEPTIONIST', 'PATIENT', 'DOCTOR', 'ADMIN'];
 
-export class CreateUserDto {
+export class CreateUserDto extends SocialNameDto {
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Use o formato AAAA-MM-DD' })
   birthDate?: string;

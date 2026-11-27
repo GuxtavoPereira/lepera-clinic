@@ -1,4 +1,5 @@
 "use client";
+import { SocialNameFields } from "@/components/profile/social-name-fields";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import type { Role, UserResponse } from "@lepera/contracts";
@@ -63,7 +64,9 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
   const patient = role === "PATIENT";
   const wizard = useRegistrationWizard("new-user", patient, {
     ...EMPTY_REGISTRATION,
-    name: user?.name ?? "",
+    name: user?.civilName ?? user?.name ?? "",
+    socialName: user?.socialName ?? "",
+    useSocialName: user?.useSocialName ?? false,
     email: user?.email ?? "",
   });
   const [licenseNumber, setLicenseNumber] = useState("");
@@ -93,6 +96,8 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
         errors.name = "Informe o nome completo, entre 2 e 120 caracteres.";
       if (!/^\S+@\S+\.\S+$/.test(wizard.form.email.trim()))
         errors.email = "Informe um e-mail válido.";
+      if (wizard.form.socialName.trim().length === 1)
+        errors.socialName = "Use de 2 a 120 caracteres para o nome social.";
       if (!wizard.showErrors(errors)) return;
     } else {
       if (wizard.step < lastStep) {
@@ -114,11 +119,13 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
           ? "/patients"
           : "/users";
       const payload = isEdit
-        ? { name: wizard.form.name.trim(), email: wizard.form.email.trim() }
+        ? { civilName: wizard.form.name.trim(), socialName: base.socialName, useSocialName: base.useSocialName, email: wizard.form.email.trim() }
         : patient
           ? base
           : {
               name: base.name,
+              socialName: base.socialName,
+              useSocialName: base.useSocialName,
               email: base.email,
               password: base.password,
               cpf: base.cpf,
@@ -187,7 +194,7 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
           <>
             <FormField
               id="new-user-name"
-              label="Nome completo"
+              label="Nome civil completo"
               error={wizard.errors.name}
             >
               <input
@@ -206,6 +213,7 @@ function UserFormContent({ user, onOpenChange, onSaved }: Omit<Props, "open">) {
                 }
               />
             </FormField>
+            <SocialNameFields value={wizard.form} onChange={wizard.update} idPrefix="new-user" error={wizard.errors.socialName} />
             <FormField
               id="new-user-email"
               label="E-mail"

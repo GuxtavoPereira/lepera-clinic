@@ -23,6 +23,8 @@ export class DoctorsService {
       const user = await this.users.create(
         {
           name: dto.name,
+          socialName: dto.socialName,
+          useSocialName: dto.useSocialName,
           cpf: dto.cpf,
           email: dto.email,
           password: dto.password,
@@ -48,7 +50,9 @@ export class DoctorsService {
 
   findAll() {
     return this.prisma.db.doctor.findMany({
-      include: { user: { omit: { passwordHash: true } } },
+      include: {
+        user: { select: { name: true, photoUrl: true, isActive: true } },
+      },
       orderBy: { user: { name: 'asc' } },
     });
   }
@@ -56,7 +60,9 @@ export class DoctorsService {
   findOne(id: string) {
     return this.prisma.db.doctor.findUnique({
       where: { id },
-      include: { user: { omit: { passwordHash: true } } },
+      include: {
+        user: { select: { name: true, photoUrl: true, isActive: true } },
+      },
     });
   }
 
@@ -97,6 +103,9 @@ export class DoctorsService {
       throw error;
     }
 
-    return this.findOne(doctor.id);
+    return this.prisma.db.doctor.findUnique({
+      where: { id: doctor.id },
+      include: { user: { omit: { passwordHash: true, sessionVersion: true } } },
+    });
   }
 }

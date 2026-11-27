@@ -135,6 +135,8 @@ function UsersManagement() {
       const matchesSearch =
         term.length === 0 ||
         u.name.toLowerCase().includes(term) ||
+        u.civilName?.toLowerCase().includes(term) ||
+        u.socialName?.toLowerCase().includes(term) ||
         u.email.toLowerCase().includes(term);
       return matchesRole && matchesStatus && matchesSearch;
     });
@@ -269,6 +271,13 @@ function UsersManagement() {
                       <p className="text-sm font-semibold text-foreground">
                         {u.name}
                       </p>
+                      {u.useSocialName &&
+                        u.civilName &&
+                        u.civilName !== u.name && (
+                          <span className="text-xs text-muted-foreground">
+                            (civil: {u.civilName})
+                          </span>
+                        )}
                       {u.isActive ? (
                         <span className="rounded-full bg-teal-50 text-teal-800 text-xs font-medium px-2.5 py-0.5">
                           Ativo

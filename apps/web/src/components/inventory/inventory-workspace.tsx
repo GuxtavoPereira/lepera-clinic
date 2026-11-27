@@ -21,6 +21,7 @@ import {
 } from "./stock-movement-sheet";
 import {
   stockStatus,
+  testSpecification,
   type InventoryItem,
   type InventoryPage,
   type InventorySummary,
@@ -32,7 +33,8 @@ export function InventoryWorkspace() {
   const enabled = role === "ADMIN" || role === "SUPER_ADMIN";
   const [search, setSearch] = useState("");
   const [lowStock, setLowStock] = useState(false);
-  const [filter, setFilter] = useState({ search: "", lowStock: false });
+  const [category, setCategory] = useState("");
+  const [filter, setFilter] = useState({ search: "", lowStock: false, category: "" });
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
   const [edit, setEdit] = useState<{ item: InventoryItem | null } | null>(null);
@@ -46,6 +48,7 @@ export function InventoryWorkspace() {
     pageSize: "15",
     search: filter.search,
     lowStock: String(filter.lowStock),
+    ...(filter.category ? { category: filter.category } : {}),
   });
   const list = useInventoryResource<InventoryPage<InventoryItem>>(
     `/inventory/items?${params}`,
@@ -64,7 +67,7 @@ export function InventoryWorkspace() {
   function apply(event: FormEvent) {
     event.preventDefault();
     setPage(1);
-    setFilter({ search: search.trim(), lowStock });
+    setFilter({ search: search.trim(), lowStock, category });
   }
   function afterMove(item: InventoryItem) {
     setView(null);
@@ -176,11 +179,19 @@ export function InventoryWorkspace() {
               className={inputClassName}
               value={search}
               maxLength={120}
-              placeholder="Nome ou descrição"
+              placeholder="Nome, edição ou descrição"
               onChange={(e) => setSearch(e.target.value)}
             />
           </FormField>
         </div>
+        <FormField id="inventory-category-filter" label="Categoria">
+          <select id="inventory-category-filter" className={inputClassName} value={category}
+            onChange={(e) => setCategory(e.target.value)}>
+            <option value="">Todas</option>
+            <option value="PSYCHOLOGICAL_TEST">Testes psicológicos</option>
+            <option value="GENERAL">Materiais gerais</option>
+          </select>
+        </FormField>
         <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -193,7 +204,7 @@ export function InventoryWorkspace() {
         <Button className="min-h-11" type="submit" variant="outline">
           Aplicar filtros
         </Button>
-        {filter.search || filter.lowStock ? (
+        {filter.search || filter.lowStock || filter.category ? (
           <Button
             className="min-h-11"
             type="button"
@@ -201,7 +212,8 @@ export function InventoryWorkspace() {
             onClick={() => {
               setSearch("");
               setLowStock(false);
-              setFilter({ search: "", lowStock: false });
+              setCategory("");
+              setFilter({ search: "", lowStock: false, category: "" });
               setPage(1);
             }}
           >
@@ -249,7 +261,7 @@ export function InventoryWorkspace() {
               />
               <p className="font-medium">Nenhum material encontrado</p>
               <p className="text-sm text-muted-foreground">
-                {filter.search || filter.lowStock
+                {filter.search || filter.lowStock || filter.category
                   ? "Ajuste os filtros ou cadastre um novo material."
                   : "Cadastre um material e registre a primeira entrada para começar."}
               </p>
@@ -274,6 +286,7 @@ export function InventoryWorkspace() {
                           {stockStatus(item)}
                         </span>
                       </div>
+                      {item.category === "PSYCHOLOGICAL_TEST" && <p className="break-words text-sm font-medium">{testSpecification(item)}</p>}
                       {item.description ? (
                         <p className="break-words text-sm text-muted-foreground">
                           {item.description}

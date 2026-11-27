@@ -1,5 +1,7 @@
 "use client";
 
+import { Fragment } from "react";
+import { SocialNameFields } from "@/components/profile/social-name-fields";
 import { FormField, inputClassName } from "@/components/forms/form-field";
 import { isUnder18, maskCpf, maskPhone } from "@/lib/br-format";
 import type {
@@ -15,7 +17,7 @@ export {
 } from "@/lib/registration-validation";
 
 type Field = {
-  key: Exclude<keyof RegistrationForm, "consent">;
+  key: Exclude<keyof RegistrationForm, "consent" | "useSocialName">;
   label: string;
   type?: string;
   required?: boolean;
@@ -46,7 +48,7 @@ export function RegistrationFields({
   const fields: Field[] = [
     {
       key: "name",
-      label: "Nome completo",
+      label: "Nome civil completo",
       required: true,
       maxLength: 120,
       autoComplete: "name",
@@ -156,7 +158,7 @@ export function RegistrationFields({
               .filter(Boolean)
               .join(" ") || undefined;
           return (
-            <FormField
+            <Fragment key={field.key}><FormField
               key={field.key}
               id={id}
               label={field.label}
@@ -202,6 +204,8 @@ export function RegistrationFields({
                 }}
               />
             </FormField>
+            {field.key === "name" && <SocialNameFields value={value} onChange={onChange} idPrefix={prefix} error={errors.socialName} />}
+            </Fragment>
           );
         })}
       {patient && (!step || step === 3) && (

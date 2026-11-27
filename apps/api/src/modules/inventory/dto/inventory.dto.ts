@@ -1,5 +1,11 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  inventoryCategories,
+  psychologicalTestMaterials,
+  type InventoryCategory,
+  type PsychologicalTestMaterial,
+} from '@lepera/contracts';
+import {
   IsBoolean,
   IsIn,
   IsInt,
@@ -31,6 +37,10 @@ export class InventoryPageDto {
 
 export class ListInventoryDto extends InventoryPageDto {
   @ValidateIf(provided)
+  @IsIn(inventoryCategories)
+  category?: InventoryCategory;
+
+  @ValidateIf(provided)
   @Transform(trim)
   @IsString()
   @MaxLength(120)
@@ -44,7 +54,24 @@ export class ListInventoryDto extends InventoryPageDto {
   lowStock?: boolean;
 }
 
-export class CreateInventoryItemDto {
+class InventorySpecificationDto {
+  @ValidateIf(provided)
+  @IsIn(inventoryCategories)
+  category?: InventoryCategory;
+
+  @ValidateIf(provided)
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  testEdition?: string;
+
+  @ValidateIf(provided)
+  @IsIn(psychologicalTestMaterials)
+  testMaterial?: PsychologicalTestMaterial;
+}
+
+export class CreateInventoryItemDto extends InventorySpecificationDto {
   @Transform(trim)
   @IsString()
   @MinLength(3)
@@ -63,7 +90,7 @@ export class CreateInventoryItemDto {
   minimumStock: number = 5;
 }
 
-export class UpdateInventoryItemDto {
+export class UpdateInventoryItemDto extends InventorySpecificationDto {
   @ValidateIf(provided)
   @Transform(trim)
   @IsString()

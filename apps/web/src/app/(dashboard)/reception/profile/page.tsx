@@ -13,6 +13,7 @@ import {
   PersonalFields,
   type PersonalFormState,
 } from "@/components/profile/personal-fields";
+import { syncStoredUserName } from "@/lib/auth";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import {
   isValidBirthDate,
@@ -23,6 +24,10 @@ import {
 } from "@/lib/br-format";
 
 type Me = {
+  id: string;
+  civilName?: string | null;
+  socialName?: string | null;
+  useSocialName?: boolean;
   name: string;
   email: string;
   cpf: string | null;
@@ -45,10 +50,13 @@ export default function ReceptionProfilePage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   function apply(me: Me) {
+    syncStoredUserName(me.id, me.name);
     setEmail(me.email);
     setCpfLocked(!!me.cpf);
     setPersonal({
-      name: me.name,
+      name: me.civilName ?? me.name,
+      socialName: me.socialName ?? "",
+      useSocialName: me.useSocialName ?? false,
       cpf: maskCpf(me.cpf ?? ""),
       birthDate: toDateInput(me.birthDate),
     });
@@ -96,7 +104,9 @@ export default function ReceptionProfilePage() {
       await apiFetch("/receptionists/me", {
         method: "PATCH",
         body: JSON.stringify({
-          name: personal.name.trim(),
+          civilName: personal.name.trim(),
+          socialName: personal.socialName?.trim() || null,
+          useSocialName: Boolean(personal.socialName?.trim() && personal.useSocialName),
           birthDate: personal.birthDate || undefined,
           ...(!cpfLocked ? { cpf: onlyDigits(personal.cpf) } : {}),
           extension: extension.trim() || null,

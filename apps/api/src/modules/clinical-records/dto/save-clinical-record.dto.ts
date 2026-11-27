@@ -33,6 +33,16 @@ export class SaveClinicalRecordDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
+  cid11?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  dsm5Tr?: string | null;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(500)
   approachUsed?: string | null;
 

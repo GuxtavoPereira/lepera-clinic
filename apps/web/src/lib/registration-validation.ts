@@ -9,6 +9,8 @@ import {
 
 export type RegistrationForm = {
   name: string;
+  socialName: string;
+  useSocialName: boolean;
   email: string;
   password: string;
   confirmPassword: string;
@@ -27,6 +29,8 @@ export type RegistrationErrors = Partial<Record<RegistrationField, string>>;
 export type RegistrationStep = 1 | 2 | 3;
 export const EMPTY_REGISTRATION: RegistrationForm = {
   name: "",
+  socialName: "",
+  useSocialName: false,
   email: "",
   password: "",
   confirmPassword: "",
@@ -42,7 +46,7 @@ export const EMPTY_REGISTRATION: RegistrationForm = {
 export function registrationStepForField(
   field: RegistrationField,
 ): RegistrationStep {
-  if (["name", "email", "password", "confirmPassword"].includes(field))
+  if (["name", "socialName", "useSocialName", "email", "password", "confirmPassword"].includes(field))
     return 1;
   if (
     ["cpf", "birthDate", "phone", "licenseNumber", "specialty"].includes(field)
@@ -57,6 +61,7 @@ export function registrationErrors(
 ): RegistrationErrors {
   const errors: RegistrationErrors = {};
   if (!step || step === 1) {
+    if (form.socialName.trim() && (form.socialName.trim().length < 2 || form.socialName.trim().length > 120)) errors.socialName = "Use de 2 a 120 caracteres para o nome social.";
     if (form.name.trim().length < 2 || form.name.trim().length > 120)
       errors.name = "Informe o nome completo, entre 2 e 120 caracteres.";
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim()))
@@ -112,6 +117,8 @@ export function validateRegistration(
 export function registrationPayload(form: RegistrationForm): RegisterPayload {
   return {
     name: form.name.trim(),
+    socialName: form.socialName.trim() || null,
+    useSocialName: Boolean(form.socialName.trim() && form.useSocialName),
     email: form.email.trim(),
     password: form.password,
     cpf: onlyDigits(form.cpf),

@@ -92,6 +92,10 @@ describe('ReportsService', () => {
     Promise<
       {
         name: string;
+        category: 'GENERAL' | 'PSYCHOLOGICAL_TEST';
+        testEdition: string | null;
+        testMaterial:
+          'KIT' | 'MANUAL' | 'BOOKLET' | 'PROTOCOL' | 'RESPONSE_SHEET' | null;
         stockQuantity: number;
         minimumStock: number;
         updatedAt: Date;
@@ -124,6 +128,15 @@ describe('ReportsService', () => {
         Promise<
           {
             name: string;
+            category: 'GENERAL' | 'PSYCHOLOGICAL_TEST';
+            testEdition: string | null;
+            testMaterial:
+              | 'KIT'
+              | 'MANUAL'
+              | 'BOOKLET'
+              | 'PROTOCOL'
+              | 'RESPONSE_SHEET'
+              | null;
             stockQuantity: number;
             minimumStock: number;
             updatedAt: Date;
@@ -310,7 +323,19 @@ describe('ReportsService', () => {
     inventory.mockResolvedValue([
       {
         name: 'Papel',
+        category: 'GENERAL',
+        testEdition: null,
+        testMaterial: null,
         stockQuantity: 5,
+        minimumStock: 5,
+        updatedAt: new Date('2026-11-05T12:00:00Z'),
+      },
+      {
+        name: 'Instrumento demonstração',
+        category: 'PSYCHOLOGICAL_TEST',
+        testEdition: '2ª edição',
+        testMaterial: 'RESPONSE_SHEET',
+        stockQuantity: 12,
         minimumStock: 5,
         updatedAt: new Date('2026-11-05T12:00:00Z'),
       },
@@ -318,6 +343,10 @@ describe('ReportsService', () => {
     const result = await service.preview(query({ kind: 'inventory' }), admin);
     expect(result.note).toContain('não representam um saldo histórico');
     expect(result.rows[0]).toContain('Repor estoque');
+    expect(result.rows[0]).toContain('Material geral');
+    expect(result.rows[1]).toContain(
+      'Teste psicológico · Folha de respostas · 2ª edição',
+    );
     expect(inventory.mock.calls[0][0]).not.toHaveProperty('where');
   });
 

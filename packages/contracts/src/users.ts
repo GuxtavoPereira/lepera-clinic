@@ -11,6 +11,8 @@ export const PasswordSchema = z
   .max(72, "A senha pode ter no máximo 72 caracteres");
 export const CreateUserBaseSchema = z.object({
   name: z.string().trim().min(2).max(120),
+  socialName: z.string().trim().min(2).max(120).nullable().optional(),
+  useSocialName: z.boolean().optional(),
   email: z.string().trim().toLowerCase().email("E-mail inválido"),
   password: PasswordSchema,
   cpf: CpfSchema,
@@ -21,6 +23,7 @@ export type CreateUserBaseInput = z.infer<typeof CreateUserBaseSchema>;
 export const UpdateUserSchema = CreateUserBaseSchema.omit({ password: true })
   .partial()
   .extend({
+    civilName: z.string().trim().min(2).max(120).optional(),
     cpf: CpfSchema.optional(),
     birthDate: BirthDateSchema.nullable().optional(),
     photoUrl: z.string().url().nullable().optional(), 
@@ -44,6 +47,9 @@ export type ListUsersQuery = z.infer<typeof ListUsersQuerySchema>;
 export const UserResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
+  civilName: z.string().nullable().optional(),
+  socialName: z.string().nullable().optional(),
+  useSocialName: z.boolean().optional(),
   email: z.string(),
   cpf: CpfSchema,
   birthDate: z.string().nullable(),

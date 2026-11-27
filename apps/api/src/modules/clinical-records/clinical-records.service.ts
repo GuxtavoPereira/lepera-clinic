@@ -14,16 +14,18 @@ import { AuditService } from '../audit/audit.service';
 import type { RequestContext } from '../audit/request-context';
 import { SaveClinicalRecordDto } from './dto/save-clinical-record.dto';
 
-const SENSITIVE_FIELDS = [
+const EDITABLE_FIELDS = [
   'mainComplaint',
   'clinicalNotes',
   'homework',
   'diagnosticHypothesis',
-  'cid10',
-  'dsm5',
+  'cid11',
+  'dsm5Tr',
   'approachUsed',
   'therapeuticPlan',
 ] as const;
+const HISTORICAL_FIELDS = ['cid10', 'dsm5'] as const;
+const SENSITIVE_FIELDS = [...EDITABLE_FIELDS, ...HISTORICAL_FIELDS] as const;
 type SensitiveField = (typeof SENSITIVE_FIELDS)[number];
 
 type ClinicalRecordRow = {
@@ -153,6 +155,20 @@ export class ClinicalRecordsService {
           throw new ConflictException(
             'Prontuário já assinado: não pode mais ser alterado',
           );
+        }
+
+        // Older forms may echo these fields. Accept an unchanged value, but
+        // never create, overwrite or re-encrypt an earlier classification.
+        for (const field of HISTORICAL_FIELDS) {
+          if (dto[field] === undefined) continue;
+          const original = existing?.[field]
+            ? this.crypto.decrypt(existing[field], this.aad(existing.id, field))
+            : null;
+          if ((dto[field] || null) !== original) {
+            throw new BadRequestException(
+              'CID-10 e DSM-5 são históricos. Reabra o prontuário para registrar CID-11 ou DSM-5-TR.',
+            );
+          }
         }
 
         const nextSessionDate = this.parseDate(dto.nextSessionDate);
@@ -321,7 +337,7 @@ export class ClinicalRecordsService {
   private encryptFields(recordId: string, dto: SaveClinicalRecordDto) {
     const data: Partial<Record<SensitiveField, string | null>> = {};
 
-    for (const field of SENSITIVE_FIELDS) {
+    for (const field of EDITABLE_FIELDS) {
       const value = dto[field];
       if (value === undefined) continue;
       data[field] =

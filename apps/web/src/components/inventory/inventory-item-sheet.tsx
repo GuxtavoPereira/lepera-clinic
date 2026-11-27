@@ -1,6 +1,12 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import {
+  psychologicalTestMaterials,
+  testMaterialLabels,
+  type InventoryCategory,
+  type PsychologicalTestMaterial,
+} from "@lepera/contracts";
 import { apiFetch } from "@/lib/api-client";
 import {
   FormField,
@@ -17,7 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import type { InventoryItem } from "./inventory-types";
 
-type Errors = Partial<Record<"name" | "minimumStock" | "description", string>>;
+type Errors = Partial<Record<"name" | "minimumStock" | "description" | "testEdition" | "testMaterial", string>>;
 
 export function InventoryItemSheet({
   initial,
@@ -29,6 +35,10 @@ export function InventoryItemSheet({
   onSaved: (item: InventoryItem) => void;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
+  const [category, setCategory] = useState<InventoryCategory>(initial?.category ?? "GENERAL");
+  const [testEdition, setTestEdition] = useState(initial?.testEdition ?? "");
+  const [testMaterial, setTestMaterial] = useState<PsychologicalTestMaterial | "">(initial?.testMaterial ?? "");
+  const isTest = category === "PSYCHOLOGICAL_TEST";
   const [description, setDescription] = useState(initial?.description ?? "");
   const [minimumStock, setMinimumStock] = useState(
     String(initial?.minimumStock ?? 5),
@@ -43,6 +53,8 @@ export function InventoryItemSheet({
     event.preventDefault();
     if (saving) return;
     const next: Errors = {};
+    if (isTest && !testEdition.trim()) next.testEdition = "Informe a edição ou versão.";
+    if (isTest && !testMaterial) next.testMaterial = "Escolha o material contado no estoque.";
     if (name.trim().length < 3)
       next.name = "Informe um nome com pelo menos 3 caracteres.";
     if (description.trim().length > 500)
@@ -72,6 +84,8 @@ export function InventoryItemSheet({
           method: initial ? "PATCH" : "POST",
           body: JSON.stringify({
             name: name.trim(),
+            category,
+            ...(isTest ? { testEdition: testEdition.trim(), testMaterial } : {}),
             description: description.trim(),
             minimumStock: minimum,
           }),
@@ -119,9 +133,30 @@ export function InventoryItemSheet({
           className="space-y-5 px-6 pb-6"
         >
           <fieldset disabled={saving} className="space-y-5 disabled:opacity-60">
+            <FormField id="inventory-category" label="Categoria">
+              <select
+                id="inventory-category"
+                className={inputClassName}
+                value={category}
+                onChange={(e) => {
+                  const nextCategory = e.target.value as InventoryCategory;
+                  setCategory(nextCategory);
+                  if (nextCategory === "GENERAL") {
+                    setErrors((prev) => ({
+                      ...prev,
+                      testEdition: undefined,
+                      testMaterial: undefined,
+                    }));
+                  }
+                }}
+              >
+                <option value="GENERAL">Material geral</option>
+                <option value="PSYCHOLOGICAL_TEST">Teste psicológico</option>
+              </select>
+            </FormField>
             <FormField
               id="inventory-name"
-              label="Nome do material *"
+              label={isTest ? "Nome do teste psicológico *" : "Nome do material *"}
               error={errors.name}
             >
               <input
@@ -134,6 +169,20 @@ export function InventoryItemSheet({
                 required
               />
             </FormField>
+            {isTest && <>
+              <FormField id="inventory-testEdition" label="Edição ou versão *" error={errors.testEdition}>
+                <input id="inventory-testEdition" className={inputClassName} maxLength={80} value={testEdition}
+                  onChange={(e) => setTestEdition(e.target.value)} {...aria("testEdition")} required />
+              </FormField>
+              <FormField id="inventory-testMaterial" label="Material contado por unidade *" error={errors.testMaterial}>
+                <select id="inventory-testMaterial" className={inputClassName} value={testMaterial}
+                  onChange={(e) => setTestMaterial(e.target.value as PsychologicalTestMaterial | "")}
+                  {...aria("testMaterial")} required>
+                  <option value="">Selecione o material</option>
+                  {psychologicalTestMaterials.map((type) => <option key={type} value={type}>{testMaterialLabels[type]}</option>)}
+                </select>
+              </FormField>
+            </>}
             <FormField
               id="inventory-description"
               label="Descrição"

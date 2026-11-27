@@ -22,6 +22,8 @@ export class ReceptionistsService {
       const user = await this.users.create(
         {
           name: dto.name,
+          socialName: dto.socialName,
+          useSocialName: dto.useSocialName,
           cpf: dto.cpf,
           email: dto.email,
           password: dto.password,

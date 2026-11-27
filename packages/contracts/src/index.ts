@@ -9,3 +9,4 @@ export * from "./psychology-specialties";
 
 export * from "./privacy";
 export * from "./lattes";
+export * from "./inventory";

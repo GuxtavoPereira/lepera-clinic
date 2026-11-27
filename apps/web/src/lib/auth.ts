@@ -25,6 +25,8 @@ export type TokenPayload = {
 
 /** Corpo de POST /auth/register (cadastro público do paciente). */
 export type RegisterPayload = {
+  socialName?: string | null;
+  useSocialName?: boolean;
   name: string;
   email: string;
   password: string;
@@ -119,4 +121,11 @@ export function parseToken(token: string | null): TokenPayload | null {
 
 export function getCurrentUser(): TokenPayload | null {
   return parseToken(getToken());
+}
+
+export function syncStoredUserName(id: string, name: string) {
+  const user = getStoredUser();
+  if (!user || user.id !== id) return;
+  localStorage.setItem(USER_KEY, JSON.stringify({ ...user, name }));
+  notify();
 }

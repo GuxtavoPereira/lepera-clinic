@@ -1,3 +1,4 @@
+import { SocialNameDto } from './social-name.dto';
 import { Transform } from 'class-transformer';
 import {
   IsOptional,
@@ -13,7 +14,14 @@ import { IsCpf } from '../../../common/validators/is-cpf.decorator';
 export const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Dados pessoais editáveis de qualquer usuário (base dos DTOs de perfil). */
-export class PersonalDataDto {
+export class PersonalDataDto extends SocialNameDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  civilName?: string;
+
   @IsOptional()
   @Transform(trim)
   @IsString()

@@ -117,7 +117,11 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
 
     const result = await service.save(
       'appointment-1',
-      { clinicalNotes: notes, cid10: 'F41.1' },
+      {
+        clinicalNotes: notes,
+        cid11: 'referência CID',
+        dsm5Tr: 'referência DSM',
+      },
       doctorUser,
     );
 
@@ -126,10 +130,14 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
     )[0].data;
     expect(stored.clinicalNotes.startsWith('v1:')).toBe(true);
     expect(stored.clinicalNotes).not.toContain('ansiedade');
-    expect(stored.cid10).not.toContain('F41');
+    expect(stored.cid11).toMatch(/^v1:/);
+    expect(stored.dsm5Tr).toMatch(/^v1:/);
 
     expect(result.record.clinicalNotes).toBe(notes);
-    expect(result.record.cid10).toBe('F41.1');
+    expect(result.record.cid11).toBe('referência CID');
+    expect(result.record.dsm5Tr).toBe('referência DSM');
+    expect(result.record.cid10).toBeNull();
+    expect(result.record.dsm5).toBeNull();
     expect(result.record.sessionSequence).toBe(3);
     expect(result.appointment.patient.name).toBe('Lucas Pereira');
   });
@@ -207,11 +215,66 @@ describe('ClinicalRecordsService (RN02 / RNF01 / RF12)', () => {
     expect(auditLog).not.toHaveBeenCalled();
   });
 
+  it('lê o histórico na edição original e o preserva ao editar a classificação atual', async () => {
+    const original = {
+      id: 'record-1',
+      isSigned: false,
+      cid10: crypto.encrypt('CID anterior', 'clinical_record:record-1:cid10'),
+      dsm5: crypto.encrypt('DSM anterior', 'clinical_record:record-1:dsm5'),
+    };
+    recordFindUnique.mockResolvedValue(original);
+    const before = await service.getByAppointment('appointment-1', doctorUser);
+    expect(before.record).toMatchObject({
+      cid10: 'CID anterior',
+      dsm5: 'DSM anterior',
+      cid11: null,
+      dsm5Tr: null,
+    });
+    // Um cliente antigo pode reenviar o valor histórico junto com outra edição.
+    await service.save(
+      'appointment-1',
+      {
+        cid10: 'CID anterior',
+        dsm5: 'DSM anterior',
+        cid11: 'CID atual',
+      },
+      doctorUser,
+    );
+    const mutation = (
+      recordUpdate.mock.calls[0] as [{ data: Record<string, unknown> }]
+    )[0].data;
+    expect(mutation).not.toHaveProperty('cid10');
+    expect(mutation).not.toHaveProperty('dsm5');
+    expect(mutation.cid11).toEqual(expect.stringMatching(/^v1:/));
+  });
+
+  it('recusa criar, apagar ou alterar a edição histórica', async () => {
+    await expect(
+      service.save('appointment-1', { cid10: 'novo' }, doctorUser),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    recordFindUnique.mockResolvedValue({
+      id: 'record-1',
+      isSigned: false,
+      dsm5: crypto.encrypt('DSM anterior', 'clinical_record:record-1:dsm5'),
+    });
+    for (const dsm5 of [null, 'revisado']) {
+      await expect(
+        service.save('appointment-1', { dsm5 }, doctorUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    }
+    expect(recordCreate).not.toHaveBeenCalled();
+    expect(recordUpdate).not.toHaveBeenCalled();
+  });
+
   it('prontuário assinado não pode mais ser alterado', async () => {
     recordFindUnique.mockResolvedValue({ id: 'record-1', isSigned: true });
 
     await expect(
-      service.save('appointment-1', { clinicalNotes: 'novo' }, doctorUser),
+      service.save(
+        'appointment-1',
+        { cid11: 'novo', dsm5Tr: null },
+        doctorUser,
+      ),
     ).rejects.toBeInstanceOf(ConflictException);
 
     expect(recordUpdate).not.toHaveBeenCalled();
