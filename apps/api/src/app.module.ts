@@ -17,6 +17,8 @@ import { ScheduleRequestsModule } from './modules/schedule-requests/schedule-req
 import { CancellationRequestsModule } from './modules/cancellation-requests/cancellation-requests.module';
 import { ClinicalRecordsModule } from './modules/clinical-records/clinical-records.module';
 import { ClinicalDocumentsModule } from './modules/clinical-documents/clinical-documents.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
+import { GuidanceMessagesModule } from './modules/guidance-messages/guidance-messages.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -47,6 +49,8 @@ import { PublicClinicModule } from './modules/public-clinic/public-clinic.module
     CancellationRequestsModule,
     ClinicalRecordsModule,
     ClinicalDocumentsModule,
+    RoomsModule,
+    GuidanceMessagesModule,
     AvailabilityModule,
     WaitlistModule,
     NotificationsModule,

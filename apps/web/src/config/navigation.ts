@@ -11,6 +11,8 @@ import {
   User,
   ClipboardList,
   ShieldCheck,
+  DoorOpen,
+  MessageSquareText,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@lepera/contracts";
@@ -24,12 +26,14 @@ const SECURITY_ITEM: NavItem = {
 };
 
 const REPORTS_ITEM: NavItem = { label: "Relatórios", href: "/reports", icon: FileText };
+const ROOMS_ITEM: NavItem = { label: "Salas", href: "/rooms", icon: DoorOpen };
 
 const ADMIN_ITEMS: NavItem[] = [
   { label: "Painel", href: "/admin/dashboard", icon: Home },
   { label: "Usuários", href: "/admin/users", icon: UserCog },
   { label: "Financeiro", href: "/admin/financial", icon: Wallet },
   { label: "Estoque", href: "/admin/inventory", icon: Package },
+  ROOMS_ITEM,
 ];
 
 // Só entram aqui rotas que existem em app/(dashboard).
@@ -51,6 +55,8 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Pacientes", href: "/doctor/patients", icon: Users },
     { label: "Prontuários", href: "/doctor/records", icon: ClipboardList },
     { label: "Documentos", href: "/doctor/documents", icon: FileText },
+    { label: "Orientações", href: "/doctor/messages", icon: MessageSquareText },
+    ROOMS_ITEM,
     { label: "Disponibilidade", href: "/doctor/availability", icon: Clock },
     { label: "Perfil", href: "/doctor/profile", icon: User },
     REPORTS_ITEM,
@@ -64,6 +70,7 @@ export const navigation: Record<Role, NavItem[]> = {
       icon: Calendar,
     },
     { label: "Calendário", href: "/patient/calendar", icon: Calendar },
+    { label: "Orientações", href: "/patient/messages", icon: MessageSquareText },
     { label: "Lista de espera", href: "/patient/waitlist", icon: ListTodo },
     { label: "Perfil", href: "/patient/profile", icon: User },
     REPORTS_ITEM,
@@ -74,6 +81,7 @@ export const navigation: Record<Role, NavItem[]> = {
     { label: "Solicitações", href: "/reception/requests", icon: FileText },
     { label: "Agenda geral", href: "/reception/appointments", icon: Calendar },
     { label: "Calendário", href: "/reception/calendar", icon: Calendar },
+    ROOMS_ITEM,
     { label: "Pacientes", href: "/reception/patients", icon: Users },
     { label: "Recebimentos", href: "/reception/payments", icon: Wallet },
     { label: "Lista de espera", href: "/reception/waitlist", icon: ListTodo },

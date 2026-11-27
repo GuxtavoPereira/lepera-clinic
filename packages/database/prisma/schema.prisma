@@ -129,6 +129,7 @@ model User {
   transactions   FinancialTransaction[]
   auditLogs      AuditLog[]
   passwordResetTokens PasswordResetToken[]
+  roomReservations    RoomReservation[]
 
   @@map("users")
 }
@@ -162,6 +163,7 @@ model Doctor {
   reviews              Review[]
   progressNotes        ClinicalRecord[]
   clinicalDocuments    ClinicalDocument[]
+  guidanceMessages     PatientGuidanceMessage[]
 
   @@map("doctors")
 }
@@ -190,6 +192,7 @@ model Patient {
   reviews       Review[]
   progressNotes     ClinicalRecord[]
   clinicalDocuments ClinicalDocument[]
+  guidanceMessages  PatientGuidanceMessage[]
 
   @@map("patients")
 }
@@ -287,6 +290,8 @@ model Appointment {
   cancellationRequests CancellationRequest[]
   notifications        Notification[]
   clinicalDocuments    ClinicalDocument[]
+  roomReservations     RoomReservation[]
+  guidanceMessages     PatientGuidanceMessage[]
 
   // Índices das consultas de conflito (RN01) e das listagens
   @@index([doctorId, startDatetime])
@@ -406,6 +411,81 @@ model ClinicalDocument {
   @@index([patientId, updatedAt])
   @@index([type, status])
   @@map("clinical_documents")
+}
+
+enum RoomReservationStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model ClinicRoom {
+  id       String  @id @default(uuid())
+  name     String  @unique @db.VarChar(80)
+  location String? @db.VarChar(120)
+  capacity Int     @default(2)
+  notes    String? @db.Text
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reservations RoomReservation[]
+
+  @@map("clinic_rooms")
+}
+
+model RoomReservation {
+  id            String       @id @default(uuid())
+  roomId        String
+  room          ClinicRoom   @relation(fields: [roomId], references: [id])
+  reservedById  String
+  reservedBy    User         @relation(fields: [reservedById], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  title         String                @db.VarChar(140)
+  notes         String?               @db.Text
+  startDatetime DateTime
+  endDatetime   DateTime
+  status        RoomReservationStatus @default(CONFIRMED)
+  cancelReason  String?               @db.Text
+  cancelledAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roomId, startDatetime, endDatetime])
+  @@index([reservedById, startDatetime])
+  @@map("room_reservations")
+}
+
+enum GuidanceMessageCategory {
+  POST_SESSION
+  CANCELLATION_NOTICE
+  PREPARATION
+  GENERAL
+}
+
+model PatientGuidanceMessage {
+  id            String       @id @default(uuid())
+  doctorId      String
+  doctor        Doctor       @relation(fields: [doctorId], references: [id])
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  category GuidanceMessageCategory @default(POST_SESSION)
+  subject  String                  @db.VarChar(160)
+  // Corpo cifrado em repouso (AES-256-GCM, RNF01).
+  body     String                  @db.Text
+  readAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([patientId, createdAt])
+  @@index([doctorId, createdAt])
+  @@map("patient_guidance_messages")
 }
 
 // ------------------------------------------

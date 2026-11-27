@@ -9,11 +9,11 @@ export const HOME_BY_ROLE: Record<Role, string> = {
 };
 
 const ROLE_PREFIXES: Record<Role, string[]> = {
-  SUPER_ADMIN: ["/admin", "/reception"],
-  ADMIN: ["/admin"],
-  DOCTOR: ["/doctor"],
+  SUPER_ADMIN: ["/admin", "/reception", "/rooms"],
+  ADMIN: ["/admin", "/rooms"],
+  DOCTOR: ["/doctor", "/rooms"],
   PATIENT: ["/patient"],
-  RECEPTIONIST: ["/reception"],
+  RECEPTIONIST: ["/reception", "/rooms"],
 };
 
 const SHARED_PREFIXES = ["/notifications", "/settings", "/profile", "/reports"];
