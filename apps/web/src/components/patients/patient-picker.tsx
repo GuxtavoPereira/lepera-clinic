@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { inputClassName } from "@/components/forms/form-field";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
-export type PickedPatient = { id: string; name: string; email: string };
+export type PickedPatient = { id: string; name: string; email: string | null };
 
 type Result = {
   id: string;
-  user: { name: string; email: string; cpf: string | null };
+  user: { name: string; email: string | null; cpf: string | null };
 };
 
 type Props = {
@@ -124,7 +124,7 @@ export function PatientPicker({ value, onChange }: Props) {
                   {patient.user.name}
                 </span>
                 <span className="text-xs text-slate-500">
-                  {patient.user.email}
+                  {patient.user.email ?? "Sem login próprio (dependente)"}
                   {patient.user.cpf && ` · CPF ${privateCpf(patient.user.cpf)}`}
                 </span>
               </button>

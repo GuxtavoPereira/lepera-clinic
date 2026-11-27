@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Calendar, CalendarPlus, Clock3, UserRound } from "lucide-react";
+import { Calendar, CalendarPlus, Clock3, Star, UserRound } from "lucide-react";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 import {
   NotificationAppointment,
@@ -96,20 +96,28 @@ function appointmentTypeLabel(type: Appointment["type"]) {
 }
 
 async function fetchPage() {
-  const [appointments, requests] = await Promise.all([
+  const [appointments, requests, reviews] = await Promise.all([
     apiFetch<Appointment[]>("/appointments/mine"),
     apiFetch<ScheduleRequest[]>("/schedule-requests/mine"),
+    apiFetch<{ items: Array<{ appointmentId: string; rating: number }> }>(
+      "/reviews/mine",
+    ).catch(() => ({ items: [] })),
   ]);
-  return { appointments, requests, loadedAt: Date.now() };
+  const reviewByAppointment = new Map(
+    reviews.items.map((item) => [item.appointmentId, item.rating]),
+  );
+  return { appointments, requests, reviewByAppointment, loadedAt: Date.now() };
 }
 
 function AppointmentCard({
   appointment,
   isApprovedRequest = false,
+  reviewRating,
   onCancelled,
 }: {
   appointment: Appointment;
   isApprovedRequest?: boolean;
+  reviewRating?: number;
   onCancelled: () => void | Promise<void>;
 }) {
   const canCancel =
@@ -160,6 +168,15 @@ function AppointmentCard({
               appointmentId={appointment.id}
               onCancelled={onCancelled}
             />
+          )}
+          {appointment.status === "COMPLETED" && (
+            <Link
+              href={`/patient/reviews/${appointment.id}`}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent"
+            >
+              <Star className="size-4 text-amber-500" />
+              {reviewRating ? `Ver avaliação (${reviewRating}/5)` : "Avaliar consulta"}
+            </Link>
           )}
         </div>
         <span
@@ -246,6 +263,7 @@ function PatientAppointments() {
         <AppointmentCard
           appointment={notificationAppointment}
           isApprovedRequest={linkedIds.has(notificationAppointment.id)}
+          reviewRating={data?.reviewByAppointment.get(notificationAppointment.id)}
           onCancelled={reload}
         />
       </NotificationAppointment>
@@ -337,6 +355,7 @@ function PatientAppointments() {
                     key={appointment.id}
                     appointment={appointment}
                     isApprovedRequest={linkedIds.has(appointment.id)}
+                    reviewRating={data?.reviewByAppointment.get(appointment.id)}
                     onCancelled={reload}
                   />
                 ))}

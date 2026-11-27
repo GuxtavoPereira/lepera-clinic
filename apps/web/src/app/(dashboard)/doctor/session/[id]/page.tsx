@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Check, Loader2, Lock, Save } from "lucide-react";
+import { Activity, ArrowLeft, Check, Loader2, Lock, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatDateTimePtBr } from "@/lib/date-format";
@@ -284,16 +284,25 @@ export default function SessionPage() {
               {data.record && ` · Sessão ${data.record.sessionSequence}`}
             </p>
           </div>
-          <span
-            className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
-              signed
-                ? "bg-emerald-50 text-emerald-800"
-                : "bg-amber-50 text-amber-800"
-            }`}
-          >
-            {signed && <Lock className="size-3" />}
-            {signed ? "Assinado" : "Rascunho"}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/doctor/session/${appointmentId}/scales`}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              <Activity className="size-3.5 text-teal-700" />
+              Escalas da sessão
+            </Link>
+            <span
+              className={`inline-flex w-fit items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
+                signed
+                  ? "bg-emerald-50 text-emerald-800"
+                  : "bg-amber-50 text-amber-800"
+              }`}
+            >
+              {signed && <Lock className="size-3" />}
+              {signed ? "Assinado" : "Rascunho"}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -21,6 +21,7 @@ import { requestContext } from '../audit/request-context';
 import { ClinicalRecordsService } from './clinical-records.service';
 import { SetPatientReleaseDto } from './dto/patient-release.dto';
 import { SaveClinicalRecordDto } from './dto/save-clinical-record.dto';
+import { SaveSessionScalesDto } from './dto/save-session-scales.dto';
 
 type Req = {
   user: AuthUser;
@@ -84,6 +85,29 @@ export class ClinicalRecordsController {
     return this.records.setPatientRelease(
       appointmentId,
       dto.released,
+      req.user,
+      requestContext(req),
+    );
+  }
+
+  // GET /api/clinical-records/by-appointment/:appointmentId/scales (CLI-01)
+  @Get('by-appointment/:appointmentId/scales')
+  @Header('Cache-Control', 'private, no-store')
+  getScales(@Param('appointmentId') appointmentId: string, @Req() req: Req) {
+    return this.records.getScales(appointmentId, req.user, requestContext(req));
+  }
+
+  // PUT /api/clinical-records/by-appointment/:appointmentId/scales (CLI-01)
+  @Put('by-appointment/:appointmentId/scales')
+  @Header('Cache-Control', 'private, no-store')
+  saveScales(
+    @Param('appointmentId') appointmentId: string,
+    @Body() dto: SaveSessionScalesDto,
+    @Req() req: Req,
+  ) {
+    return this.records.saveScales(
+      appointmentId,
+      dto,
       req.user,
       requestContext(req),
     );

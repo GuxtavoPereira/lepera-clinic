@@ -27,6 +27,7 @@ import { FinancialModule } from './modules/financial/financial.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { GooglePreviewModule } from './modules/google-preview/google-preview.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { PublicClinicModule } from './modules/public-clinic/public-clinic.module';
 
 @Module({
@@ -60,6 +61,7 @@ import { PublicClinicModule } from './modules/public-clinic/public-clinic.module
     InventoryModule,
     GooglePreviewModule,
     ReportsModule,
+    ReviewsModule,
     PublicClinicModule,
   ],
   controllers: [HealthController],

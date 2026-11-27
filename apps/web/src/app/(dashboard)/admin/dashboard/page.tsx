@@ -76,6 +76,9 @@ const ACTION_LABEL: Record<string, string> = {
   "patient_record.document.read": "Paciente consultou documento",
   "patient_record.document.export": "Paciente exportou documento em PDF",
   "clinical_summary.read": "Resumo em parágrafo gerado",
+  "session_scale.save": "Escalas da sessão registradas",
+  "session_scale.read": "Escalas da sessão consultadas",
+  "review.create": "Avaliação de consulta enviada",
 };
 const loadUsers = async (signal: AbortSignal) => {
   const users = await apiFetch<UserRow[]>("/users", { signal });

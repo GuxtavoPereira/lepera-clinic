@@ -14,6 +14,7 @@ import { ageInYears } from '../../common/utils/dates';
 import { AuditService } from '../audit/audit.service';
 import type { RequestContext } from '../audit/request-context';
 import { SaveClinicalRecordDto } from './dto/save-clinical-record.dto';
+import { SaveSessionScalesDto } from './dto/save-session-scales.dto';
 
 const EDITABLE_FIELDS = [
   'mainComplaint',
@@ -640,6 +641,180 @@ export class ClinicalRecordsService {
         'Compilação estruturada gerada exclusivamente a partir dos registros assinados por este profissional. Não utiliza inteligência artificial, não gera diagnóstico automático e exige revisão clínica antes de qualquer uso externo.',
       sources,
     };
+  }
+
+  /** CLI-01: Consulta escalas numéricas (1–10) vinculadas ao prontuário da sessão. */
+  async getScales(
+    appointmentId: string,
+    user: AuthUser,
+    ctx: RequestContext = {},
+  ) {
+    const { appointment } = await this.requireOwnAppointment(
+      this.prisma.db,
+      appointmentId,
+      user,
+    );
+
+    const record = await this.prisma.db.clinicalRecord.findUnique({
+      where: { appointmentId },
+      select: {
+        id: true,
+        isSigned: true,
+        signedAt: true,
+        sessionSequence: true,
+        scales: {
+          select: { id: true, name: true, value: true, observation: true },
+          orderBy: { id: 'asc' },
+        },
+      },
+    });
+
+    const scales = (record?.scales ?? []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      value: s.value,
+      observation: s.observation
+        ? this.decryptScaleObservation(s.id, s.observation)
+        : null,
+    }));
+
+    if (record && scales.length > 0) {
+      await this.audit.log({
+        actor: user,
+        action: 'session_scale.read',
+        resource: RESOURCE,
+        resourceId: record.id,
+        metadata: { count: scales.length },
+        ...ctx,
+      });
+    }
+
+    return {
+      appointment: this.toSummary(appointment),
+      recordId: record?.id ?? null,
+      isSigned: record?.isSigned ?? false,
+      signedAt: record?.signedAt ?? null,
+      sessionSequence: record?.sessionSequence ?? appointment.sessionSequence,
+      scales,
+    };
+  }
+
+  /** CLI-01: Persiste escalas numéricas (1–10) com observação cifrada e respeito ao bloqueio de assinatura. */
+  async saveScales(
+    appointmentId: string,
+    dto: SaveSessionScalesDto,
+    user: AuthUser,
+    ctx: RequestContext = {},
+  ) {
+    return this.prisma.db.$transaction(async (tx) => {
+      const { doctor, appointment } = await this.requireOwnAppointment(
+        tx,
+        appointmentId,
+        user,
+      );
+
+      if (
+        appointment.status === 'CANCELLED' ||
+        appointment.status === 'RESCHEDULED'
+      ) {
+        throw new ConflictException(
+          'Não é possível registrar escalas em consulta cancelada ou remarcada',
+        );
+      }
+
+      let record = await tx.clinicalRecord.findUnique({
+        where: { appointmentId },
+        select: {
+          id: true,
+          isSigned: true,
+          signedAt: true,
+          sessionSequence: true,
+        },
+      });
+      if (record?.isSigned) {
+        throw new ConflictException(
+          'Prontuário já assinado: escalas não podem mais ser alteradas',
+        );
+      }
+
+      if (!record) {
+        const previous = await tx.clinicalRecord.count({
+          where: { patientId: appointment.patientId },
+        });
+        record = await tx.clinicalRecord.create({
+          data: {
+            id: randomUUID(),
+            appointmentId,
+            patientId: appointment.patientId,
+            doctorId: doctor.id,
+            sessionSequence: appointment.sessionSequence ?? previous + 1,
+          },
+          select: {
+            id: true,
+            isSigned: true,
+            signedAt: true,
+            sessionSequence: true,
+          },
+        });
+      }
+
+      await tx.sessionScale.deleteMany({ where: { recordId: record.id } });
+
+      const saved: Array<{
+        id: string;
+        name: string;
+        value: number;
+        observation: string | null;
+      }> = [];
+      for (const item of dto.scales) {
+        const scaleId = randomUUID();
+        const obs = item.observation?.trim() || null;
+        const encryptedObs = obs
+          ? this.crypto.encrypt(obs, `session_scale:${scaleId}:observation`)
+          : null;
+        await tx.sessionScale.create({
+          data: {
+            id: scaleId,
+            recordId: record.id,
+            name: item.name,
+            value: item.value,
+            observation: encryptedObs,
+          },
+        });
+        saved.push({
+          id: scaleId,
+          name: item.name,
+          value: item.value,
+          observation: obs,
+        });
+      }
+
+      await this.audit.log(
+        {
+          actor: user,
+          action: 'session_scale.save',
+          resource: RESOURCE,
+          resourceId: record.id,
+          metadata: { count: saved.length },
+          ...ctx,
+        },
+        tx,
+      );
+
+      return {
+        appointment: this.toSummary(appointment),
+        recordId: record.id,
+        isSigned: record.isSigned,
+        signedAt: record.signedAt,
+        sessionSequence: record.sessionSequence,
+        scales: saved,
+      };
+    });
+  }
+
+  private decryptScaleObservation(scaleId: string, stored: string): string {
+    if (!stored.startsWith('v1:')) return stored;
+    return this.crypto.decrypt(stored, `session_scale:${scaleId}:observation`);
   }
 
   // ---------------------------------------------------------------- helpers
